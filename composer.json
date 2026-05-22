@@ -1,0 +1,36 @@
+{
+  "name": "trk/processwire-wireconsole",
+  "description": "ProcessWire Admin UI (bridge UI) for the ProcessWire Console ecosystem.",
+  "type": "pw-module",
+  "keywords": [
+    "processwire",
+    "console",
+    "admin",
+    "module"
+  ],
+  "homepage": "https://github.com/trk/WireConsole",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Iskender TOTOGLU",
+      "email": "iskender@totoglu.com",
+      "homepage": "https://totoglu.com/"
+    }
+  ],
+  "require": {
+    "php": ">=8.2",
+    "hari/pw-module": "~1.0"
+  },
+  "suggest": {
+    "trk/processwire-console": "Required to operate migrations/queues/seeding/scheduling via the Admin UI.",
+    "trk/processwire-boost": "Optional. Provides additional project tooling and status info."
+  },
+  "config": {
+    "process-timeout": 0,
+    "allow-plugins": {
+      "hari/pw-module": true
+    }
+  },
+  "minimum-stability": "dev"
+}
+
