@@ -2,73 +2,79 @@
 
 declare(strict_types=1);
 
-/**
- * Test bootstrap for WireConsole module tests.
- *
- * This boots ProcessWire without rendering frontend output and ensures
- * the module classes are available to the test runtime.
- */
-
-namespace Site\modules\WireConsole\tests;
-
-use ProcessWire\Config;
 use ProcessWire\ProcessWire;
+use ProcessWire\ProcessWireConsole;
+use ProcessWire\WireKit;
 
-/**
- * Boot ProcessWire and return the current instance.
- */
-function bootProcessWire(): ProcessWire
-{
-    $root = findProjectRoot(__DIR__);
+$moduleRoot = dirname(__DIR__);
+$projectRoot = dirname($moduleRoot, 3);
+$autoloadPath = $projectRoot . '/vendor/autoload.php';
 
-    $composerAutoloader = $root . '/vendor/autoload.php';
-    if (is_file($composerAutoloader)) {
-        require_once $composerAutoloader;
-    }
-
-    if (!class_exists(ProcessWire::class, false)) {
-        require_once $root . '/wire/core/ProcessWire.php';
-    }
-
-    /** @var Config $config */
-    $config = ProcessWire::buildConfig($root);
-
-    /**
-     * Tests should be isolated from project-specific init/ready code.
-     * Disable site status files (init/ready hooks) so test runs do not execute
-     * site/init.php, site/ready.php, readySite.php, etc.
-     */
-    $config->statusFiles = [];
-
-    // Boot without rendering ProcessPageView output.
-    $wire = new ProcessWire($config, '/', false);
-    ProcessWire::setCurrentInstance($wire);
-    $wire->boot($config);
-    ProcessWire::setCurrentInstance($wire);
-
-    // Ensure our module classes are defined (tests call static methods).
-    require_once $root . '/site/modules/WireConsole/WireConsole.module.php';
-    require_once $root . '/site/modules/WireConsole/ProcessWireConsole.module.php';
-
-    return $wire;
+if (is_file($autoloadPath)) {
+	require_once $autoloadPath;
 }
 
-/**
- * Find project root by walking up until both "wire/" and "index.php" exist.
- */
-function findProjectRoot(string $startDir): string
-{
-    $dir = $startDir;
-    for ($i = 0; $i < 10; $i++) {
-        if (is_file($dir . '/index.php') && is_dir($dir . '/wire')) {
-            return $dir;
-        }
-        $parent = dirname($dir);
-        if ($parent === $dir) {
-            break;
-        }
-        $dir = $parent;
-    }
+if (!function_exists('ProcessWire\\wire') || ProcessWire::getCurrentInstance() === null) {
+	require_once $projectRoot . '/index.php';
+}
 
-    throw new \RuntimeException('Could not locate ProcessWire project root for tests.');
+$pw = ProcessWire::getCurrentInstance();
+$classLoader = $pw?->classLoader ?? \ProcessWire\wire('classLoader');
+
+$wireKitRoot = $projectRoot . '/site/modules/WireKit';
+if (is_file($wireKitRoot . '/WireKit.module.php')) {
+	require_once $wireKitRoot . '/WireKit.module.php';
+}
+
+if ($classLoader) {
+	if (is_dir($wireKitRoot)) {
+		$classLoader->addNamespace('Totoglu\\WireKit', $wireKitRoot . '/src/');
+		$classLoader->addNamespace('Htmx\\Component', $wireKitRoot . '/components/');
+		$classLoader->addNamespace('Htmx\\Ui', $wireKitRoot . '/ui/');
+	}
+	$classLoader->addNamespace('Totoglu\\WireConsole', $moduleRoot . '/src/');
+	$classLoader->addNamespace('Htmx\\Component', $moduleRoot . '/components/');
+	$classLoader->addNamespace('Htmx\\Ui', $moduleRoot . '/ui/');
+}
+
+require_once $moduleRoot . '/ProcessWireConsole.module.php';
+
+if (!function_exists('wcTestModule')) {
+	/**
+	 * Instantiate and wire a fresh ProcessWireConsole instance for Pest tests.
+	 */
+	function wcTestModule(): ProcessWireConsole
+	{
+		$pw = ProcessWire::getCurrentInstance();
+		if ($pw && class_exists(WireKit::class)) {
+			WireKit::instance($pw)->bootComponents();
+		}
+
+		$module = new ProcessWireConsole();
+		if ($pw) {
+			$module->setWire($pw);
+		}
+		$module->bootComponents();
+
+		return $module;
+	}
+
+	/**
+	 * Switch the current ProcessWire test user to the superuser (ID 41).
+	 */
+	function wcSetSuperuser(): void
+	{
+		$pw = ProcessWire::getCurrentInstance();
+		$users = $pw?->users;
+		if (!$users) {
+			return;
+		}
+		$admin = $users->get(41);
+		if (!$admin || !$admin->id) {
+			$admin = $users->get('roles=superuser');
+		}
+		if ($admin && $admin->id) {
+			$users->setCurrentUser($admin);
+		}
+	}
 }
