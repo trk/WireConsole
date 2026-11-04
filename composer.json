@@ -1,36 +1,48 @@
 {
-  "name": "trk/processwire-wireconsole",
-  "description": "ProcessWire Admin UI (bridge UI) for the ProcessWire Console ecosystem.",
-  "type": "pw-module",
-  "keywords": [
-    "processwire",
-    "console",
-    "admin",
-    "module"
-  ],
-  "homepage": "https://github.com/trk/WireConsole",
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "Iskender TOTOGLU",
-      "email": "iskender@totoglu.com",
-      "homepage": "https://totoglu.com/"
-    }
-  ],
-  "require": {
-    "php": ">=8.2",
-    "hari/pw-module": "~1.0"
-  },
-  "suggest": {
-    "trk/processwire-console": "Required to operate migrations/queues/seeding/scheduling via the Admin UI.",
-    "trk/processwire-boost": "Optional. Provides additional project tooling and status info."
-  },
-  "config": {
-    "process-timeout": 0,
-    "allow-plugins": {
-      "hari/pw-module": true
-    }
-  },
-  "minimum-stability": "dev"
+	"name": "trk/processwire-wireconsole",
+	"description": "HTMX v4-powered ProcessWire Console & Boost administrative workspace (Setup > Console).",
+	"type": "pw-module",
+	"license": "MIT",
+	"keywords": [
+		"processwire",
+		"console",
+		"boost",
+		"htmx",
+		"htmx4",
+		"migrations",
+		"queues",
+		"admin",
+		"module"
+	],
+	"homepage": "https://github.com/trk/WireConsole",
+	"authors": [
+		{
+			"name": "Iskender TOTOGLU",
+			"email": "iskender@totoglu.com",
+			"homepage": "https://totoglu.com/"
+		}
+	],
+	"require": {
+		"php": ">=8.4"
+	},
+	"suggest": {
+		"trk/processwire-console": "Required to operate migrations, queues, seeders, scheduling, backups, and Pest tests via the Console workspace.",
+		"trk/processwire-boost": "Optional. Enables ProcessWire Boost AI guidelines, skills, and the 28-tool MCP server panel."
+	},
+	"autoload": {
+		"psr-4": {
+			"Totoglu\\WireConsole\\": "src/",
+			"Htmx\\Component\\": "components/",
+			"Htmx\\Ui\\": "ui/"
+		}
+	},
+	"config": {
+		"process-timeout": 0,
+		"sort-packages": true,
+		"allow-plugins": {
+			"hari/pw-module": true
+		}
+	},
+	"minimum-stability": "dev",
+	"prefer-stable": true
 }
-
