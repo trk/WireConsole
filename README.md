@@ -2,7 +2,7 @@
 
 Admin module (`Setup > Console`) for managing **`trk/processwire-console`** and **`trk/processwire-boost`** from the ProcessWire backend.
 
-![ProcessWire Console](preview.jpg)
+![ProcessWire Console](https://raw.githubusercontent.com/trk/WireConsole/refs/heads/main/preview.jpg)
 
 ## Requirements
 
