@@ -12,7 +12,6 @@ use Htmx\Ui\KitButton;
 use Htmx\Ui\KitCodePreview;
 use Htmx\Ui\KitConfirmModal;
 use Htmx\Ui\KitNotice;
-use Htmx\Ui\KitProgressBar;
 use Htmx\Ui\KitTabs;
 use Totoglu\Htmx\Component;
 use Totoglu\WireConsole\ConsoleRuntime;
@@ -42,7 +41,7 @@ require_once __DIR__ . '/ConsoleLogsPanel.php';
  *   Scheduling, Backups, Testing, Boost & AI, and Logs & Audit
  * - Superuser-gated mutation actions with `KitActionCard` & `KitConfirmModal`
  */
-class ConsoleWorkspace extends Component
+class ConsoleWorkspace extends BaseWorkspace
 {
 	use HandlesWorkspaceMutations;
 
@@ -53,10 +52,12 @@ class ConsoleWorkspace extends Component
 	public string $inspectedCategory = '';
 	public string $inspectedIdentifier = '';
 
-	/** @var array{variant: string, title: string, message: string, details: string}|null */
-	protected ?array $flashNotice = null;
-
 	protected ?ConsoleRuntime $runtimeInstance = null;
+
+	public function workspaceId(): string
+	{
+		return 'console';
+	}
 
 	public function mount(string $activeTab = ''): void
 	{
@@ -202,13 +203,13 @@ class ConsoleWorkspace extends Component
 		$url = $sanitizer->entities($this->requestUrl());
 		$id = $sanitizer->entities($this->id);
 
-		// Render header, persistent runtime version strip, & tab bar
-		$activityBar = KitProgressBar::make()->indeterminate(true)->render();
+		// Render header, tab bar, process/notification centers & persistent runtime version strip
 		$headerHtml = $this->renderHeader();
 		$versionStripHtml = ConsoleVersionStrip::make(['versions' => $runtime->getVersionMatrix()])->render();
 		$navHtml = $this->renderTabNav($tabs);
 		$inspectorHtml = $this->renderInspectedFileDrawer();
-		$noticeHtml = $this->renderFlashNotice();
+		$processHtml = $this->renderProcessCenter();
+		$noticeHtml = $this->renderNotificationCenter();
 
 		// When trk/processwire-console is missing, always show the setup onboarding card at the top
 		$onboardingBanner = !$packages['console']['installed']
@@ -224,7 +225,7 @@ class ConsoleWorkspace extends Component
 		$confirmDialogHtml = KitConfirmModal::make()->render();
 
 		return <<<HTML
-		<div id="{$id}" class="wc-workspace" data-wk-active-tab="{$sanitizer->entities($this->activeTab)}" data-wk-active-tab-label="{$activeTabLabel}" data-wc-active-tab="{$sanitizer->entities($this->activeTab)}" data-wc-active-tab-label="{$activeTabLabel}">
+		<div id="{$id}" class="wk-workspace wc-workspace" data-wk-active-tab="{$sanitizer->entities($this->activeTab)}" data-wk-active-tab-label="{$activeTabLabel}" data-wc-active-tab="{$sanitizer->entities($this->activeTab)}" data-wc-active-tab-label="{$activeTabLabel}">
 			<form class="wc-workspace__form"
 				autocomplete="off"
 				hx-action="{$url}"
@@ -234,11 +235,11 @@ class ConsoleWorkspace extends Component
 				hx-status:422="swap:outerMorph target:#{$id}"
 				hx-disable="#{$id} button">
 				{$this->renderStatePayload()}
-				{$activityBar}
 				{$headerHtml}
-				{$versionStripHtml}
 				{$navHtml}
+				{$processHtml}
 				{$noticeHtml}
+				{$versionStripHtml}
 				{$inspectorHtml}
 				{$onboardingBanner}
 				{$actionsDeckHtml}
@@ -295,8 +296,8 @@ class ConsoleWorkspace extends Component
 		$id = $this->id;
 
 		$roleLabel = $this->runtime()->isSuperuser()
-			? KitBadge::make(['label' => $this->_('Superuser Mode'), 'variant' => 'primary', 'showDot' => false])->render()
-			: KitBadge::make(['label' => $this->_('Read-only View'), 'variant' => 'muted', 'showDot' => false])->render();
+			? KitBadge::make(['label' => $this->_('Superuser Mode'), 'variant' => 'primary', 'showDot' => false])
+			: KitBadge::make(['label' => $this->_('Read-only View'), 'variant' => 'muted', 'showDot' => false]);
 
 		$refreshBtn = KitButton::make()
 			->label($this->_('Refresh'))
@@ -308,24 +309,15 @@ class ConsoleWorkspace extends Component
 			->hxMethod('post')
 			->hxTarget('#' . $id)
 			->hxSwap('outerMorph')
-			->hxVals(['__htmx_action' => 'queryRefresh'])
-			->render();
+			->hxVals(['__htmx_action' => 'queryRefresh']);
 
-		return <<<HTML
-		<header class="wc-header">
-			<div class="wc-header__brand">
-				<div class="wc-header__title-row">
-					<span class="wc-header__icon" aria-hidden="true"><i class="fa fa-terminal"></i></span>
-					<h2 class="wc-header__title">{$this->_('ProcessWire Console')}</h2>
-					{$roleLabel}
-				</div>
-				<p class="wc-header__subtitle">{$this->_('Operational control plane for migrations, queues, seeders, scheduled tasks, backups, and Pest tests.')}</p>
-			</div>
-			<div class="wc-header__meta">
-				{$refreshBtn}
-			</div>
-		</header>
-		HTML;
+		return $this->renderWorkspaceHeader(
+			$this->_('Console'),
+			$this->_('Monitor system health, background tasks, scheduled jobs, database backups, and activity logs.'),
+			'terminal',
+			[$roleLabel],
+			[$refreshBtn]
+		);
 	}
 
 	/**

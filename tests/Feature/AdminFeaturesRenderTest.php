@@ -46,7 +46,7 @@ test('ProcessWireConsole executes and renders the HTMX v4 ConsoleWorkspace compo
 		->and($html)->toContain('hx-method="post"')
 		->and($html)->toContain('hx-swap="outerMorph"')
 		->and($html)->toContain('hx__state__hxc_wc_workspace')
-		->and($html)->toContain('ProcessWire Console')
+		->and($html)->toContain('<h1 class="wk-workspace-title">Console</h1>')
 		->and($html)->toContain('processwire-console')
 		->and($html)->toContain('processwire-boost')
 		->and($html)->toContain('<span>Boost &amp; AI</span>')
@@ -70,7 +70,7 @@ test('ConsoleWorkspace switches between all 9 dedicated Console*Panel components
 		$workspace->querySwitchTab($tab);
 
 		$html = $workspace->render();
-		$headerPos = strpos($html, 'class="wc-header"');
+		$headerPos = strpos($html, 'class="wk-workspace-head"');
 		$versionPos = strpos($html, 'wk-version-strip');
 		$tabsPos = strpos($html, 'wk-tabs');
 		$deckPos = strpos($html, 'class="wk-action-deck"');
@@ -83,9 +83,9 @@ test('ConsoleWorkspace switches between all 9 dedicated Console*Panel components
 			->and($tabsPos)->toBeInt()
 			->and($deckPos)->toBeInt()
 			->and($panelPos)->toBeInt()
-			->and($headerPos)->toBeLessThan($versionPos)
-			->and($versionPos)->toBeLessThan($tabsPos)
-			->and($tabsPos)->toBeLessThan($deckPos)
+			->and($headerPos)->toBeLessThan($tabsPos)
+			->and($tabsPos)->toBeLessThan($versionPos)
+			->and($versionPos)->toBeLessThan($deckPos)
 			->and($deckPos)->toBeLessThan($panelPos)
 			->and($html)->toContain('<dialog id="wk-confirm-dialog"')
 			->and($html)->toContain('wk-confirm-dialog')

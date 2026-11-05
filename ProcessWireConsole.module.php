@@ -125,11 +125,35 @@ class ProcessWireConsole extends Process
 		}
 
 		$modules = $this->wire()->modules;
-		if ($modules && $modules->isInstalled('WireKit')) {
+		if (class_exists(WireKit::class)) {
 			try {
-				/** @var WireKit|null $kit */
-				$kit = $modules->get('WireKit');
-				$kit?->bootComponents();
+				$kit = WireKit::instance($this);
+				$kit->bootComponents();
+				$kit->registerWorkspace([
+					'id' => 'console',
+					'title' => $this->_('Console'),
+					'description' => $this->_('Monitor system health, background tasks, scheduled jobs, database backups, and activity logs.'),
+					'icon' => 'terminal',
+					'process' => 'ProcessWireConsole',
+					'component' => ConsoleWorkspace::class,
+					'category' => $this->_('System'),
+					'order' => 60,
+					'permission' => self::PERMISSION_VIEW,
+					'statsCallback' => function (): array {
+						$overview = $this->runtime()->getOverviewTelemetry();
+						$isDown = !empty($overview['maintenance']['isDown']);
+						$scheduledCount = (int) ($overview['scheduling']['totalCount'] ?? 0);
+
+						return [
+							[
+								'label' => $this->_('Status'),
+								'value' => $isDown ? $this->_('Maintenance') : $this->_('Online'),
+								'tone' => $isDown ? 'warning' : 'success',
+							],
+							['label' => $this->_('Scheduled'), 'value' => (string) $scheduledCount],
+						];
+					},
+				]);
 			} catch (\Throwable) {
 				// Fallback if WireKit is still initializing
 			}
