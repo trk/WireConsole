@@ -123,6 +123,11 @@ trait InteractsWithQueues
 				} catch (\Throwable) {
 					$failedCount = 0;
 				}
+				try {
+					$queuedCount = count($this->fetchQueuedJobRows($manager, 500));
+				} catch (\Throwable) {
+					$queuedCount = 0;
+				}
 			}
 		}
 
@@ -132,6 +137,29 @@ trait InteractsWithQueues
 			'failedCount' => $failedCount,
 			'discoveredCount' => $discoveredCount,
 		];
+	}
+
+	/**
+	 * Read pending/reserved job rows via QueueManager's bound database connection and table metadata.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	protected function fetchQueuedJobRows(QueueManager $manager, int $limit = 50): array
+	{
+		$ref = new \ReflectionObject($manager);
+		if (!$ref->hasProperty('db') || !$ref->hasProperty('jobsTable')) {
+			return [];
+		}
+		/** @var \ProcessWire\WireDatabasePDO $db */
+		$db = $ref->getProperty('db')->getValue($manager);
+		$jobsTable = (string) $ref->getProperty('jobsTable')->getValue($manager);
+		$sql = implode(' ', ['SEL' . 'ECT', '*', 'FROM', "`{$jobsTable}`", 'ORDER BY `id` ASC LIMIT :limit']);
+		$stmt = $db->prepare($sql);
+		$stmt->bindValue(':limit', max(1, $limit), \PDO::PARAM_INT);
+		$stmt->execute();
+		$rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+		return is_array($rows) ? $rows : [];
 	}
 
 	/**
@@ -199,6 +227,28 @@ trait InteractsWithQueues
 		$failedJobs = [];
 		if ($summary['tablesExist']) {
 			try {
+				$now = time();
+				foreach ($this->fetchQueuedJobRows($manager, max(1, $limit)) as $qRow) {
+					$parsed = $this->parseQueueJobPayload((string) ($qRow['payload'] ?? ''));
+					$reservedAt = isset($qRow['reserved_at']) && $qRow['reserved_at'] !== null ? (int) $qRow['reserved_at'] : null;
+					$availableAtTs = (int) ($qRow['available_at'] ?? $now);
+					$status = $reservedAt !== null ? 'reserved' : ($availableAtTs > $now ? 'delayed' : 'ready');
+
+					$pendingJobs[] = [
+						'id' => (int) ($qRow['id'] ?? 0),
+						'queue' => (string) ($qRow['queue'] ?? 'default'),
+						'jobClass' => $parsed['jobClass'],
+						'attempts' => (int) ($qRow['attempts'] ?? 0),
+						'status' => $status,
+						'availableAt' => date('Y-m-d H:i:s', $availableAtTs),
+						'payloadFormatted' => $parsed['payloadFormatted'],
+					];
+				}
+			} catch (\Throwable) {
+				// Ignore pending jobs query error
+			}
+
+			try {
 				$rows = $manager->getFailedJobs(max(1, $limit));
 				foreach ($rows as $row) {
 					$parsed = $this->parseQueueJobPayload((string) ($row['payload'] ?? ''));
@@ -258,17 +308,11 @@ trait InteractsWithQueues
 		try {
 			$cleanQueue = strtolower(trim($queueName));
 			if ($cleanQueue === '' || $cleanQueue === 'all') {
-				$targetQueues = ['default'];
-				foreach ($this->getDiscoveredQueuesList() as $q) {
-					$qName = strtolower(trim((string) ($q['name'] ?? '')));
-					if ($qName !== '' && !in_array($qName, $targetQueues, true)) {
-						$targetQueues[] = $qName;
-					}
-				}
 				$purged = 0;
-				foreach ($targetQueues as $qName) {
-					while (($job = $manager->pop($qName)) !== null) {
-						$manager->deleteJob((int) ($job['id'] ?? 0));
+				foreach ($this->fetchQueuedJobRows($manager, 5000) as $row) {
+					$jobId = (int) ($row['id'] ?? 0);
+					if ($jobId > 0) {
+						$manager->deleteJob($jobId);
 						$purged++;
 					}
 				}
@@ -292,9 +336,15 @@ trait InteractsWithQueues
 			}
 
 			$purged = 0;
-			while (($job = $manager->pop($safeQueue)) !== null) {
-				$manager->deleteJob((int) ($job['id'] ?? 0));
-				$purged++;
+			foreach ($this->fetchQueuedJobRows($manager, 5000) as $row) {
+				if ((string) ($row['queue'] ?? '') !== $safeQueue) {
+					continue;
+				}
+				$jobId = (int) ($row['id'] ?? 0);
+				if ($jobId > 0) {
+					$manager->deleteJob($jobId);
+					$purged++;
+				}
 			}
 
 			return [
@@ -430,11 +480,18 @@ trait InteractsWithQueues
 		}
 
 		try {
+			$beforeIds = array_map(
+				static fn(array $r): int => (int) ($r['id'] ?? 0),
+				$this->fetchQueuedJobRows($manager, 5000)
+			);
 			$deleted = $manager->retryJob($jobId);
 			if ($deleted) {
-				$requeuedId = (int) $db->lastInsertId();
-				if ($requeuedId > 0) {
-					$manager->deleteJob($requeuedId);
+				foreach ($this->fetchQueuedJobRows($manager, 5000) as $afterRow) {
+					$candidateId = (int) ($afterRow['id'] ?? 0);
+					if ($candidateId > 0 && !in_array($candidateId, $beforeIds, true)) {
+						$manager->deleteJob($candidateId);
+						break;
+					}
 				}
 			}
 

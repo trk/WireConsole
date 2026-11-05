@@ -219,26 +219,97 @@ class ProcessWireConsole extends Process
 	 */
 	public function ___execute(): string
 	{
+		return $this->renderSection('overview');
+	}
+
+	/**
+	 * Migrations section (`./migrations/`).
+	 */
+	public function ___executeMigrations(): string
+	{
+		return $this->renderSection('migrations');
+	}
+
+	/**
+	 * Queues section (`./queues/`).
+	 */
+	public function ___executeQueues(): string
+	{
+		return $this->renderSection('queues');
+	}
+
+	/**
+	 * Seeding section (`./seeding/`).
+	 */
+	public function ___executeSeeding(): string
+	{
+		return $this->renderSection('seeding');
+	}
+
+	/**
+	 * Scheduling section (`./scheduling/`).
+	 */
+	public function ___executeScheduling(): string
+	{
+		return $this->renderSection('scheduling');
+	}
+
+	/**
+	 * Backups section (`./backup/`).
+	 */
+	public function ___executeBackup(): string
+	{
+		return $this->renderSection('backup');
+	}
+
+	/**
+	 * Testing section (`./testing/`).
+	 */
+	public function ___executeTesting(): string
+	{
+		return $this->renderSection('testing');
+	}
+
+	/**
+	 * Boost & AI section (`./boost/`).
+	 */
+	public function ___executeBoost(): string
+	{
+		return $this->renderSection('boost');
+	}
+
+	/**
+	 * Logs & Audit section (`./logs/`).
+	 */
+	public function ___executeLogs(): string
+	{
+		return $this->renderSection('logs');
+	}
+
+	/**
+	 * Render the Console workspace for `$section`; HTMX section requests receive only the workspace markup.
+	 */
+	private function renderSection(string $section): string
+	{
 		$this->bootComponents();
 		$this->loadWorkspaceAssets();
-
-		$requestedTab = (string) ($this->wire()->input->get('tab') ?? 'overview');
-		$this->resetBreadcrumbsToConsoleRoot($requestedTab);
+		$this->resetBreadcrumbsToConsoleRoot($section);
 
 		/** @var Htmx|null $htmx */
 		$htmx = $this->wire()->htmx;
 		if ($htmx instanceof Htmx) {
-			return $htmx->renderComponent(ConsoleWorkspace::class, [
-				'activeTab' => $requestedTab,
+			$html = $htmx->renderComponent(ConsoleWorkspace::class, [
+				'activeTab' => $section,
 			]);
+		} else {
+			$workspace = new ConsoleWorkspace();
+			$workspace->setWire($this->wire());
+			$workspace->fill(['activeTab' => $section]);
+			$workspace->mount($section);
+			$html = $workspace->renderToString();
 		}
 
-		$workspace = new ConsoleWorkspace();
-		$workspace->setWire($this->wire());
-		$workspace->fill(['activeTab' => $requestedTab]);
-		$workspace->mount($requestedTab);
-
-		return $workspace->renderToString();
+		return WireKit::instance($this)->workspaceResponse($html);
 	}
 
 	/**
@@ -254,7 +325,7 @@ class ProcessWireConsole extends Process
 
 		foreach ($tabs as $key => $meta) {
 			$items[] = [
-				'id' => '?tab=' . rawurlencode($key),
+				'id' => $key === 'overview' ? '' : rawurlencode((string) $key) . '/',
 				'name' => html_entity_decode($meta['label'], ENT_QUOTES, 'UTF-8'),
 				'icon' => $meta['icon'],
 				'_class' => '',
@@ -302,7 +373,7 @@ class ProcessWireConsole extends Process
 	}
 
 	/**
-	 * Load WireKit.css, WireKit.js, ProcessWireConsole.css, ProcessWireConsole.js,
+	 * Load WireKit.css, WireKit.js (section URL & breadcrumb sync), ProcessWireConsole.css,
 	 * and HTMX frontend script when rendering the Console admin page.
 	 */
 	protected function loadWorkspaceAssets(): void
@@ -322,15 +393,10 @@ class ProcessWireConsole extends Process
 		$moduleDir = basename(__DIR__);
 		$moduleUrl = rtrim((string) $config->urls->siteModules, '/') . '/' . $moduleDir . '/';
 		$cssPath = __DIR__ . '/ProcessWireConsole.css';
-		$jsPath = __DIR__ . '/ProcessWireConsole.js';
 
 		if (is_file($cssPath)) {
 			$v = (string) (@filemtime($cssPath) ?: '2.0.0');
 			$config->styles->add($moduleUrl . 'ProcessWireConsole.css?v=' . $v);
-		}
-		if (is_file($jsPath)) {
-			$v = (string) (@filemtime($jsPath) ?: '2.0.0');
-			$config->scripts->add($moduleUrl . 'ProcessWireConsole.js?v=' . $v);
 		}
 
 		if ($this->breadcrumbsHooked) {
@@ -383,7 +449,7 @@ class ProcessWireConsole extends Process
 		if ($cleanTab !== '' && $cleanTab !== 'overview') {
 			$tabs = $this->runtime()->getAccessibleTabs();
 			if (isset($tabs[$cleanTab])) {
-				$this->breadcrumb($rootUrl . '?tab=' . rawurlencode($cleanTab), $tabs[$cleanTab]['label']);
+				$this->breadcrumb($rootUrl . rawurlencode($cleanTab) . '/', $tabs[$cleanTab]['label']);
 			}
 		}
 	}

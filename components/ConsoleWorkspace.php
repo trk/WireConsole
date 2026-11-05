@@ -12,7 +12,6 @@ use Htmx\Ui\KitButton;
 use Htmx\Ui\KitCodePreview;
 use Htmx\Ui\KitConfirmModal;
 use Htmx\Ui\KitNotice;
-use Htmx\Ui\KitTabs;
 use Totoglu\Htmx\Component;
 use Totoglu\WireConsole\ConsoleRuntime;
 
@@ -36,7 +35,7 @@ require_once __DIR__ . '/ConsoleLogsPanel.php';
  *
  * Stateful HTMX v4 orchestrator component rendering the ProcessWire Console dashboard:
  * - Package readiness & Composer onboarding banner (prominent when packages are missing)
- * - Accessible tab navigation via `KitTabs`
+ * - Accessible section navigation via `KitNavs`
  * - Dedicated `Console*Panel` components for Overview, Migrations, Queues, Seeding,
  *   Scheduling, Backups, Testing, Boost & AI, and Logs & Audit
  * - Superuser-gated mutation actions with `KitActionCard` & `KitConfirmModal`
@@ -225,7 +224,7 @@ class ConsoleWorkspace extends BaseWorkspace
 		$confirmDialogHtml = KitConfirmModal::make()->render();
 
 		return <<<HTML
-		<div id="{$id}" class="wk-workspace wc-workspace" data-wk-active-tab="{$sanitizer->entities($this->activeTab)}" data-wk-active-tab-label="{$activeTabLabel}" data-wc-active-tab="{$sanitizer->entities($this->activeTab)}" data-wc-active-tab-label="{$activeTabLabel}">
+		<div id="{$id}" class="wk-workspace wc-workspace" data-wk-active-tab="{$sanitizer->entities($this->activeTab)}" data-wk-active-tab-label="{$activeTabLabel}" data-wk-active-tab-url="{$sanitizer->entities($this->sectionUrl($this->activeTab))}" data-wc-active-tab="{$sanitizer->entities($this->activeTab)}" data-wc-active-tab-label="{$activeTabLabel}">
 			<form class="wc-workspace__form"
 				autocomplete="off"
 				hx-action="{$url}"
@@ -243,7 +242,7 @@ class ConsoleWorkspace extends BaseWorkspace
 				{$inspectorHtml}
 				{$onboardingBanner}
 				{$actionsDeckHtml}
-				<main class="wk-panel" role="tabpanel">
+				<main class="wk-panel">
 					{$panelHtml}
 				</main>
 				{$confirmDialogHtml}
@@ -321,22 +320,22 @@ class ConsoleWorkspace extends BaseWorkspace
 	}
 
 	/**
-	 * Render the horizontal tab bar for accessible sections via `KitTabs`.
+	 * Render the section navigation for accessible sections via `KitNavs`.
 	 *
 	 * @param array<string, array{label: string, icon: string, permission: string, description: string}> $tabs
 	 */
 	protected function renderTabNav(array $tabs): string
 	{
-		$kitTabs = KitTabs::make()
-			->active($this->activeTab)
-			->ariaLabel($this->_('Console sections'))
-			->htmxSwitch($this->requestUrl(), '#' . $this->id, 'querySwitchTab', 'tab');
-
+		$sections = [];
 		foreach ($tabs as $key => $meta) {
-			$kitTabs->addTab($key, $meta['label'], $meta['icon']);
+			$sections[$key] = [
+				'label' => $meta['label'],
+				'icon' => $meta['icon'],
+				'url' => $this->sectionUrl((string) $key),
+			];
 		}
 
-		return $kitTabs->render();
+		return $this->buildWorkspaceNav($sections, $this->_('Console sections'));
 	}
 
 	/**

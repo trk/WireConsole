@@ -78,7 +78,6 @@ $runtime = ConsoleRuntime::make($this->wire());
 site/modules/WireConsole/
 ├── ProcessWireConsole.module.php     # Process module (Setup > Console)
 ├── ProcessWireConsole.css            # Workspace styles
-├── ProcessWireConsole.js             # Tab URL & breadcrumb sync
 ├── src/
 │   ├── ConsoleRuntime.php            # Service layer (Totoglu\WireConsole\ConsoleRuntime)
 │   └── Concerns/                     # Subsystem traits

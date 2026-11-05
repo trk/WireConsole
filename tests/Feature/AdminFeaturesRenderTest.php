@@ -203,7 +203,8 @@ test('ProcessWireConsole executeNavJSON returns accessible tabs for AdminThemeUi
 		->and($decoded['url'])->not->toBeEmpty()
 		->and($decoded['add'])->toBeNull()
 		->and(count($decoded['list']))->toBe(9)
-		->and($decoded['list'][0]['url'])->toBe('?tab=overview');
+		->and($decoded['list'][0]['url'])->toBe('')
+		->and($decoded['list'][1]['url'])->toBe('migrations/');
 });
 
 test('WireKit and Console-specific Htmx Ui elements render escaped semantic HTML and support make() factory', function (): void {
