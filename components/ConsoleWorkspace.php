@@ -95,8 +95,27 @@ class ConsoleWorkspace extends Component
 	public function queryInspectFile(string $category = '', string $identifier = ''): void
 	{
 		$this->activeTab = $this->resolvePermittedTab($this->activeTab);
-		$this->inspectedCategory = strtolower(trim($category));
-		$this->inspectedIdentifier = trim($identifier);
+		$cleanCategory = strtolower(trim($category));
+		$cleanId = trim($identifier);
+
+		if (!$this->runtime()->userCanInspectCategory($cleanCategory)) {
+			$this->inspectedCategory = '';
+			$this->inspectedIdentifier = '';
+			$this->runtime()->audit('file.inspect', 'denied_rbac', [
+				'category' => $cleanCategory,
+				'identifier' => $cleanId,
+			]);
+			$this->setNotice(
+				'danger',
+				$this->_('Permission Denied'),
+				$this->_('You do not have permission to inspect this file.')
+			);
+
+			return;
+		}
+
+		$this->inspectedCategory = $cleanCategory;
+		$this->inspectedIdentifier = $cleanId;
 	}
 
 	/**
@@ -188,8 +207,8 @@ class ConsoleWorkspace extends Component
 		$headerHtml = $this->renderHeader();
 		$versionStripHtml = ConsoleVersionStrip::make(['versions' => $runtime->getVersionMatrix()])->render();
 		$navHtml = $this->renderTabNav($tabs);
-		$noticeHtml = $this->renderFlashNotice();
 		$inspectorHtml = $this->renderInspectedFileDrawer();
+		$noticeHtml = $this->renderFlashNotice();
 
 		// When trk/processwire-console is missing, always show the setup onboarding card at the top
 		$onboardingBanner = !$packages['console']['installed']
@@ -351,6 +370,26 @@ class ConsoleWorkspace extends Component
 	protected function renderInspectedFileDrawer(): string
 	{
 		if ($this->inspectedCategory === '' || $this->inspectedIdentifier === '') {
+			return '';
+		}
+
+		if (!$this->runtime()->userCanInspectCategory($this->inspectedCategory)) {
+			$deniedCategory = $this->inspectedCategory;
+			$deniedId = $this->inspectedIdentifier;
+			$this->inspectedCategory = '';
+			$this->inspectedIdentifier = '';
+			$this->runtime()->audit('file.inspect', 'denied_rbac', [
+				'category' => $deniedCategory,
+				'identifier' => $deniedId,
+			]);
+			if ($this->flashNotice === null) {
+				$this->setNotice(
+					'danger',
+					$this->_('Permission Denied'),
+					$this->_('You do not have permission to inspect this file.')
+				);
+			}
+
 			return '';
 		}
 

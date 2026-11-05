@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace Totoglu\WireConsole;
 
+use ProcessWire\ProcessWire;
 use ProcessWire\Wire;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Totoglu\Console\Boost\BoostManager;
 use Totoglu\Console\Migration\Migrator;
 use Totoglu\Console\Support\FeatureDiscoverer;
@@ -209,6 +213,26 @@ class ConsoleRuntime extends Wire
 	}
 
 	/**
+	 * Check whether the current user has permission to inspect files in the given category.
+	 *
+	 * Backups require both superuser status and the backup permission (matching backup download);
+	 * all other categories enforce the permission of the tab that owns them.
+	 */
+	public function userCanInspectCategory(string $category): bool
+	{
+		return match (strtolower(trim($category))) {
+			'backup' => $this->isSuperuser() && $this->userCanView(self::PERMISSION_BACKUP),
+			'migration' => $this->userCanView(self::PERMISSION_MIGRATIONS),
+			'queue' => $this->userCanView(self::PERMISSION_QUEUES),
+			'seeder' => $this->userCanView(self::PERMISSION_SEEDING),
+			'task' => $this->userCanView(self::PERMISSION_SCHEDULING),
+			'test' => $this->userCanView(self::PERMISSION_TESTING),
+			'skill', 'boost-doc' => $this->userCanView(self::PERMISSION_BOOST),
+			default => false,
+		};
+	}
+
+	/**
 	 * Resolve the absolute root path of the ProcessWire installation.
 	 */
 	public function getProjectRootPath(): string
@@ -255,6 +279,99 @@ class ConsoleRuntime extends Wire
 		}
 
 		return $this->discovererInstance = new FeatureDiscoverer($pw);
+	}
+
+	/**
+	 * Execute an upstream trk/processwire-console Symfony Console command in-process using ArrayInput and BufferedOutput.
+	 *
+	 * @param class-string<Command> $commandClass
+	 * @param array<string, mixed> $parameters
+	 * @return array{ok: bool, exitCode: int, data: array<string, mixed>, error: ?array{code: string, message: string}, rawOutput: string, stdout: string}
+	 */
+	protected function runConsoleCommandInProcess(string $commandClass, array $parameters = []): array
+	{
+		if (!$this->ensureAutoload() || !class_exists($commandClass) || !class_exists(ArrayInput::class) || !class_exists(BufferedOutput::class)) {
+			return [
+				'ok' => false,
+				'exitCode' => 1,
+				'data' => [],
+				'error' => [
+					'code' => 'UNAVAILABLE',
+					'message' => $this->_('Console command runtime is unavailable because trk/processwire-console is not installed.'),
+				],
+				'rawOutput' => '',
+				'stdout' => '',
+			];
+		}
+
+		$pw = $this->wire();
+		if ($pw instanceof ProcessWire) {
+			ProcessWire::setCurrentInstance($pw);
+		}
+
+		$parameters['--json'] = true;
+
+		/** @var Command $command */
+		$command = new $commandClass();
+		$input = new ArrayInput($parameters);
+		$input->setInteractive(false);
+		$output = new BufferedOutput();
+
+		ob_start();
+		try {
+			$exitCode = $command->run($input, $output);
+			$stdout = trim((string) ob_get_clean());
+		} catch (\Throwable $e) {
+			$stdout = trim((string) ob_get_clean());
+
+			return [
+				'ok' => false,
+				'exitCode' => 1,
+				'data' => [],
+				'error' => [
+					'code' => 'EXCEPTION',
+					'message' => $e->getMessage(),
+				],
+				'rawOutput' => '',
+				'stdout' => $stdout,
+			];
+		}
+
+		$rawOutput = trim($output->fetch());
+		$decoded = $rawOutput !== '' ? json_decode($rawOutput, true) : null;
+
+		if (is_array($decoded) && array_key_exists('ok', $decoded)) {
+			$ok = (bool) $decoded['ok'] && $exitCode === 0;
+			$data = isset($decoded['data']) && is_array($decoded['data']) ? $decoded['data'] : [];
+			$error = null;
+			if (isset($decoded['error']) && is_array($decoded['error'])) {
+				$error = [
+					'code' => (string) ($decoded['error']['code'] ?? 'ERROR'),
+					'message' => (string) ($decoded['error']['message'] ?? $this->_('Command execution failed.')),
+				];
+			}
+
+			return [
+				'ok' => $ok,
+				'exitCode' => $exitCode,
+				'data' => $data,
+				'error' => $error,
+				'rawOutput' => $rawOutput,
+				'stdout' => $stdout,
+			];
+		}
+
+		return [
+			'ok' => $exitCode === 0,
+			'exitCode' => $exitCode,
+			'data' => [],
+			'error' => $exitCode === 0 ? null : [
+				'code' => 'COMMAND_FAILED',
+				'message' => $rawOutput !== '' ? $rawOutput : $this->_('Command execution failed.'),
+			],
+			'rawOutput' => $rawOutput,
+			'stdout' => $stdout,
+		];
 	}
 
 	/**

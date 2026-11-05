@@ -314,3 +314,354 @@ test('ConsoleRuntime manages maintenance mode (down.json) and audit log channels
 	$schedRun = $runtime->runScheduledTasks('due');
 	expect($schedRun)->toHaveKey('details');
 });
+
+test('a role with only wire-console gets a refusal when inspecting a backup, test, skill or boost-doc it lacks the tab permission for', function (): void {
+	$pw = ProcessWire::getCurrentInstance();
+	$adminRuntime = wcTestModule()->runtime();
+	$backupDir = $adminRuntime->getBackupDirectory();
+	if (!is_dir($backupDir)) {
+		@mkdir($backupDir, 0755, true);
+	}
+	$backupFile = 'wc_inspect_guard_' . uniqid() . '.sql';
+	$backupFullPath = $backupDir . $backupFile;
+	file_put_contents($backupFullPath, "-- SECRET SQL BACKUP CONTENT\nSELECT 1;\n");
+
+	$createdPermissions = [];
+	foreach ([
+		\Totoglu\WireConsole\ConsoleRuntime::PERMISSION_VIEW,
+		\Totoglu\WireConsole\ConsoleRuntime::PERMISSION_BACKUP,
+	] as $permName) {
+		$perm = $pw->permissions->get('name=' . $permName);
+		if (!$perm || !$perm->id) {
+			$perm = $pw->permissions->add($permName);
+			$createdPermissions[] = $perm;
+		}
+	}
+
+	$roleName = 'wc-only-role-' . uniqid();
+	$userName = 'wc-only-user-' . uniqid();
+	$role = $pw->roles->add($roleName);
+	$role->of(false);
+	$viewPerm = $pw->permissions->get('name=page-view');
+	if ($viewPerm && $viewPerm->id) {
+		$role->addPermission($viewPerm);
+	}
+	$role->addPermission(\Totoglu\WireConsole\ConsoleRuntime::PERMISSION_VIEW);
+	$pw->roles->save($role);
+
+	$user = $pw->users->add($userName);
+	$user->of(false);
+	$user->pass = 'TempPass123!@#';
+	$user->addRole($role);
+	$pw->users->save($user);
+
+	try {
+		$pw->users->setCurrentUser($user);
+		expect($user->isSuperuser())->toBeFalse()
+			->and($user->hasPermission(\Totoglu\WireConsole\ConsoleRuntime::PERMISSION_VIEW))->toBeTrue()
+			->and($user->hasPermission(\Totoglu\WireConsole\ConsoleRuntime::PERMISSION_TESTING))->toBeFalse()
+			->and($user->hasPermission(\Totoglu\WireConsole\ConsoleRuntime::PERMISSION_BOOST))->toBeFalse()
+			->and($user->hasPermission(\Totoglu\WireConsole\ConsoleRuntime::PERMISSION_BACKUP))->toBeFalse();
+
+		$restrictedRuntime = \Totoglu\WireConsole\ConsoleRuntime::make($pw);
+		$targets = [
+			'backup' => $backupFile,
+			'test' => 'ActionGuardsTest',
+			'skill' => 'pw-htmx',
+			'boost-doc' => 'agents-md',
+		];
+
+		foreach ($targets as $category => $identifier) {
+			expect($restrictedRuntime->userCanInspectCategory($category))->toBeFalse("Expected userCanInspectCategory('{$category}') to be false")
+				->and($restrictedRuntime->inspectProjectFile($category, $identifier))->toBeNull("Expected inspectProjectFile('{$category}', '{$identifier}') to return null");
+
+			// Action-time refusal via queryInspectFile
+			$workspace = new \Htmx\Component\ConsoleWorkspace();
+			$workspace->setWire($pw);
+			$workspace->mount('overview');
+			$workspace->queryInspectFile($category, $identifier);
+			$html = $workspace->render();
+
+			expect($workspace->inspectedCategory)->toBe('')
+				->and($workspace->inspectedIdentifier)->toBe('')
+				->and($html)->toContain('Permission Denied')
+				->and($html)->not->toContain('Read-only source preview')
+				->and($html)->not->toContain('SECRET SQL BACKUP CONTENT');
+
+			// Render-time refusal when state carries an unauthorized inspected category
+			$hydratedWorkspace = new \Htmx\Component\ConsoleWorkspace();
+			$hydratedWorkspace->setWire($pw);
+			$hydratedWorkspace->fill([
+				'activeTab' => 'overview',
+				'inspectedCategory' => $category,
+				'inspectedIdentifier' => $identifier,
+			]);
+			$renderedHtml = $hydratedWorkspace->render();
+
+			expect($hydratedWorkspace->inspectedCategory)->toBe('')
+				->and($hydratedWorkspace->inspectedIdentifier)->toBe('')
+				->and($renderedHtml)->toContain('Permission Denied')
+				->and($renderedHtml)->not->toContain('Read-only source preview')
+				->and($renderedHtml)->not->toContain('SECRET SQL BACKUP CONTENT');
+		}
+
+		// Even with wire-console-backup permission, a non-superuser cannot inspect backups (matches download-backup)
+		wcSetSuperuser();
+		$role->of(false);
+		$role->addPermission(\Totoglu\WireConsole\ConsoleRuntime::PERMISSION_BACKUP);
+		$pw->roles->save($role);
+		$pw->users->setCurrentUser($user);
+
+		$backupViewerRuntime = \Totoglu\WireConsole\ConsoleRuntime::make($pw);
+		expect($backupViewerRuntime->userCanView(\Totoglu\WireConsole\ConsoleRuntime::PERMISSION_BACKUP))->toBeTrue()
+			->and($backupViewerRuntime->userCanInspectCategory('backup'))->toBeFalse()
+			->and($backupViewerRuntime->inspectProjectFile('backup', $backupFile))->toBeNull();
+	} finally {
+		wcSetSuperuser();
+		if (is_file($backupFullPath)) {
+			@unlink($backupFullPath);
+		}
+		if ($user && $user->id) {
+			$pw->users->delete($user);
+		}
+		if ($role && $role->id) {
+			$pw->roles->delete($role);
+		}
+		foreach ($createdPermissions as $perm) {
+			if ($perm && $perm->id) {
+				$pw->permissions->delete($perm);
+			}
+		}
+	}
+});
+
+test('superuser with backup permission can still inspect', function (): void {
+	wcSetSuperuser();
+	$pw = ProcessWire::getCurrentInstance();
+	$runtime = wcTestModule()->runtime();
+
+	$backupDir = $runtime->getBackupDirectory();
+	if (!is_dir($backupDir)) {
+		@mkdir($backupDir, 0755, true);
+	}
+	$backupFile = 'wc_superuser_inspect_' . uniqid() . '.sql';
+	$backupFullPath = $backupDir . $backupFile;
+	file_put_contents($backupFullPath, "-- SUPERUSER SQL SNAPSHOT\nSELECT 42;\n");
+
+	try {
+		expect($runtime->userCanInspectCategory('backup'))->toBeTrue()
+			->and($runtime->userCanInspectCategory('test'))->toBeTrue()
+			->and($runtime->userCanInspectCategory('skill'))->toBeTrue()
+			->and($runtime->userCanInspectCategory('boost-doc'))->toBeTrue();
+
+		$preview = $runtime->inspectProjectFile('backup', $backupFile);
+		expect($preview)->toBeArray()
+			->and($preview['content'])->toContain('SUPERUSER SQL SNAPSHOT');
+
+		$workspace = new \Htmx\Component\ConsoleWorkspace();
+		$workspace->setWire($pw);
+		$workspace->mount('backup');
+		$workspace->queryInspectFile('backup', $backupFile);
+		$html = $workspace->render();
+
+		expect($workspace->inspectedCategory)->toBe('backup')
+			->and($workspace->inspectedIdentifier)->toBe($backupFile)
+			->and($html)->toContain('Read-only source preview')
+			->and($html)->toContain('SUPERUSER SQL SNAPSHOT')
+			->and($html)->not->toContain('Permission Denied');
+	} finally {
+		if (is_file($backupFullPath)) {
+			@unlink($backupFullPath);
+		}
+	}
+});
+
+test('queue work, seeding, scheduling, maintenance mode, and cache clearing delegate to trk/processwire-console and ProcessWire APIs without duplicated loops or raw SQL', function (): void {
+	wcSetSuperuser();
+	$pw = ProcessWire::getCurrentInstance();
+	$runtime = wcTestModule()->runtime();
+	$root = $runtime->getProjectRootPath();
+
+	// 1. Source verification: no duplicated worker/seeder/scheduler loops or raw SQL on caches/queue tables
+	$queuesSource = (string) file_get_contents($root . 'site/modules/WireConsole/src/Concerns/InteractsWithQueues.php');
+	$seedSchedSource = (string) file_get_contents($root . 'site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php');
+	$sysLogsSource = (string) file_get_contents($root . 'site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php');
+
+	expect($queuesSource)->toContain('QueueWorkCommand')
+		->and($queuesSource)->not->toContain('->handle(')
+		->and($queuesSource)->not->toContain('->markFailed(')
+		->and($queuesSource)->not->toContain('->releaseJob(')
+		->and($queuesSource)->not->toContain('DELETE FROM')
+		->and($queuesSource)->not->toContain('SELECT ')
+		->and($queuesSource)->not->toContain('SHOW TABLES');
+
+	expect($seedSchedSource)->toContain('DbSeedCommand')
+		->and($seedSchedSource)->toContain('ScheduleRunCommand')
+		->and($seedSchedSource)->not->toContain('->run()')
+		->and($seedSchedSource)->not->toContain('->handle()');
+
+	expect($sysLogsSource)->toContain('DownCommand')
+		->and($sysLogsSource)->toContain('UpCommand')
+		->and($sysLogsSource)->not->toContain('DELETE FROM')
+		->and($sysLogsSource)->not->toContain('`caches`');
+
+	// 2. Behaviour test: queue job processed via QueueWorkCommand delegation + QueueManager maintenance APIs
+	$queueDir = $root . 'site/queue/';
+	if (!is_dir($queueDir)) {
+		@mkdir($queueDir, 0755, true);
+	}
+	$queueFile = $queueDir . 'WcDelegationVerifyQueue.php';
+	$failQueueFile = $queueDir . 'WcDelegationFailQueue.php';
+
+	file_put_contents($queueFile, <<<'PHP'
+<?php
+declare(strict_types=1);
+namespace Site\Queue;
+use Totoglu\Console\Queue\Queue;
+class WcDelegationVerifyQueue extends Queue
+{
+	public function handle(array $data = []): void
+	{
+		\ProcessWire\wire('cache')?->save('wire-console:test:queue-marker', (string) ($data['marker'] ?? 'missing'), 300);
+	}
+}
+PHP);
+
+	file_put_contents($failQueueFile, <<<'PHP'
+<?php
+declare(strict_types=1);
+namespace Site\Queue;
+use Totoglu\Console\Queue\Queue;
+class WcDelegationFailQueue extends Queue
+{
+	public function handle(array $data = []): void
+	{
+		throw new \RuntimeException('Intentional delegated queue failure');
+	}
+}
+PHP);
+
+	// 3. Behaviour test fixtures: seeder & scheduled task
+	$seederDir = $root . 'site/seeders/';
+	if (!is_dir($seederDir)) {
+		@mkdir($seederDir, 0755, true);
+	}
+	$seederFile = $seederDir . 'WcDelegationVerifySeeder.php';
+	file_put_contents($seederFile, <<<'PHP'
+<?php
+declare(strict_types=1);
+namespace Site\Seeders;
+use Totoglu\Console\Database\Seeder;
+class WcDelegationVerifySeeder extends Seeder
+{
+	public function run(): void
+	{
+		$this->wire->cache?->save('wire-console:test:seeder-marker', 'seeded-via-db-seed-command', 300);
+	}
+}
+PHP);
+
+	$scheduleDir = $root . 'site/schedule/';
+	if (!is_dir($scheduleDir)) {
+		@mkdir($scheduleDir, 0755, true);
+	}
+	$taskFile = $scheduleDir . 'WcDelegationVerifyTask.php';
+	file_put_contents($taskFile, <<<'PHP'
+<?php
+declare(strict_types=1);
+namespace Site\Schedule;
+use Totoglu\Console\Scheduling\Event;
+use Totoglu\Console\Scheduling\Task;
+class WcDelegationVerifyTask extends Task
+{
+	public function schedule(Event $event): void
+	{
+		$event->everyMinute();
+	}
+
+	public function handle(): void
+	{
+		$this->wire->cache?->save('wire-console:test:task-marker', 'ran-via-schedule-run-command', 300);
+	}
+}
+PHP);
+
+	try {
+		$freshRuntime = \Totoglu\WireConsole\ConsoleRuntime::make($pw);
+		$freshRuntime->installQueueTables();
+		$freshRuntime->purgePendingJobs('wc_delegated');
+		$pw->cache?->delete('wire-console:test:queue-marker');
+		$pw->cache?->delete('wire-console:test:seeder-marker');
+		$pw->cache?->delete('wire-console:test:task-marker');
+
+		// Dispatch and process queue job via delegated QueueWorkCommand
+		$dispatchRes = $freshRuntime->dispatchQueueJob('WcDelegationVerifyQueue', '{"marker":"delegated-queue-ok"}', 'wc_delegated');
+		expect($dispatchRes['ok'])->toBeTrue()
+			->and($dispatchRes['jobId'])->toBeGreaterThan(0);
+
+		$workRes = $freshRuntime->workQueueBatch('wc_delegated', 3, 1);
+		expect($workRes['ok'])->toBeTrue()
+			->and($workRes['processed'])->toBe(1)
+			->and($workRes['failed'])->toBe(0)
+			->and($pw->cache?->get('wire-console:test:queue-marker'))->toBe('delegated-queue-ok');
+
+		// Purge pending queue jobs via QueueManager API
+		$freshRuntime->dispatchQueueJob('WcDelegationVerifyQueue', '{"marker":"to-be-purged"}', 'wc_delegated');
+		$purgeRes = $freshRuntime->purgePendingJobs('wc_delegated');
+		expect($purgeRes['ok'])->toBeTrue()
+			->and($purgeRes['purgedCount'])->toBe(1);
+
+		// Failing job + deleteFailedJob via QueueManager API
+		$freshRuntime->dispatchQueueJob('WcDelegationFailQueue', '{}', 'wc_delegated');
+		$failWorkRes = $freshRuntime->workQueueBatch('wc_delegated', 2, 1);
+		expect($failWorkRes['ok'])->toBeFalse()
+			->and($failWorkRes['failed'])->toBeGreaterThanOrEqual(1);
+
+		$failedJobs = $freshRuntime->getQueuesStatus(50)['failedJobs'];
+		$targetFailedId = 0;
+		foreach ($failedJobs as $fj) {
+			if ($fj['queue'] === 'wc_delegated') {
+				$targetFailedId = $fj['id'];
+				break;
+			}
+		}
+		expect($targetFailedId)->toBeGreaterThan(0);
+
+		$delFailedRes = $freshRuntime->deleteFailedJob($targetFailedId);
+		expect($delFailedRes['ok'])->toBeTrue()
+			->and($delFailedRes['deleted'])->toBeTrue();
+
+		// Run seeder via delegated DbSeedCommand
+		$seedRes = $freshRuntime->runSeeders('WcDelegationVerifySeeder');
+		expect($seedRes['ok'])->toBeTrue()
+			->and($seedRes['executed'])->toContain('WcDelegationVerifySeeder')
+			->and($pw->cache?->get('wire-console:test:seeder-marker'))->toBe('seeded-via-db-seed-command');
+
+		// Run scheduled task via delegated ScheduleRunCommand
+		$taskRes = $freshRuntime->runScheduledTasks('due');
+		expect($taskRes['ok'])->toBeTrue()
+			->and($taskRes['executed'])->toContain('WcDelegationVerifyTask')
+			->and($pw->cache?->get('wire-console:test:task-marker'))->toBe('ran-via-schedule-run-command');
+
+		// Clear WireCache via $cache API (no raw SQL)
+		$pw->cache?->save('wire-console:test:cache-canary', 'alive', 300);
+		expect($pw->cache?->get('wire-console:test:cache-canary'))->toBe('alive');
+		$cacheClearRes = $freshRuntime->clearSystemCaches('wire');
+		expect($cacheClearRes['ok'])->toBeTrue()
+			->and($cacheClearRes['cleared'])->toBe(['WireCache'])
+			->and($pw->cache?->get('wire-console:test:cache-canary'))->toBeNull();
+	} finally {
+		\Totoglu\WireConsole\ConsoleRuntime::make($pw)->purgePendingJobs('wc_delegated');
+		foreach ([$queueFile, $failQueueFile, $seederFile, $taskFile] as $tempFile) {
+			if (is_file($tempFile)) {
+				@unlink($tempFile);
+			}
+		}
+		$pw->cache?->delete('wire-console:test:queue-marker');
+		$pw->cache?->delete('wire-console:test:seeder-marker');
+		$pw->cache?->delete('wire-console:test:task-marker');
+		$pw->cache?->delete('wire-console:test:cache-canary');
+	}
+});
+
+

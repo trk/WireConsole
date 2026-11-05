@@ -22,6 +22,7 @@ test('ProcessWireConsole defines the standalone Console process module metadata 
 		->and($info['requires'])->toBe([
 			'PHP>=8.4',
 			'ProcessWire>=3.0.271',
+			'Htmx',
 			'WireKit',
 		])
 		->and(array_keys($info['permissions']))->toBe([
@@ -65,3 +66,29 @@ test('legacy WireConsole configurable module, UI shims, and monolithic rendering
 		->and(is_file($moduleRoot . '/components/ConsoleBoostPanel.php'))->toBeTrue()
 		->and(is_file($moduleRoot . '/components/ConsoleLogsPanel.php'))->toBeTrue();
 });
+
+test('ProcessWireConsole uninstall removes the wire-console-audit log channel', function (): void {
+	$pw = \ProcessWire\ProcessWire::getCurrentInstance();
+	$module = new class extends ProcessWireConsole {
+		public function className($options = null): string
+		{
+			return 'ProcessWireConsole';
+		}
+
+		protected function uninstallPage()
+		{
+			return 0;
+		}
+	};
+	$module->setWire($pw);
+
+	$module->runtime()->audit('uninstall_check', 'ok');
+	$channelsBefore = array_column($module->runtime()->getLogChannels(), 'name');
+	expect($channelsBefore)->toContain(\Totoglu\WireConsole\ConsoleRuntime::LOG_CHANNEL);
+
+	$module->___uninstall();
+
+	$channelsAfter = array_column($module->runtime()->getLogChannels(), 'name');
+	expect($channelsAfter)->not->toContain(\Totoglu\WireConsole\ConsoleRuntime::LOG_CHANNEL);
+});
+

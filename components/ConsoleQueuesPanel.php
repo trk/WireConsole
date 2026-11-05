@@ -252,7 +252,7 @@ class ConsoleQueuesPanel extends ConsolePanelComponent
 			->actionMethod('workQueueBatch')
 			->button($this->_('Work Batch'), 'play')
 			->controlsHtml($workControls)
-			->disabled(!$tablesExist || $queuedCount === 0)
+			->disabled(!$tablesExist)
 			->variant('primary');
 
 		$dispatchControls = (string) (new KitSelect())
@@ -302,7 +302,7 @@ class ConsoleQueuesPanel extends ConsolePanelComponent
 			->actionMethod('purgePendingJobs')
 			->button($this->_('Purge Pending'), 'eraser')
 			->controlsHtml((string) (new KitInput())->name('purge_queue_name')->value('all')->size('sm')->width('short')->placeholder('all or default')->autocomplete('off')->spellcheck(false))
-			->disabled(!$tablesExist || $queuedCount === 0)
+			->disabled(!$tablesExist)
 			->variant('danger');
 
 		$cards[] = (new KitActionCard())

@@ -14,9 +14,6 @@ use Totoglu\Htmx\Component;
 use Totoglu\WireConsole\ConsoleRuntime;
 
 require_once dirname(__DIR__) . '/src/ConsoleRuntime.php';
-require_once dirname(__DIR__, 2) . '/WireKit/ui/KitInput.php';
-require_once dirname(__DIR__, 2) . '/WireKit/ui/KitSelect.php';
-require_once dirname(__DIR__, 2) . '/WireKit/ui/KitCheckbox.php';
 
 /**
  * Abstract base class for standalone ProcessWireConsole tab panel components.

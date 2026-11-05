@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Totoglu\WireConsole\Concerns;
 
+use Totoglu\Console\Commands\DbSeedCommand;
+use Totoglu\Console\Commands\ScheduleRunCommand;
 use Totoglu\Console\Database\Seeder;
 use Totoglu\Console\Scheduling\Event;
 use Totoglu\Console\Scheduling\Task;
@@ -59,14 +61,14 @@ trait InteractsWithSeedingAndScheduling
 	}
 
 	/**
-	 * Execute a specific seeder by name or all discovered seeders ('all').
+	 * Execute a specific seeder by name or all discovered seeders ('all') by delegating to `DbSeedCommand`.
 	 *
 	 * @return array{ok: bool, executed: list<string>, details: string, message: string}
 	 */
 	public function runSeeders(string $seederNameOrAll): array
 	{
 		$discoverer = $this->createDiscoverer();
-		if ($discoverer === null || !class_exists(Seeder::class)) {
+		if ($discoverer === null || !class_exists(Seeder::class) || !class_exists(DbSeedCommand::class)) {
 			return [
 				'ok' => false,
 				'executed' => [],
@@ -91,14 +93,14 @@ trait InteractsWithSeedingAndScheduling
 
 			if (strtolower($target) === 'all' || $target === '') {
 				if (isset($classes['DatabaseSeeder'])) {
-					$toRun['DatabaseSeeder'] = $classes['DatabaseSeeder'];
+					$toRun[] = 'DatabaseSeeder';
 				} else {
-					$toRun = $classes;
+					$toRun = array_values(array_map('strval', array_keys($classes)));
 				}
 			} else {
 				$matchedKey = null;
 				if (isset($classes[$target])) {
-					$matchedKey = $target;
+					$matchedKey = (string) $target;
 				} elseif (isset($classes[$target . 'Seeder'])) {
 					$matchedKey = $target . 'Seeder';
 				}
@@ -110,28 +112,33 @@ trait InteractsWithSeedingAndScheduling
 						'message' => sprintf($this->_('Seeder "%s" was not found.'), $target),
 					];
 				}
-				$toRun[$matchedKey] = $classes[$matchedKey];
+				$toRun[] = $matchedKey;
 			}
 
 			$executed = [];
 			$detailLines = [];
-			foreach ($toRun as $name => $fqcn) {
+			foreach ($toRun as $seederName) {
 				$startNs = hrtime(true);
-				ob_start();
-				try {
-					/** @var Seeder $instance */
-					$instance = new $fqcn($this->wire());
-					$instance->run();
-					$stdout = trim((string) ob_get_clean());
-				} catch (\Throwable $innerError) {
-					ob_end_clean();
-					throw $innerError;
-				}
+				$res = $this->runConsoleCommandInProcess(DbSeedCommand::class, [
+					'--class' => $seederName,
+					'--force' => true,
+				]);
 				$elapsedMs = (int) round((hrtime(true) - $startNs) / 1_000_000);
-				$executed[] = (string) $name;
-				$line = sprintf('+ %s (%d ms)', (string) $name, $elapsedMs);
-				if ($stdout !== '') {
-					$line .= "\n  " . str_replace("\n", "\n  ", mb_substr($stdout, 0, 2000));
+
+				if (!$res['ok']) {
+					return [
+						'ok' => false,
+						'executed' => $executed,
+						'details' => implode("\n", $detailLines),
+						'message' => (string) ($res['error']['message'] ?? $this->_('Seeder execution failed.')),
+					];
+				}
+
+				$seededName = (string) ($res['data']['seeder'] ?? $seederName);
+				$executed[] = $seededName;
+				$line = sprintf('+ %s (%d ms)', $seededName, $elapsedMs);
+				if ($res['stdout'] !== '') {
+					$line .= "\n  " . str_replace("\n", "\n  ", mb_substr($res['stdout'], 0, 2000));
 				}
 				$detailLines[] = $line;
 			}
@@ -222,14 +229,14 @@ trait InteractsWithSeedingAndScheduling
 	}
 
 	/**
-	 * Run due scheduled tasks or force-run a specific task by name.
+	 * Run due scheduled tasks by delegating to `ScheduleRunCommand`.
 	 *
 	 * @return array{ok: bool, executed: list<string>, errors: array<string, string>, details: string, message: string}
 	 */
 	public function runScheduledTasks(string $taskNameOrDue = 'due'): array
 	{
 		$discoverer = $this->createDiscoverer();
-		if ($discoverer === null || !class_exists(Task::class)) {
+		if ($discoverer === null || !class_exists(Task::class) || !class_exists(ScheduleRunCommand::class)) {
 			return [
 				'ok' => false,
 				'executed' => [],
@@ -253,12 +260,6 @@ trait InteractsWithSeedingAndScheduling
 
 			$target = trim($taskNameOrDue);
 			$onlyDue = strtolower($target) === 'due' || $target === '';
-			$now = new \DateTime('now');
-			$cache = $this->wire()->cache;
-			$executed = [];
-			$errors = [];
-			$detailLines = [];
-
 			if (!$onlyDue && !isset($classes[$target])) {
 				return [
 					'ok' => false,
@@ -269,41 +270,42 @@ trait InteractsWithSeedingAndScheduling
 				];
 			}
 
-			foreach ($classes as $name => $fqcn) {
+			$res = $this->runConsoleCommandInProcess(ScheduleRunCommand::class);
+			$executedRaw = isset($res['data']['executed']) && is_array($res['data']['executed'])
+				? array_values(array_map('strval', $res['data']['executed']))
+				: [];
+			$errorsRaw = isset($res['data']['errors']) && is_array($res['data']['errors'])
+				? $res['data']['errors']
+				: [];
+
+			$cache = $this->wire()->cache;
+			$executed = [];
+			$errors = [];
+			$detailLines = [];
+
+			foreach ($executedRaw as $name) {
 				if (!$onlyDue && $name !== $target) {
 					continue;
 				}
-
-				$startNs = hrtime(true);
-				ob_start();
-				try {
-					/** @var Task $task */
-					$task = new $fqcn($this->wire());
-					$event = new Event();
-					$task->schedule($event);
-
-					if ($onlyDue && !$event->isDue($now)) {
-						ob_end_clean();
-						continue;
-					}
-
-					$task->handle();
-					$stdout = trim((string) ob_get_clean());
-					$elapsedMs = (int) round((hrtime(true) - $startNs) / 1_000_000);
-					$executed[] = (string) $name;
-					if ($cache) {
-						$cache->save('wire-console:schedule:last-run:' . $name, date('Y-m-d H:i:s'), 86400 * 30);
-					}
-					$line = sprintf('+ %s (%d ms)', (string) $name, $elapsedMs);
-					if ($stdout !== '') {
-						$line .= "\n  " . str_replace("\n", "\n  ", mb_substr($stdout, 0, 2000));
-					}
-					$detailLines[] = $line;
-				} catch (\Throwable $e) {
-					ob_end_clean();
-					$errors[(string) $name] = $e->getMessage();
-					$detailLines[] = sprintf('! %s: %s', (string) $name, $e->getMessage());
+				$executed[] = $name;
+				if ($cache) {
+					$cache->save('wire-console:schedule:last-run:' . $name, date('Y-m-d H:i:s'), 86400 * 30);
 				}
+				$detailLines[] = sprintf('+ %s', $name);
+			}
+
+			foreach ($errorsRaw as $name => $errMsg) {
+				$taskName = (string) $name;
+				if (!$onlyDue && $taskName !== $target) {
+					continue;
+				}
+				$errors[$taskName] = (string) $errMsg;
+				$detailLines[] = sprintf('! %s: %s', $taskName, (string) $errMsg);
+			}
+
+			if (!$res['ok'] && $errors === [] && $res['error'] !== null) {
+				$errors['schedule:run'] = $res['error']['message'];
+				$detailLines[] = '! ' . $res['error']['message'];
 			}
 
 			$details = implode("\n", $detailLines);

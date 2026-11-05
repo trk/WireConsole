@@ -149,5 +149,6 @@ php vendor/bin/wire log:tail wire-console-audit
 | `wire-console-logs` | View Logs & Audit tab |
 
 - Non-superuser roles with `wire-console-*` permissions get **read-only** access.
+- Read-only file inspection (`queryInspectFile` / `inspectProjectFile`) enforces the permission of the tab that owns the category (`wire-console-migrations`, `wire-console-queues`, `wire-console-seeding`, `wire-console-scheduling`, `wire-console-testing`, `wire-console-boost`), and inspecting or downloading `.sql` backups requires **superuser** privileges plus `wire-console-backup`.
 - Running migrations, queues, seeders, backups, restores, tests, cache flushes, or file generators requires a **superuser** account and confirmation input.
-- All state-changing actions are logged to the `wire-console-audit` log channel.
+- All state-changing actions are logged to the `wire-console-audit` log channel (which is removed automatically on module uninstall).

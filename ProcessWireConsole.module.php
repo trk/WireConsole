@@ -28,6 +28,7 @@ require_once __DIR__ . '/src/ConsoleRuntime.php';
  * @method string execute()
  * @method string executeNavJSON(array $options = [])
  * @method void executeDownloadBackup()
+ * @method void uninstall()
  */
 class ProcessWireConsole extends Process
 {
@@ -80,6 +81,7 @@ class ProcessWireConsole extends Process
 			'requires' => [
 				'PHP>=8.4',
 				'ProcessWire>=3.0.271',
+				'Htmx',
 				'WireKit',
 			],
 		];
@@ -340,7 +342,7 @@ class ProcessWireConsole extends Process
 	}
 
 	/**
-	 * Reset admin breadcrumbs so they start directly at the Console root (matching WireEntries).
+	 * Reset admin breadcrumbs so they start directly at the Console root.
 	 */
 	protected function resetBreadcrumbsToConsoleRoot(string $activeTab = 'overview'): void
 	{
@@ -389,5 +391,15 @@ class ProcessWireConsole extends Process
 		$adminUrl = (string) ($this->wire()->config?->urls?->admin ?? '/processwire/');
 
 		return rtrim($adminUrl, '/') . '/setup/wire-console/';
+	}
+
+	/**
+	 * Remove the Console audit log channel and cached schedule timestamps on module uninstall.
+	 */
+	public function ___uninstall(): void
+	{
+		$this->wire()->log?->delete(ConsoleRuntime::LOG_CHANNEL);
+		$this->wire()->cache?->delete('wire-console*');
+		parent::___uninstall();
 	}
 }

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Totoglu\WireConsole\Concerns;
 
 use ProcessWire\ProcessWire;
+use Totoglu\Console\Commands\CacheClearCommand;
+use Totoglu\Console\Commands\DownCommand;
+use Totoglu\Console\Commands\UpCommand;
 
 /**
  * System Maintenance (`down`/`up`), Cache Flush (`cache:clear`/`cache:wire:clear`),
@@ -164,7 +167,7 @@ trait InteractsWithSystemAndLogs
 	}
 
 	/**
-	 * Put the application into maintenance mode (`site/down.json`).
+	 * Put the application into maintenance mode (`site/down.json`) by delegating to `DownCommand`.
 	 *
 	 * @return array{ok: bool, message: string}
 	 */
@@ -172,38 +175,44 @@ trait InteractsWithSystemAndLogs
 	{
 		$file = $this->getMaintenanceFilePath();
 		$cleanStatus = in_array($status, [503, 500, 404, 302, 307], true) ? $status : 503;
-		$payload = [
-			'redirect' => ($redirect !== null && trim($redirect) !== '') ? trim($redirect) : null,
-			'retry' => ($retry !== null && $retry > 0) ? $retry : null,
-			'secret' => ($secret !== null && trim($secret) !== '') ? trim($secret) : null,
-			'status' => $cleanStatus,
-			'time' => time(),
+
+		if (is_file($file) && class_exists(UpCommand::class)) {
+			$this->runConsoleCommandInProcess(UpCommand::class);
+		}
+
+		$parameters = [
+			'--status' => (string) $cleanStatus,
 		];
+		if ($secret !== null && trim($secret) !== '') {
+			$parameters['--secret'] = trim($secret);
+		}
+		if ($retry !== null && $retry > 0) {
+			$parameters['--retry'] = (string) $retry;
+		}
+		if ($redirect !== null && trim($redirect) !== '') {
+			$parameters['--redirect'] = trim($redirect);
+		}
 
-		try {
-			$written = @file_put_contents($file, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-			if ($written === false) {
-				return [
-					'ok' => false,
-					'message' => $this->_('Failed to write site/down.json maintenance file.'),
-				];
-			}
-			@chmod($file, 0600);
-
-			return [
-				'ok' => true,
-				'message' => $this->_('Application is now in maintenance mode (site/down.json created).'),
-			];
-		} catch (\Throwable $e) {
+		$res = $this->runConsoleCommandInProcess(DownCommand::class, $parameters);
+		if (!$res['ok']) {
 			return [
 				'ok' => false,
-				'message' => $e->getMessage(),
+				'message' => (string) ($res['error']['message'] ?? $this->_('Failed to write site/down.json maintenance file.')),
 			];
 		}
+
+		if (is_file($file)) {
+			@chmod($file, 0600);
+		}
+
+		return [
+			'ok' => true,
+			'message' => $this->_('Application is now in maintenance mode (site/down.json created).'),
+		];
 	}
 
 	/**
-	 * Bring the application out of maintenance mode by removing `site/down.json`.
+	 * Bring the application out of maintenance mode by delegating to `UpCommand`.
 	 *
 	 * @return array{ok: bool, message: string}
 	 */
@@ -217,7 +226,8 @@ trait InteractsWithSystemAndLogs
 			];
 		}
 
-		if (@unlink($file)) {
+		$res = $this->runConsoleCommandInProcess(UpCommand::class);
+		if ($res['ok'] || !is_file($file)) {
 			return [
 				'ok' => true,
 				'message' => $this->_('Application is now live (site/down.json removed).'),
@@ -226,12 +236,12 @@ trait InteractsWithSystemAndLogs
 
 		return [
 			'ok' => false,
-			'message' => $this->_('Failed to remove site/down.json.'),
+			'message' => (string) ($res['error']['message'] ?? $this->_('Failed to remove site/down.json.')),
 		];
 	}
 
 	/**
-	 * Clear ProcessWire module cache, FileCompiler cache, WireCache entries, or refresh module registry (`cache:clear` / `cache:wire:clear` / `module:refresh`).
+	 * Clear ProcessWire module cache, FileCompiler cache, WireCache entries, or refresh module registry (`cache:clear` / `$cache->deleteAll()` / `module:refresh`).
 	 *
 	 * @param string $mode 'all', 'core', 'wire' (WireCache only), or 'modules' (Modules::refresh)
 	 * @return array{ok: bool, cleared: list<string>, message: string}
@@ -255,41 +265,26 @@ trait InteractsWithSystemAndLogs
 			}
 
 			if ($resolvedMode === 'all' || $resolvedMode === 'core') {
-				$modules = $this->wire()->modules;
-				if ($modules) {
-					$modules->resetCache();
-					$cleared[] = 'Modules';
+				$res = $this->runConsoleCommandInProcess(CacheClearCommand::class);
+				if (!$res['ok']) {
+					return [
+						'ok' => false,
+						'cleared' => $cleared,
+						'message' => (string) ($res['error']['message'] ?? $this->_('Failed to clear core caches.')),
+					];
 				}
-
-				$cacheBase = (string) ($this->wire()->config?->paths?->cache ?? '');
-				$compiledPath = $cacheBase !== '' ? rtrim($cacheBase, '/') . '/FileCompiler/' : '';
-				if ($compiledPath !== '' && is_dir($compiledPath)) {
-					$files = new \RecursiveIteratorIterator(
-						new \RecursiveDirectoryIterator($compiledPath, \RecursiveDirectoryIterator::SKIP_DOTS),
-						\RecursiveIteratorIterator::CHILD_FIRST
-					);
-					foreach ($files as $fileinfo) {
-						if (!$fileinfo instanceof \SplFileInfo) {
-							continue;
-						}
-						$realPath = $fileinfo->getRealPath();
-						if ($realPath === false) {
-							continue;
-						}
-						if ($fileinfo->isDir()) {
-							@rmdir($realPath);
-						} else {
-							@unlink($realPath);
-						}
-					}
-					$cleared[] = 'FileCompiler';
+				$cmdCleared = isset($res['data']['cleared']) && is_array($res['data']['cleared'])
+					? array_values(array_map('strval', $res['data']['cleared']))
+					: ['Modules', 'FileCompiler'];
+				foreach ($cmdCleared as $item) {
+					$cleared[] = $item;
 				}
 			}
 
 			if ($resolvedMode === 'all' || $resolvedMode === 'wire') {
-				$db = $this->wire()->database;
-				if ($db) {
-					$db->exec('DELETE FROM `caches`');
+				$cache = $this->wire()->cache;
+				if ($cache) {
+					$cache->deleteAll();
 					$cleared[] = 'WireCache';
 				}
 			}

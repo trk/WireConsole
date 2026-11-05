@@ -306,6 +306,14 @@ trait InteractsWithScaffolding
 	{
 		$cleanCategory = strtolower(trim($category));
 		$cleanId = trim($identifier);
+		if (!$this->userCanInspectCategory($cleanCategory)) {
+			$this->audit('file.inspect', 'denied_rbac', [
+				'category' => $cleanCategory,
+				'identifier' => $cleanId,
+			]);
+
+			return null;
+		}
 		if ($cleanId === '' || str_contains($cleanId, "\0") || str_contains($cleanId, '..') || str_contains($cleanId, '/') || str_contains($cleanId, '\\')) {
 			return null;
 		}

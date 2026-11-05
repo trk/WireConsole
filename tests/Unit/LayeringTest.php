@@ -35,10 +35,7 @@ final class LayeringScanner
 	 *
 	 * @var list<string>
 	 */
-	public const array KNOWN_VIOLATIONS = [
-		'ProcessWireConsole.module.php|ref:WireEntries', // #07 Console security & delegation
-		'components/ConsolePanelComponent.php|path:WireKit', // #07 Console security & delegation
-	];
+	public const array KNOWN_VIOLATIONS = [];
 
 	/**
 	 * Layer table. `lower` lists every module this module may reference, direct lower layer first.

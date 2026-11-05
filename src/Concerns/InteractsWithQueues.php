@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Totoglu\WireConsole\Concerns;
 
+use Totoglu\Console\Commands\QueueWorkCommand;
 use Totoglu\Console\Queue\QueueManager;
 
 /**
@@ -18,18 +19,12 @@ trait InteractsWithQueues
 	{
 		try {
 			$db = $this->wire()->database;
-			if (!$db) {
+			if (!$db || !method_exists($db, 'tableExists')) {
 				return false;
 			}
-			if (method_exists($db, 'tableExists')) {
-				return (bool) $db->tableExists(self::TABLE_QUEUE_JOBS)
-					&& (bool) $db->tableExists(self::TABLE_QUEUE_FAILED);
-			}
-			$stmt1 = $db->query("SHOW TABLES LIKE '" . self::TABLE_QUEUE_JOBS . "'");
-			$stmt2 = $db->query("SHOW TABLES LIKE '" . self::TABLE_QUEUE_FAILED . "'");
 
-			return $stmt1 !== false && $stmt1->rowCount() > 0
-				&& $stmt2 !== false && $stmt2->rowCount() > 0;
+			return (bool) $db->tableExists(self::TABLE_QUEUE_JOBS)
+				&& (bool) $db->tableExists(self::TABLE_QUEUE_FAILED);
 		} catch (\Throwable) {
 			return false;
 		}
@@ -121,20 +116,13 @@ trait InteractsWithQueues
 		$discoveredCount = count($this->getDiscoveredQueuesList());
 
 		if ($tablesExist) {
-			try {
-				$db = $this->wire()->database;
-				if ($db) {
-					$q1 = $db->query('SELECT COUNT(*) FROM `' . self::TABLE_QUEUE_JOBS . '`');
-					if ($q1 !== false) {
-						$queuedCount = (int) $q1->fetchColumn();
-					}
-					$q2 = $db->query('SELECT COUNT(*) FROM `' . self::TABLE_QUEUE_FAILED . '`');
-					if ($q2 !== false) {
-						$failedCount = (int) $q2->fetchColumn();
-					}
+			$manager = $this->createQueueManager();
+			if ($manager !== null) {
+				try {
+					$failedCount = count($manager->getFailedJobs(500));
+				} catch (\Throwable) {
+					$failedCount = 0;
 				}
-			} catch (\Throwable) {
-				// Ignore SQL errors if table state is transient
 			}
 		}
 
@@ -211,38 +199,6 @@ trait InteractsWithQueues
 		$failedJobs = [];
 		if ($summary['tablesExist']) {
 			try {
-				$db = $this->wire()->database;
-				if ($db) {
-					$table = $db->escapeTable(self::TABLE_QUEUE_JOBS);
-					$stmt = $db->prepare("SELECT id, queue, payload, attempts, reserved_at, available_at, created_at FROM `{$table}` ORDER BY id ASC LIMIT :limit");
-					$stmt->bindValue(':limit', max(1, $limit), \PDO::PARAM_INT);
-					$stmt->execute();
-					$now = time();
-
-					while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-						$parsed = $this->parseQueueJobPayload((string) ($row['payload'] ?? ''));
-						$reservedAt = isset($row['reserved_at']) && $row['reserved_at'] !== null ? (int) $row['reserved_at'] : null;
-						$availTs = (int) ($row['available_at'] ?? 0);
-						$status = $reservedAt !== null
-							? 'Reserved'
-							: ($availTs > $now ? 'Delayed' : 'Ready');
-
-						$pendingJobs[] = [
-							'id' => (int) ($row['id'] ?? 0),
-							'queue' => (string) ($row['queue'] ?? 'default'),
-							'jobClass' => $parsed['jobClass'],
-							'attempts' => (int) ($row['attempts'] ?? 0),
-							'status' => $status,
-							'availableAt' => $availTs > 0 ? date('Y-m-d H:i:s', $availTs) : '—',
-							'payloadFormatted' => $parsed['payloadFormatted'],
-						];
-					}
-				}
-			} catch (\Throwable) {
-				// Ignore pending jobs query error
-			}
-
-			try {
 				$rows = $manager->getFailedJobs(max(1, $limit));
 				foreach ($rows as $row) {
 					$parsed = $this->parseQueueJobPayload((string) ($row['payload'] ?? ''));
@@ -284,14 +240,14 @@ trait InteractsWithQueues
 	}
 
 	/**
-	 * Purge pending jobs from `queue_jobs` (either for a specific queue or `'all'`).
+	 * Purge pending jobs from `queue_jobs` (either for a specific queue or `'all'`) via QueueManager APIs.
 	 *
 	 * @return array{ok: bool, purgedCount: int, message: string}
 	 */
 	public function purgePendingJobs(string $queueName = 'all'): array
 	{
-		$db = $this->wire()->database;
-		if (!$db || !$this->queueTablesExist()) {
+		$manager = $this->createQueueManager();
+		if ($manager === null || !$this->queueTablesExist()) {
 			return [
 				'ok' => false,
 				'purgedCount' => 0,
@@ -300,12 +256,22 @@ trait InteractsWithQueues
 		}
 
 		try {
-			$table = $db->escapeTable(self::TABLE_QUEUE_JOBS);
 			$cleanQueue = strtolower(trim($queueName));
 			if ($cleanQueue === '' || $cleanQueue === 'all') {
-				$stmt = $db->prepare("DELETE FROM `{$table}`");
-				$stmt->execute();
-				$purged = $stmt->rowCount();
+				$targetQueues = ['default'];
+				foreach ($this->getDiscoveredQueuesList() as $q) {
+					$qName = strtolower(trim((string) ($q['name'] ?? '')));
+					if ($qName !== '' && !in_array($qName, $targetQueues, true)) {
+						$targetQueues[] = $qName;
+					}
+				}
+				$purged = 0;
+				foreach ($targetQueues as $qName) {
+					while (($job = $manager->pop($qName)) !== null) {
+						$manager->deleteJob((int) ($job['id'] ?? 0));
+						$purged++;
+					}
+				}
 
 				return [
 					'ok' => true,
@@ -325,10 +291,11 @@ trait InteractsWithQueues
 				];
 			}
 
-			$stmt = $db->prepare("DELETE FROM `{$table}` WHERE queue = :queue");
-			$stmt->bindValue(':queue', $safeQueue);
-			$stmt->execute();
-			$purged = $stmt->rowCount();
+			$purged = 0;
+			while (($job = $manager->pop($safeQueue)) !== null) {
+				$manager->deleteJob((int) ($job['id'] ?? 0));
+				$purged++;
+			}
 
 			return [
 				'ok' => true,
@@ -438,7 +405,7 @@ trait InteractsWithQueues
 	}
 
 	/**
-	 * Delete a single failed job record by ID from `failed_jobs`.
+	 * Delete a single failed job record by ID from `failed_jobs` via QueueManager APIs.
 	 *
 	 * @return array{ok: bool, deleted: bool, message: string}
 	 */
@@ -452,8 +419,9 @@ trait InteractsWithQueues
 			];
 		}
 
+		$manager = $this->createQueueManager();
 		$db = $this->wire()->database;
-		if (!$db || !$this->queueTablesExist()) {
+		if ($manager === null || !$db || !$this->queueTablesExist()) {
 			return [
 				'ok' => false,
 				'deleted' => false,
@@ -462,11 +430,13 @@ trait InteractsWithQueues
 		}
 
 		try {
-			$table = $db->escapeTable(self::TABLE_QUEUE_FAILED);
-			$stmt = $db->prepare("DELETE FROM `{$table}` WHERE id = :id");
-			$stmt->bindValue(':id', $jobId, \PDO::PARAM_INT);
-			$stmt->execute();
-			$deleted = $stmt->rowCount() > 0;
+			$deleted = $manager->retryJob($jobId);
+			if ($deleted) {
+				$requeuedId = (int) $db->lastInsertId();
+				if ($requeuedId > 0) {
+					$manager->deleteJob($requeuedId);
+				}
+			}
 
 			return [
 				'ok' => $deleted,
@@ -485,14 +455,13 @@ trait InteractsWithQueues
 	}
 
 	/**
-	 * Process a bounded batch of pending jobs from `queue_jobs` synchronously (`queue:work` batch equivalent).
+	 * Process a bounded batch of pending jobs from `queue_jobs` synchronously by delegating to `QueueWorkCommand`.
 	 *
 	 * @return array{ok: bool, processed: int, failed: int, jobs: list<string>, errors: list<string>, details: string, message: string}
 	 */
 	public function workQueueBatch(string $queueName = 'default', int $maxJobs = 5, int $maxTries = 3): array
 	{
-		$manager = $this->createQueueManager();
-		if ($manager === null) {
+		if (!$this->ensureAutoload() || !class_exists(QueueWorkCommand::class)) {
 			return [
 				'ok' => false,
 				'processed' => 0,
@@ -529,50 +498,26 @@ trait InteractsWithQueues
 		$errors = [];
 
 		for ($i = 0; $i < $limit; $i++) {
-			try {
-				$job = $manager->pop($cleanQueue);
-			} catch (\Throwable $e) {
-				$errors[] = $e->getMessage();
-				break;
-			}
+			$res = $this->runConsoleCommandInProcess(QueueWorkCommand::class, [
+				'--queue' => $cleanQueue,
+				'--tries' => (string) $tries,
+				'--once' => true,
+			]);
 
-			if ($job === null) {
-				break;
-			}
-
-			$jobId = (int) ($job['id'] ?? 0);
-			$payload = json_decode((string) ($job['payload'] ?? ''), true);
-			$className = is_array($payload) && isset($payload['class']) && is_string($payload['class'])
-				? trim($payload['class'])
-				: '';
-			$data = is_array($payload) && isset($payload['data']) && is_array($payload['data'])
-				? $payload['data']
-				: [];
-
-			try {
-				if ($className === '') {
-					throw new \RuntimeException('Missing job class in payload.');
+			if ($res['ok']) {
+				$stepProcessed = (int) ($res['data']['processed'] ?? 0);
+				if ($stepProcessed === 0) {
+					break;
 				}
-
-				$instance = $manager->resolveClass($className);
-				$instance->handle($data);
-				$manager->deleteJob($jobId);
-				$processed++;
-				$jobs[] = sprintf('#%d %s', $jobId, $className);
-			} catch (\Throwable $e) {
-				$failed++;
-				$attemptNum = ((int) ($job['attempts'] ?? 0)) + 1;
-				try {
-					if ($attemptNum >= $tries) {
-						$manager->markFailed($job, $e);
-					} else {
-						$manager->releaseJob($jobId, 0);
-					}
-				} catch (\Throwable) {
-					// Ignore secondary release/fail error
-				}
-				$errors[] = sprintf('#%d %s: %s', $jobId, $className !== '' ? $className : 'UnknownJob', $e->getMessage());
+				$processed += $stepProcessed;
+				$stepJobId = (int) ($res['data']['job_id'] ?? 0);
+				$stepClass = (string) ($res['data']['lastJob'] ?? $res['data']['class'] ?? 'Job');
+				$jobs[] = $stepJobId > 0 ? sprintf('#%d %s', $stepJobId, $stepClass) : $stepClass;
+				continue;
 			}
+
+			$failed++;
+			$errors[] = (string) ($res['error']['message'] ?? $this->_('Queue worker execution failed.'));
 		}
 
 		if ($processed === 0 && $failed === 0 && $errors === []) {

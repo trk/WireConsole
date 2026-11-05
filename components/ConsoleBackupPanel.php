@@ -51,7 +51,7 @@ class ConsoleBackupPanel extends ConsolePanelComponent
 				$nameSafe = $sanitizer->entities($file['name']);
 				$sizeSafe = $sanitizer->entities($file['sizeFormatted']);
 				$dateSafe = $sanitizer->entities($file['modifiedFormatted']);
-				$inspectBtn = $this->renderInspectTrigger('backup', $file['name']);
+				$inspectBtn = $isSuper ? $this->renderInspectTrigger('backup', $file['name']) : '';
 				$dlUrl = $adminBackupUrl . rawurlencode($file['name']);
 				$dlBtn = $isSuper
 					? (string) (new KitButton())
