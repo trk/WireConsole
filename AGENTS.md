@@ -8,8 +8,8 @@ description: "Architecture and development reference for ProcessWireConsole (Tot
 
 ## Architectural Invariants
 
-1. **Layering & Dependencies (`WireKit` + `Htmx`):**
-   - `ProcessWireConsole` requires `['PHP>=8.4', 'ProcessWire>=3.0.271', 'WireKit', 'Htmx']`.
+1. **Layering & Dependencies (`WireKit`):**
+   - `ProcessWireConsole` requires `['PHP>=8.4', 'ProcessWire>=3.0.271', 'WireKit']`.
    - Zero dependency on `WireEntries`, `WireSeo`, `WireForms`, `WireNavigation`, or `WireHeadless`.
    - Registers its workspace into `WireKit`'s `WorkspaceRegistry` under slug `'console'` (`Htmx\Component\ConsoleWorkspace extends Totoglu\WireKit\Workspace\BaseWorkspace`).
 2. **Delegation to `trk/processwire-console` (`Totoglu\Console\*`):**

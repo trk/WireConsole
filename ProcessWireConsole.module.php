@@ -82,7 +82,6 @@ class ProcessWireConsole extends Process
 				'PHP>=8.4',
 				'ProcessWire>=3.0.271',
 				'WireKit',
-				'Htmx',
 			],
 		];
 	}

@@ -23,7 +23,6 @@ test('ProcessWireConsole defines the standalone Console process module metadata 
 			'PHP>=8.4',
 			'ProcessWire>=3.0.271',
 			'WireKit',
-			'Htmx',
 		])
 		->and(array_keys($info['permissions']))->toBe([
 			'wire-console',
@@ -94,8 +93,7 @@ test('ProcessWireConsole uninstall removes the wire-console-audit log channel, c
 
 	$composer = json_decode((string) file_get_contents(dirname(__DIR__, 2) . '/composer.json'), true);
 	expect($composer['version'] ?? null)->toBe('2.0.0')
-		->and($composer['require']['trk/processwire-wire-kit'] ?? null)->toBe('^1.0')
-		->and($composer['require']['trk/processwire-htmx'] ?? null)->toBe('^2.1');
+		->and($composer['require']['trk/processwire-wire-kit'] ?? null)->toBe('^1.0');
 
 	$module->___install();
 	expect($pw->permissions->get(ProcessWireConsole::PERMISSION_VIEW)?->id)->toBeGreaterThan(0);

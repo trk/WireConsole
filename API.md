@@ -4,7 +4,7 @@
 
 ## 1. Process Module: `ProcessWire\ProcessWireConsole`
 
-Mounted at **Setup > Console** (`/processwire/setup/wire-console/`). Requires `WireKit` and `Htmx`.
+Mounted at **Setup > Console** (`/processwire/setup/wire-console/`). Requires `WireKit`.
 
 ### Permission Constants
 

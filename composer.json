@@ -25,8 +25,7 @@
 	],
 	"require": {
 		"php": ">=8.4",
-		"trk/processwire-wire-kit": "^1.0",
-		"trk/processwire-htmx": "^2.1"
+		"trk/processwire-wire-kit": "^1.0"
 	},
 	"suggest": {
 		"trk/processwire-console": "Required to operate migrations, queues, seeders, scheduling, backups, and Pest tests via the Console workspace.",
