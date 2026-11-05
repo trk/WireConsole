@@ -8,7 +8,7 @@ Admin module (`Setup > Console`) for managing **`trk/processwire-console`** and 
 
 - PHP `>= 8.4`
 - ProcessWire `>= 3.0.271`
-- ProcessWire modules: `Htmx`, `WireKit`
+- ProcessWire modules: `WireKit`, `Htmx`
 - Composer packages:
   - `trk/processwire-console` (migrations, queues, seeders, scheduling, backups, testing)
   - `trk/processwire-boost` (optional — AI guidelines, skills, MCP server)
