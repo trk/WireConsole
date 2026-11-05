@@ -8,7 +8,10 @@ use Htmx\Ui\KitActionCard;
 use Htmx\Ui\KitBadge;
 use Htmx\Ui\KitButton;
 use Htmx\Ui\KitCard;
+use Htmx\Ui\KitCheckbox;
 use Htmx\Ui\KitEmptyState;
+use Htmx\Ui\KitInput;
+use Htmx\Ui\KitSelect;
 
 require_once __DIR__ . '/ConsolePanelComponent.php';
 
@@ -77,13 +80,15 @@ class ConsoleBackupPanel extends ConsolePanelComponent
 			], $trs);
 		}
 
-		$restoreOptions = '';
+		$restoreOptions = [];
 		foreach ($backups as $file) {
-			$nameSafe = $sanitizer->entities($file['name']);
-			$restoreOptions .= "<option value=\"{$nameSafe}\">{$nameSafe} ({$sanitizer->entities($file['sizeFormatted'])})</option>";
+			$fName = (string) ($file['name'] ?? '');
+			if ($fName !== '') {
+				$restoreOptions[$fName] = sprintf('%s (%s)', $fName, (string) ($file['sizeFormatted'] ?? ''));
+			}
 		}
-		if ($restoreOptions === '') {
-			$restoreOptions = '<option value="">' . $sanitizer->entities($this->_('No backups available')) . '</option>';
+		if ($restoreOptions === []) {
+			$restoreOptions[''] = $this->_('No backups available');
 		}
 
 		$hasBackups = $backups !== [];
@@ -96,7 +101,7 @@ class ConsoleBackupPanel extends ConsolePanelComponent
 			->confirm('confirm_backup_create', 'BACKUP')
 			->actionMethod('createBackup')
 			->button($this->_('Create Backup'), 'hdd-o')
-			->controlsHtml('<input type="text" name="backup_description" class="wk-input wk-input--sm wk-input-short" placeholder="' . $this->esc($this->_('Optional note')) . '" autocomplete="off">')
+			->controlsHtml((string) (new KitInput())->name('backup_description')->size('sm')->width('short')->placeholder($this->_('Optional note'))->autocomplete('off'))
 			->disabled(!$writable)
 			->variant('primary');
 
@@ -108,12 +113,20 @@ class ConsoleBackupPanel extends ConsolePanelComponent
 			->confirm('confirm_backup_purge', 'PURGE')
 			->actionMethod('purgeBackups')
 			->button($this->_('Purge Old'), 'eraser')
-			->controlsHtml('<label class="wk-field-inline"><span>' . $this->esc($this->_('Days')) . '</span><input type="number" name="purge_days" value="30" min="1" max="3650" class="wk-input wk-input--sm wk-input-num" autocomplete="off"></label>')
+			->controlsHtml((string) (new KitInput())->type('number')->name('purge_days')->value(30)->min(1)->max(3650)->size('sm')->width('num')->inlineLabel($this->_('Days'))->autocomplete('off'))
 			->disabled(!$hasBackups)
 			->variant('secondary');
 
-		$restoreControls = '<select name="restore_file" class="wk-select wk-select--sm">' . $restoreOptions . '</select>'
-			. '<label class="wk-checkbox-inline"><input type="checkbox" name="restore_pre_backup" value="1" checked class="wk-checkbox"><span>' . $this->esc($this->_('Safety snapshot')) . '</span></label>';
+		$restoreControls = (string) (new KitSelect())
+			->name('restore_file')
+			->size('sm')
+			->options($restoreOptions)
+			. (string) (new KitCheckbox())
+				->name('restore_pre_backup')
+				->value('1')
+				->checked(true)
+				->label($this->_('Safety snapshot'))
+				->inline(true);
 
 		$restoreCard = (new KitActionCard())
 			->icon('history')

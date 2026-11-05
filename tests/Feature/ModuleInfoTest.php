@@ -22,7 +22,6 @@ test('ProcessWireConsole defines the standalone Console process module metadata 
 		->and($info['requires'])->toBe([
 			'PHP>=8.4',
 			'ProcessWire>=3.0.271',
-			'Htmx',
 			'WireKit',
 		])
 		->and(array_keys($info['permissions']))->toBe([

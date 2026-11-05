@@ -7,7 +7,9 @@ namespace Htmx\Component;
 use Htmx\Ui\ConsoleOnboardingCard;
 use Htmx\Ui\KitActionCard;
 use Htmx\Ui\KitBadge;
+use Htmx\Ui\KitInput;
 use Htmx\Ui\KitProgressBar;
+use Htmx\Ui\KitSelect;
 use Htmx\Ui\KitStatCard;
 
 require_once __DIR__ . '/ConsolePanelComponent.php';
@@ -203,18 +205,39 @@ class ConsoleOverviewPanel extends ConsolePanelComponent
 				->actionMethod('enableMaintenanceMode')
 				->button($this->_('Put App Down'), 'power-off')
 				->controlsHtml(
-					'<input type="text" name="down_secret" class="wk-input wk-input--sm wk-input-short" placeholder="' . $this->esc($this->_('Optional secret')) . '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-1p-ignore="true" data-lpignore="true">'
-					. '<label class="wk-field-inline"><span>' . $this->esc($this->_('Retry (s)')) . '</span>'
-					. '<input type="number" name="down_retry" value="60" min="0" max="86400" class="wk-input wk-input--sm wk-input-num" autocomplete="off"></label>'
+					(string) (new KitInput())
+						->name('down_secret')
+						->size('sm')
+						->width('short')
+						->placeholder($this->_('Optional secret'))
+						->autocomplete('off')
+						->spellcheck(false)
+						->setAttribute('autocorrect', 'off')
+						->setAttribute('autocapitalize', 'off')
+						->setAttribute('data-1p-ignore', 'true')
+						->setAttribute('data-lpignore', 'true')
+					. (string) (new KitInput())
+						->type('number')
+						->name('down_retry')
+						->value(60)
+						->min(0)
+						->max(86400)
+						->size('sm')
+						->width('num')
+						->inlineLabel($this->_('Retry (s)'))
+						->autocomplete('off')
 				)
 				->variant('secondary');
 
-		$cacheControls = '<select name="cache_clear_mode" class="wk-select wk-select--sm">'
-			. '<option value="all">' . $this->esc($this->_('All Caches (cache:clear)')) . '</option>'
-			. '<option value="wire">' . $this->esc($this->_('WireCache Only (cache:wire:clear)')) . '</option>'
-			. '<option value="core">' . $this->esc($this->_('Modules & FileCompiler Only')) . '</option>'
-			. '<option value="modules">' . $this->esc($this->_('Modules Registry Only (module:refresh)')) . '</option>'
-			. '</select>';
+		$cacheControls = (string) (new KitSelect())
+			->name('cache_clear_mode')
+			->size('sm')
+			->options([
+				'all' => $this->_('All Caches (cache:clear)'),
+				'wire' => $this->_('WireCache Only (cache:wire:clear)'),
+				'core' => $this->_('Modules & FileCompiler Only'),
+				'modules' => $this->_('Modules Registry Only (module:refresh)'),
+			]);
 
 		$cacheCard = (new KitActionCard())
 			->icon('bolt')

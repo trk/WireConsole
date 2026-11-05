@@ -9,6 +9,8 @@ use Htmx\Ui\KitBadge;
 use Htmx\Ui\KitCard;
 use Htmx\Ui\KitCodePreview;
 use Htmx\Ui\KitEmptyState;
+use Htmx\Ui\KitInput;
+use Htmx\Ui\KitSelect;
 
 require_once __DIR__ . '/ConsolePanelComponent.php';
 
@@ -190,11 +192,11 @@ class ConsoleQueuesPanel extends ConsolePanelComponent
 			: [];
 		$hasDiscovered = $discoveredQueues !== [];
 
-		$queueClassOptions = '<option value="">' . $sanitizer->entities($this->_('Select Queue Handler...')) . '</option>';
+		$queueClassOptions = [];
 		foreach ($discoveredQueues as $q) {
-			$qNameSafe = $sanitizer->entities((string) ($q['name'] ?? ''));
-			if ($qNameSafe !== '') {
-				$queueClassOptions .= "<option value=\"{$qNameSafe}\">{$qNameSafe}</option>";
+			$qName = (string) ($q['name'] ?? '');
+			if ($qName !== '') {
+				$queueClassOptions[$qName] = $qName;
 			}
 		}
 
@@ -212,9 +214,34 @@ class ConsoleQueuesPanel extends ConsolePanelComponent
 				->variant('primary');
 		}
 
-		$workControls = '<input type="text" name="work_queue_name" value="default" class="wk-input wk-input--sm wk-input-short" placeholder="default" autocomplete="off" spellcheck="false">'
-			. '<label class="wk-field-inline"><span>' . $this->esc($this->_('Max')) . '</span><input type="number" name="work_max_jobs" value="5" min="1" max="50" class="wk-input wk-input--sm wk-input-num" autocomplete="off"></label>'
-			. '<label class="wk-field-inline"><span>' . $this->esc($this->_('Tries')) . '</span><input type="number" name="work_max_tries" value="3" min="1" max="10" class="wk-input wk-input--sm wk-input-num" autocomplete="off"></label>';
+		$workControls = (string) (new KitInput())
+			->name('work_queue_name')
+			->value('default')
+			->size('sm')
+			->width('short')
+			->placeholder('default')
+			->autocomplete('off')
+			->spellcheck(false)
+			. (string) (new KitInput())
+				->type('number')
+				->name('work_max_jobs')
+				->value(5)
+				->min(1)
+				->max(50)
+				->size('sm')
+				->width('num')
+				->inlineLabel($this->_('Max'))
+				->autocomplete('off')
+			. (string) (new KitInput())
+				->type('number')
+				->name('work_max_tries')
+				->value(3)
+				->min(1)
+				->max(10)
+				->size('sm')
+				->width('num')
+				->inlineLabel($this->_('Tries'))
+				->autocomplete('off');
 
 		$cards[] = (new KitActionCard())
 			->icon('cogs')
@@ -228,8 +255,19 @@ class ConsoleQueuesPanel extends ConsolePanelComponent
 			->disabled(!$tablesExist || $queuedCount === 0)
 			->variant('primary');
 
-		$dispatchControls = '<select name="dispatch_job_class" class="wk-select wk-select--sm">' . $queueClassOptions . '</select>'
-			. '<input type="text" name="dispatch_job_payload" value="{}" class="wk-input wk-input--sm wk-input-short" placeholder=\'{"userId": 1}\' autocomplete="off" spellcheck="false">';
+		$dispatchControls = (string) (new KitSelect())
+			->name('dispatch_job_class')
+			->size('sm')
+			->placeholder($this->_('Select Queue Handler...'))
+			->options($queueClassOptions)
+			. (string) (new KitInput())
+				->name('dispatch_job_payload')
+				->value('{}')
+				->size('sm')
+				->width('short')
+				->placeholder('{"userId": 1}')
+				->autocomplete('off')
+				->spellcheck(false);
 
 		$cards[] = (new KitActionCard())
 			->icon('paper-plane')
@@ -251,7 +289,7 @@ class ConsoleQueuesPanel extends ConsolePanelComponent
 			->confirm('confirm_queues_retry', 'RETRY')
 			->actionMethod('retryFailedJobs')
 			->button($this->_('Retry Failed'), 'repeat')
-			->controlsHtml('<input type="text" name="retry_target" value="all" class="wk-input wk-input--sm wk-input-short" placeholder="all or ID" autocomplete="off" spellcheck="false">')
+			->controlsHtml((string) (new KitInput())->name('retry_target')->value('all')->size('sm')->width('short')->placeholder('all or ID')->autocomplete('off')->spellcheck(false))
 			->disabled(!$tablesExist || $failedCount === 0)
 			->variant('primary');
 
@@ -263,7 +301,7 @@ class ConsoleQueuesPanel extends ConsolePanelComponent
 			->confirm('confirm_queues_purge_pending', 'PURGE')
 			->actionMethod('purgePendingJobs')
 			->button($this->_('Purge Pending'), 'eraser')
-			->controlsHtml('<input type="text" name="purge_queue_name" value="all" class="wk-input wk-input--sm wk-input-short" placeholder="all or default" autocomplete="off" spellcheck="false">')
+			->controlsHtml((string) (new KitInput())->name('purge_queue_name')->value('all')->size('sm')->width('short')->placeholder('all or default')->autocomplete('off')->spellcheck(false))
 			->disabled(!$tablesExist || $queuedCount === 0)
 			->variant('danger');
 
@@ -275,7 +313,7 @@ class ConsoleQueuesPanel extends ConsolePanelComponent
 			->confirm('confirm_queues_delete_one', 'DELETE')
 			->actionMethod('deleteFailedJob')
 			->button($this->_('Delete Job'), 'times')
-			->controlsHtml('<label class="wk-field-inline"><span>' . $this->esc($this->_('Job ID')) . '</span><input type="number" name="delete_failed_id" value="1" min="1" class="wk-input wk-input--sm wk-input-num" autocomplete="off"></label>')
+			->controlsHtml((string) (new KitInput())->type('number')->name('delete_failed_id')->value(1)->min(1)->size('sm')->width('num')->inlineLabel($this->_('Job ID'))->autocomplete('off'))
 			->disabled(!$tablesExist || $failedCount === 0)
 			->variant('danger');
 

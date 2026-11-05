@@ -8,6 +8,7 @@ use Htmx\Ui\KitActionCard;
 use Htmx\Ui\KitBadge;
 use Htmx\Ui\KitCard;
 use Htmx\Ui\KitEmptyState;
+use Htmx\Ui\KitSelect;
 
 require_once __DIR__ . '/ConsolePanelComponent.php';
 
@@ -63,10 +64,12 @@ class ConsoleSeedingPanel extends ConsolePanelComponent
 			], $trs);
 		}
 
-		$optionsHtml = '<option value="all">' . $sanitizer->entities($this->_('Default (DatabaseSeeder / All)')) . '</option>';
+		$seederOptions = ['all' => $this->_('Default (DatabaseSeeder / All)')];
 		foreach ($seeders as $seeder) {
-			$nameSafe = $sanitizer->entities($seeder['name']);
-			$optionsHtml .= "<option value=\"{$nameSafe}\">{$nameSafe}</option>";
+			$sName = (string) ($seeder['name'] ?? '');
+			if ($sName !== '') {
+				$seederOptions[$sName] = $sName;
+			}
 		}
 
 		$runCard = (new KitActionCard())
@@ -77,7 +80,7 @@ class ConsoleSeedingPanel extends ConsolePanelComponent
 			->confirm('confirm_seeding_run', 'SEED')
 			->actionMethod('runSeeders')
 			->button($this->_('Run Seeder'), 'play')
-			->controlsHtml('<select name="seeder_target" class="wk-select wk-select--sm">' . $optionsHtml . '</select>')
+			->controlsHtml((string) (new KitSelect())->name('seeder_target')->size('sm')->options($seederOptions))
 			->disabled($seeders === [])
 			->variant('primary');
 

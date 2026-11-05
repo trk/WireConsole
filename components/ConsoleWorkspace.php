@@ -219,10 +219,10 @@ class ConsoleWorkspace extends Component
 				{$headerHtml}
 				{$versionStripHtml}
 				{$navHtml}
-				{$actionsDeckHtml}
 				{$noticeHtml}
 				{$inspectorHtml}
 				{$onboardingBanner}
+				{$actionsDeckHtml}
 				<main class="wk-panel" role="tabpanel">
 					{$panelHtml}
 				</main>

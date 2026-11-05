@@ -7,8 +7,11 @@ namespace Htmx\Component;
 use Htmx\Ui\KitActionCard;
 use Htmx\Ui\KitBadge;
 use Htmx\Ui\KitCard;
+use Htmx\Ui\KitCheckbox;
 use Htmx\Ui\KitEmptyState;
+use Htmx\Ui\KitInput;
 use Htmx\Ui\KitProgressBar;
+use Htmx\Ui\KitSelect;
 
 require_once __DIR__ . '/ConsolePanelComponent.php';
 
@@ -147,7 +150,7 @@ class ConsoleMigrationsPanel extends ConsolePanelComponent
 			->confirm('confirm_migrations_run', 'RUN')
 			->actionMethod('runMigrations')
 			->button($this->_('Run Migrations'), 'play')
-			->controlsHtml('<label class="wk-field-inline"><span>' . $this->esc($this->_('Steps')) . '</span><input type="number" name="migration_steps" value="0" min="0" max="100" class="wk-input wk-input--sm wk-input-num" autocomplete="off"></label>')
+			->controlsHtml((string) (new KitInput())->type('number')->name('migration_steps')->value(0)->min(0)->max(100)->size('sm')->width('num')->inlineLabel($this->_('Steps'))->autocomplete('off'))
 			->disabled(!$tableExists || $pending === 0)
 			->variant('primary');
 
@@ -159,16 +162,23 @@ class ConsoleMigrationsPanel extends ConsolePanelComponent
 			->confirm('confirm_migrations_rollback', 'ROLLBACK')
 			->actionMethod('rollbackMigrations')
 			->button($this->_('Rollback'), 'undo')
-			->controlsHtml('<label class="wk-field-inline"><span>' . $this->esc($this->_('Steps')) . '</span><input type="number" name="rollback_steps" value="0" min="0" max="100" class="wk-input wk-input--sm wk-input-num" autocomplete="off"></label>')
+			->controlsHtml((string) (new KitInput())->type('number')->name('rollback_steps')->value(0)->min(0)->max(100)->size('sm')->width('num')->inlineLabel($this->_('Steps'))->autocomplete('off'))
 			->disabled(!$tableExists || $ran === 0)
 			->variant('danger');
 
-		$resetControls = '<select name="migration_reset_mode" class="wk-select wk-select--sm">'
-			. '<option value="reset">' . $this->esc($this->_('Reset All (migrate:reset)')) . '</option>'
-			. '<option value="refresh">' . $this->esc($this->_('Refresh All (migrate:refresh)')) . '</option>'
-			. '<option value="fresh">' . $this->esc($this->_('Fresh All — Drop & Re-run (migrate:fresh)')) . '</option>'
-			. '</select>'
-			. '<label class="wk-checkbox-inline"><input type="checkbox" name="migration_pre_backup" value="1" class="wk-checkbox"><span>' . $this->esc($this->_('Pre-reset SQL backup')) . '</span></label>';
+		$resetControls = (string) (new KitSelect())
+			->name('migration_reset_mode')
+			->size('sm')
+			->options([
+				'reset' => $this->_('Reset All (migrate:reset)'),
+				'refresh' => $this->_('Refresh All (migrate:refresh)'),
+				'fresh' => $this->_('Fresh All — Drop & Re-run (migrate:fresh)'),
+			])
+			. (string) (new KitCheckbox())
+				->name('migration_pre_backup')
+				->value('1')
+				->label($this->_('Pre-reset SQL backup'))
+				->inline(true);
 
 		$cards[] = (new KitActionCard())
 			->icon('refresh')

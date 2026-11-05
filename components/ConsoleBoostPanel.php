@@ -7,9 +7,12 @@ namespace Htmx\Component;
 use Htmx\Ui\KitActionCard;
 use Htmx\Ui\KitBadge;
 use Htmx\Ui\KitCard;
+use Htmx\Ui\KitCheckbox;
 use Htmx\Ui\KitCliBox;
 use Htmx\Ui\KitEmptyState;
+use Htmx\Ui\KitInput;
 use Htmx\Ui\KitProgressBar;
+use Htmx\Ui\KitSelect;
 
 require_once __DIR__ . '/ConsolePanelComponent.php';
 
@@ -191,33 +194,73 @@ class ConsoleBoostPanel extends ConsolePanelComponent
 			'caption' => $this->_('Synchronize AI agent guidelines, skills, and MCP server configs from CLI:'),
 		])->render();
 
-		$gChecked = ($status['config']['guidelines'] ?? true) ? ' checked' : '';
-		$sChecked = ($status['config']['skills'] ?? true) ? ' checked' : '';
-		$mChecked = ($status['config']['mcp'] ?? false) ? ' checked' : '';
+		$featureSelected = [];
+		if ($status['config']['guidelines'] ?? true) {
+			$featureSelected[] = 'guidelines';
+		}
+		if ($status['config']['skills'] ?? true) {
+			$featureSelected[] = 'skills';
+		}
+		if ($status['config']['mcp'] ?? false) {
+			$featureSelected[] = 'mcp';
+		}
+		$featureCheckboxesHtml = (string) (new KitCheckbox())
+			->name('boost_features')
+			->options([
+				'guidelines' => $this->_('Guidelines'),
+				'skills' => $this->_('Skills'),
+				'mcp' => $this->_('MCP Server'),
+			])
+			->value($featureSelected)
+			->inline(true);
 
-		$agentCheckboxes = [];
+		$agentOptions = [];
+		$agentSelected = [];
 		foreach ($status['availableAgents'] as $agentMeta) {
-			$aName = $sanitizer->entities($agentMeta['name']);
-			$aDisplay = $sanitizer->entities($agentMeta['displayName']);
-			$aChecked = ($agentMeta['enabled'] || (!$status['hasConfig'] && $agentMeta['detected'])) ? ' checked' : '';
-			$agentCheckboxes[] = "<label class=\"wk-checkbox-inline\"><input type=\"checkbox\" name=\"boost_agents[]\" value=\"{$aName}\"{$aChecked}><span>{$aDisplay}</span></label>";
+			$aName = (string) ($agentMeta['name'] ?? '');
+			if ($aName === '') {
+				continue;
+			}
+			$agentOptions[$aName] = (string) ($agentMeta['displayName'] ?? $aName);
+			if ($agentMeta['enabled'] || (!$status['hasConfig'] && $agentMeta['detected'])) {
+				$agentSelected[] = $aName;
+			}
 		}
-		$agentCheckboxesHtml = implode('', $agentCheckboxes);
+		$agentCheckboxesHtml = $agentOptions !== []
+			? (string) (new KitCheckbox())
+				->name('boost_agents')
+				->options($agentOptions)
+				->value($agentSelected)
+				->inline(true)
+			: '';
 
-		$modCheckboxes = [];
+		$modOptions = [];
+		$modSelected = [];
 		foreach ($status['discoverableModules'] as $modMeta) {
-			$mName = $sanitizer->entities($modMeta['name']);
-			$modChecked = ($modMeta['enabled'] || !$status['hasConfig']) ? ' checked' : '';
-			$modCheckboxes[] = "<label class=\"wk-checkbox-inline\"><input type=\"checkbox\" name=\"boost_modules[]\" value=\"{$mName}\"{$modChecked}><span>{$mName}</span></label>";
+			$mName = (string) ($modMeta['name'] ?? '');
+			if ($mName === '') {
+				continue;
+			}
+			$modOptions[$mName] = $mName;
+			if ($modMeta['enabled'] || !$status['hasConfig']) {
+				$modSelected[] = $mName;
+			}
 		}
-		$modCheckboxesHtml = implode('', $modCheckboxes);
+		$modCheckboxesHtml = $modOptions !== []
+			? (string) (new KitCheckbox())
+				->name('boost_modules')
+				->options($modOptions)
+				->value($modSelected)
+				->inline(true)
+			: '';
 
 		$mcpToolOptions = [];
 		foreach ($this->runtime()->getReadOnlyMcpToolNames() as $roTool) {
-			$roSafe = $sanitizer->entities($roTool);
-			$mcpToolOptions[] = "<option value=\"{$roSafe}\">{$roSafe}</option>";
+			$roStr = (string) $roTool;
+			if ($roStr !== '') {
+				$mcpToolOptions[$roStr] = $roStr;
+			}
 		}
-		$mcpToolOptionsHtml = implode('', $mcpToolOptions);
 
 		$boostReady = (bool) ($status['available'] ?? false);
 
@@ -229,12 +272,7 @@ class ConsoleBoostPanel extends ConsolePanelComponent
 			->confirm('confirm_boost_sync', 'SYNC')
 			->actionMethod('syncBoost')
 			->button($this->_('Sync Boost'), 'refresh')
-			->controlsHtml(<<<HTML
-			<label class="wk-checkbox-inline">
-				<input type="checkbox" name="boost_discover" value="1" checked>
-				<span>{$this->_('Auto-discover new modules')}</span>
-			</label>
-			HTML)
+			->controlsHtml((string) (new KitCheckbox())->name('boost_discover')->value('1')->checked(true)->label($this->_('Auto-discover new modules'))->inline(true))
 			->disabled(!$boostReady)
 			->variant('primary');
 
@@ -242,13 +280,9 @@ class ConsoleBoostPanel extends ConsolePanelComponent
 		<details class="wk-inline-details">
 			<summary>{$this->_('Select Features, AI Agents & Modules')}</summary>
 			<div class="wk-inline-details__body">
-				<div class="wk-checkbox-group">
-					<label class="wk-checkbox-inline"><input type="checkbox" name="boost_features[]" value="guidelines"{$gChecked}><span>{$this->_('Guidelines')}</span></label>
-					<label class="wk-checkbox-inline"><input type="checkbox" name="boost_features[]" value="skills"{$sChecked}><span>{$this->_('Skills')}</span></label>
-					<label class="wk-checkbox-inline"><input type="checkbox" name="boost_features[]" value="mcp"{$mChecked}><span>{$this->_('MCP Server')}</span></label>
-				</div>
-				<div class="wk-checkbox-group">{$agentCheckboxesHtml}</div>
-				<div class="wk-checkbox-group">{$modCheckboxesHtml}</div>
+				{$featureCheckboxesHtml}
+				{$agentCheckboxesHtml}
+				{$modCheckboxesHtml}
 			</div>
 		</details>
 		HTML;
@@ -265,6 +299,20 @@ class ConsoleBoostPanel extends ConsolePanelComponent
 			->disabled(!$boostReady)
 			->variant('primary');
 
+		$remoteSkillControls = (string) (new KitInput())
+			->name('boost_remote_repo')
+			->size('sm')
+			->width('short')
+			->placeholder('owner/repo')
+			->autocomplete('off')
+			->spellcheck(false)
+			->setAttribute('autocapitalize', 'off')
+			. (string) (new KitCheckbox())
+				->name('boost_remote_force')
+				->value('1')
+				->label($this->_('Overwrite'))
+				->inline(true);
+
 		$remoteSkillCard = KitActionCard::make()
 			->icon('cloud-download')
 			->title($this->_('Install Remote GitHub Skills'))
@@ -273,21 +321,22 @@ class ConsoleBoostPanel extends ConsolePanelComponent
 			->confirm('confirm_boost_add_skill', 'INSTALL')
 			->actionMethod('installRemoteBoostSkills')
 			->button($this->_('Install Skills'), 'download')
-			->controlsHtml(<<<HTML
-			<input type="text"
-				name="boost_remote_repo"
-				class="wk-input wk-input--sm wk-input-short"
-				placeholder="owner/repo"
-				autocomplete="off"
-				spellcheck="false"
-				autocapitalize="off">
-			<label class="wk-checkbox-inline">
-				<input type="checkbox" name="boost_remote_force" value="1" class="wk-checkbox">
-				<span>{$this->_('Overwrite')}</span>
-			</label>
-			HTML)
+			->controlsHtml($remoteSkillControls)
 			->disabled(!$boostReady)
 			->variant('neutral');
+
+		$mcpTestControls = (string) (new KitSelect())
+			->name('mcp_tool_name')
+			->size('sm')
+			->options($mcpToolOptions)
+			. (string) (new KitInput())
+				->name('mcp_tool_args')
+				->value('{}')
+				->size('sm')
+				->width('short')
+				->placeholder('{"selector": "id>0, limit=5"}')
+				->autocomplete('off')
+				->spellcheck(false);
 
 		$mcpTestCard = KitActionCard::make()
 			->icon('terminal')
@@ -297,18 +346,7 @@ class ConsoleBoostPanel extends ConsolePanelComponent
 			->confirm('confirm_boost_mcp_test', 'QUERY')
 			->actionMethod('runMcpReadOnlyTool')
 			->button($this->_('Run MCP Query'), 'play')
-			->controlsHtml(<<<HTML
-			<select name="mcp_tool_name" class="wk-select wk-select--sm">
-				{$mcpToolOptionsHtml}
-			</select>
-			<input type="text"
-				name="mcp_tool_args"
-				value="{}"
-				class="wk-input wk-input--sm wk-input-short"
-				placeholder='{"selector": "id>0, limit=5"}'
-				autocomplete="off"
-				spellcheck="false">
-			HTML)
+			->controlsHtml($mcpTestControls)
 			->disabled(!$boostReady || !$mcpDiag['available'] || $mcpToolOptions === [])
 			->variant('primary');
 

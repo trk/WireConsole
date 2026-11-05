@@ -9,6 +9,8 @@ use Htmx\Ui\KitBadge;
 use Htmx\Ui\KitCard;
 use Htmx\Ui\KitCliBox;
 use Htmx\Ui\KitEmptyState;
+use Htmx\Ui\KitInput;
+use Htmx\Ui\KitSelect;
 
 require_once __DIR__ . '/ConsolePanelComponent.php';
 
@@ -78,16 +80,27 @@ class ConsoleTestingPanel extends ConsolePanelComponent
 			], $trs);
 		}
 
-		$targetOptions = '<option value="">' . $sanitizer->entities($this->_('All Suites (Full Run)')) . '</option>';
+		$targetOptions = [];
 		foreach ($testFiles as $tf) {
-			$relSafe = $sanitizer->entities($tf['relativePath']);
-			$nameSafe = $sanitizer->entities($tf['name']);
-			$suiteSafe = $sanitizer->entities($tf['suite']);
-			$targetOptions .= "<option value=\"{$relSafe}\">{$nameSafe} ({$suiteSafe})</option>";
+			$relPath = (string) ($tf['relativePath'] ?? '');
+			if ($relPath !== '') {
+				$targetOptions[$relPath] = sprintf('%s (%s)', (string) ($tf['name'] ?? ''), (string) ($tf['suite'] ?? ''));
+			}
 		}
 
-		$runControls = '<select name="test_target_path" class="wk-select wk-select--sm">' . $targetOptions . '</select>'
-			. '<input type="text" name="test_args" class="wk-input wk-input--sm wk-input-short" placeholder="--filter=ExampleTest" autocomplete="off" spellcheck="false" autocapitalize="off">';
+		$runControls = (string) (new KitSelect())
+			->name('test_target_path')
+			->size('sm')
+			->placeholder($this->_('All Suites (Full Run)'))
+			->options($targetOptions)
+			. (string) (new KitInput())
+				->name('test_args')
+				->size('sm')
+				->width('short')
+				->placeholder('--filter=ExampleTest')
+				->autocomplete('off')
+				->spellcheck(false)
+				->setAttribute('autocapitalize', 'off');
 
 		$runTestCard = (new KitActionCard())
 			->icon('check-circle')

@@ -10,8 +10,9 @@ use Htmx\Ui\KitButton;
 use Htmx\Ui\KitCard;
 use Htmx\Ui\KitCodePreview;
 use Htmx\Ui\KitEmptyState;
+use Htmx\Ui\KitInput;
+use Htmx\Ui\KitSelect;
 use Htmx\Ui\KitTabs;
-use Totoglu\Htmx\Bag\AttributeBag;
 use Totoglu\WireConsole\ConsoleRuntime;
 
 require_once __DIR__ . '/ConsolePanelComponent.php';
@@ -65,39 +66,38 @@ class ConsoleLogsPanel extends ConsolePanelComponent
 		}
 
 		$clampedLimit = in_array($this->logLimit, [25, 50, 100, 200], true) ? $this->logLimit : 50;
-		$sel25 = $clampedLimit === 25 ? ' selected' : '';
-		$sel50 = $clampedLimit === 50 ? ' selected' : '';
-		$sel100 = $clampedLimit === 100 ? ' selected' : '';
-		$sel200 = $clampedLimit === 200 ? ' selected' : '';
 
-		$searchAttrs = (new AttributeBag([
-			'type' => 'search',
-			'name' => 'log_search',
-			'value' => $this->logSearch,
-			'class' => 'wk-input wk-input--sm wk-search-input',
-			'placeholder' => $this->_('Filter log entries by keyword, user, or action...'),
-			'aria-label' => $this->_('Filter log entries'),
-			'autocomplete' => 'off',
-			'spellcheck' => 'false',
-			'hx-action' => $url,
-			'hx-method' => 'post',
-			'hx-trigger' => 'input changed delay:280ms, search',
-			'hx-target' => '#' . $this->workspaceId,
-			'hx-swap' => 'outerMorph',
-			'hx-vals' => ['__htmx_action' => 'queryFilterLogs'],
-		]))->render();
+		$searchInput = (string) (new KitInput())
+			->search($this->logSearch)
+			->name('log_search')
+			->size('sm')
+			->placeholder($this->_('Filter log entries by keyword, user, or action...'))
+			->autocomplete('off')
+			->spellcheck(false)
+			->clearable(true)
+			->setAttribute('aria-label', $this->_('Filter log entries'))
+			->hxAction($url, 'POST')
+			->hxTrigger('input changed delay:280ms, search')
+			->hxTarget('#' . $this->workspaceId)
+			->hxSwap('outerMorph')
+			->hxVals(['__htmx_action' => 'queryFilterLogs']);
 
-		$limitAttrs = (new AttributeBag([
-			'name' => 'log_limit',
-			'class' => 'wk-select wk-select--sm',
-			'aria-label' => $this->_('Entries limit'),
-			'hx-action' => $url,
-			'hx-method' => 'post',
-			'hx-trigger' => 'change',
-			'hx-target' => '#' . $this->workspaceId,
-			'hx-swap' => 'outerMorph',
-			'hx-vals' => ['__htmx_action' => 'queryFilterLogs'],
-		]))->render();
+		$limitSelect = (string) (new KitSelect())
+			->name('log_limit')
+			->value($clampedLimit)
+			->size('sm')
+			->options([
+				25 => '25 ' . $this->_('entries'),
+				50 => '50 ' . $this->_('entries'),
+				100 => '100 ' . $this->_('entries'),
+				200 => '200 ' . $this->_('entries'),
+			])
+			->setAttribute('aria-label', $this->_('Entries limit'))
+			->hxAction($url, 'POST')
+			->hxTrigger('change')
+			->hxTarget('#' . $this->workspaceId)
+			->hxSwap('outerMorph')
+			->hxVals(['__htmx_action' => 'queryFilterLogs']);
 
 		$filterBtn = KitButton::make()
 			->label($this->_('Filter'))
@@ -123,16 +123,8 @@ class ConsoleLogsPanel extends ConsolePanelComponent
 
 		$filterBarHtml = <<<HTML
 		<div class="wk-toolbar-row">
-			<div class="wk-search-wrap">
-				<i class="fa fa-search wk-search-icon" aria-hidden="true"></i>
-				<input {$searchAttrs}>
-			</div>
-			<select {$limitAttrs}>
-				<option value="25"{$sel25}>25 {$this->_('entries')}</option>
-				<option value="50"{$sel50}>50 {$this->_('entries')}</option>
-				<option value="100"{$sel100}>100 {$this->_('entries')}</option>
-				<option value="200"{$sel200}>200 {$this->_('entries')}</option>
-			</select>
+			{$searchInput}
+			{$limitSelect}
 			{$resetBtn}
 			{$filterBtn}
 		</div>

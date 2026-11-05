@@ -8,6 +8,7 @@ use Htmx\Ui\KitActionCard;
 use Htmx\Ui\KitBadge;
 use Htmx\Ui\KitCard;
 use Htmx\Ui\KitEmptyState;
+use Htmx\Ui\KitSelect;
 
 require_once __DIR__ . '/ConsolePanelComponent.php';
 
@@ -67,10 +68,12 @@ class ConsoleSchedulingPanel extends ConsolePanelComponent
 			], $trs);
 		}
 
-		$optionsHtml = '<option value="due">' . $sanitizer->entities($this->_('Only Tasks Currently Due')) . '</option>';
+		$scheduleOptions = ['due' => $this->_('Only Tasks Currently Due')];
 		foreach ($tasks as $task) {
-			$nameSafe = $sanitizer->entities($task['name']);
-			$optionsHtml .= "<option value=\"{$nameSafe}\">" . sprintf($this->_('Force Run: %s'), $nameSafe) . '</option>';
+			$tName = (string) ($task['name'] ?? '');
+			if ($tName !== '') {
+				$scheduleOptions[$tName] = sprintf($this->_('Force Run: %s'), $tName);
+			}
 		}
 
 		$triggerCard = (new KitActionCard())
@@ -81,7 +84,7 @@ class ConsoleSchedulingPanel extends ConsolePanelComponent
 			->confirm('confirm_scheduling_run', 'RUN')
 			->actionMethod('runScheduledTasks')
 			->button($this->_('Execute Tasks'), 'play')
-			->controlsHtml('<select name="schedule_target" class="wk-select wk-select--sm">' . $optionsHtml . '</select>')
+			->controlsHtml((string) (new KitSelect())->name('schedule_target')->size('sm')->options($scheduleOptions))
 			->disabled($tasks === [])
 			->variant('primary');
 

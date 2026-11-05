@@ -6,11 +6,17 @@ namespace Htmx\Component;
 
 use Htmx\Ui\KitActionCard;
 use Htmx\Ui\KitButton;
+use Htmx\Ui\KitCheckbox;
+use Htmx\Ui\KitInput;
 use Htmx\Ui\KitNotice;
+use Htmx\Ui\KitSelect;
 use Totoglu\Htmx\Component;
 use Totoglu\WireConsole\ConsoleRuntime;
 
 require_once dirname(__DIR__) . '/src/ConsoleRuntime.php';
+require_once dirname(__DIR__, 2) . '/WireKit/ui/KitInput.php';
+require_once dirname(__DIR__, 2) . '/WireKit/ui/KitSelect.php';
+require_once dirname(__DIR__, 2) . '/WireKit/ui/KitCheckbox.php';
 
 /**
  * Abstract base class for standalone ProcessWireConsole tab panel components.
