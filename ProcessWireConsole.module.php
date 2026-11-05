@@ -81,8 +81,8 @@ class ProcessWireConsole extends Process
 			'requires' => [
 				'PHP>=8.4',
 				'ProcessWire>=3.0.271',
-				'Htmx',
 				'WireKit',
+				'Htmx',
 			],
 		];
 	}
@@ -420,12 +420,55 @@ class ProcessWireConsole extends Process
 	}
 
 	/**
-	 * Remove the Console audit log channel and cached schedule timestamps on module uninstall.
+	 * Ensure all Console permissions exist idempotently on install.
+	 */
+	public function ___install(): void
+	{
+		parent::___install();
+
+		$permissions = $this->wire()?->permissions;
+		if ($permissions !== null) {
+			$info = self::getModuleInfo();
+			$declared = is_array($info['permissions'] ?? null) ? $info['permissions'] : [];
+			foreach ($declared as $permName => $permTitle) {
+				$existing = $permissions->get((string) $permName);
+				if (!$existing || !$existing->id) {
+					try {
+						$perm = $permissions->add((string) $permName);
+						$perm->title = (string) $permTitle;
+						$permissions->save($perm);
+					} catch (\Throwable) {
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Remove the Console audit log channel, cached schedule timestamps, and permissions on module uninstall.
 	 */
 	public function ___uninstall(): void
 	{
-		$this->wire()->log?->delete(ConsoleRuntime::LOG_CHANNEL);
-		$this->wire()->cache?->delete('wire-console*');
+		$this->wire()?->log?->delete(ConsoleRuntime::LOG_CHANNEL);
+		$this->wire()?->cache?->delete('wire-console*');
+
+		$permissions = $this->wire()?->permissions;
+		if ($permissions !== null) {
+			$info = self::getModuleInfo();
+			$declared = is_array($info['permissions'] ?? null) ? $info['permissions'] : [];
+			foreach (array_keys($declared) as $permName) {
+				foreach ($permissions->find("name={$permName}, include=all") as $perm) {
+					if ($perm && $perm->id) {
+						try {
+							$permissions->delete($perm);
+						} catch (\Throwable) {
+						}
+					}
+				}
+			}
+			$this->wire()?->pages?->uncacheAll();
+		}
+
 		parent::___uninstall();
 	}
 }

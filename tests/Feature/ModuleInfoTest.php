@@ -22,8 +22,8 @@ test('ProcessWireConsole defines the standalone Console process module metadata 
 		->and($info['requires'])->toBe([
 			'PHP>=8.4',
 			'ProcessWire>=3.0.271',
-			'Htmx',
 			'WireKit',
+			'Htmx',
 		])
 		->and(array_keys($info['permissions']))->toBe([
 			'wire-console',
@@ -67,12 +67,22 @@ test('legacy WireConsole configurable module, UI shims, and monolithic rendering
 		->and(is_file($moduleRoot . '/components/ConsoleLogsPanel.php'))->toBeTrue();
 });
 
-test('ProcessWireConsole uninstall removes the wire-console-audit log channel', function (): void {
+test('ProcessWireConsole uninstall removes the wire-console-audit log channel, caches, and permissions', function (): void {
 	$pw = \ProcessWire\ProcessWire::getCurrentInstance();
 	$module = new class extends ProcessWireConsole {
 		public function className($options = null): string
 		{
 			return 'ProcessWireConsole';
+		}
+
+		protected function installPage(
+			$name = '',
+			$parent = null,
+			$title = '',
+			$template = 'admin',
+			$extras = array()
+		) {
+			return new \ProcessWire\NullPage();
 		}
 
 		protected function uninstallPage()
@@ -82,13 +92,28 @@ test('ProcessWireConsole uninstall removes the wire-console-audit log channel', 
 	};
 	$module->setWire($pw);
 
+	$composer = json_decode((string) file_get_contents(dirname(__DIR__, 2) . '/composer.json'), true);
+	expect($composer['version'] ?? null)->toBe('2.0.0')
+		->and($composer['require']['trk/processwire-wire-kit'] ?? null)->toBe('^1.0')
+		->and($composer['require']['trk/processwire-htmx'] ?? null)->toBe('^2.1');
+
+	$module->___install();
+	expect($pw->permissions->get(ProcessWireConsole::PERMISSION_VIEW)?->id)->toBeGreaterThan(0);
+
 	$module->runtime()->audit('uninstall_check', 'ok');
+	$pw->cache->save('wire-console-test-key', '1', 60);
 	$channelsBefore = array_column($module->runtime()->getLogChannels(), 'name');
 	expect($channelsBefore)->toContain(\Totoglu\WireConsole\ConsoleRuntime::LOG_CHANNEL);
 
-	$module->___uninstall();
+	try {
+		$module->___uninstall();
 
-	$channelsAfter = array_column($module->runtime()->getLogChannels(), 'name');
-	expect($channelsAfter)->not->toContain(\Totoglu\WireConsole\ConsoleRuntime::LOG_CHANNEL);
+		$channelsAfter = array_column($module->runtime()->getLogChannels(), 'name');
+		expect($channelsAfter)->not->toContain(\Totoglu\WireConsole\ConsoleRuntime::LOG_CHANNEL)
+			->and($pw->cache->get('wire-console-test-key'))->toBeNull()
+			->and((int) ($pw->permissions->get(ProcessWireConsole::PERMISSION_VIEW)?->id ?? 0))->toBe(0);
+	} finally {
+		$module->___install();
+	}
 });
 
