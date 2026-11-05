@@ -145,7 +145,7 @@ test('ConsoleRuntime integrates with BoostManager and discovers Boost-aware modu
 
 	$moduleNames = array_column($boost['discoverableModules'], 'name');
 	expect($moduleNames)->toContain('Htmx')
-		->and($moduleNames)->not->toContain('WireConsole');
+		->and($moduleNames)->toContain('WireConsole');
 
 	$htmxMeta = null;
 	foreach ($boost['discoverableModules'] as $mod) {
