@@ -224,7 +224,7 @@ class ConsoleWorkspace extends Component
 		$confirmDialogHtml = KitConfirmModal::make()->render();
 
 		return <<<HTML
-		<div id="{$id}" class="wc-workspace" data-wc-active-tab="{$sanitizer->entities($this->activeTab)}" data-wc-active-tab-label="{$activeTabLabel}">
+		<div id="{$id}" class="wc-workspace" data-wk-active-tab="{$sanitizer->entities($this->activeTab)}" data-wk-active-tab-label="{$activeTabLabel}" data-wc-active-tab="{$sanitizer->entities($this->activeTab)}" data-wc-active-tab-label="{$activeTabLabel}">
 			<form class="wc-workspace__form"
 				autocomplete="off"
 				hx-action="{$url}"

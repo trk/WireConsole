@@ -333,7 +333,9 @@ class ProcessWireConsole extends Process
 			foreach ($breadcrumbs as $breadcrumb) {
 				$title = $sanitizer ? $sanitizer->entities1((string) $breadcrumb->title) : htmlspecialchars((string) $breadcrumb->title, ENT_QUOTES, 'UTF-8', false);
 				$url = $sanitizer ? $sanitizer->entities((string) $breadcrumb->url) : htmlspecialchars((string) $breadcrumb->url, ENT_QUOTES, 'UTF-8');
-				$attr = $index === 0 ? " data-wc-crumb-root='1'" : " data-wc-crumb-tab='1'";
+				$attr = $index === 0
+					? " data-wk-crumb-root='1' data-wc-crumb-root='1'"
+					: " data-wk-crumb-tab='1' data-wc-crumb-tab='1'";
 				$out .= "<li{$attr}><a href='{$url}'>{$title}</a></li>";
 				$index++;
 			}
