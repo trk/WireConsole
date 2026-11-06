@@ -15,21 +15,6 @@ use Htmx\Ui\KitNotice;
 use Totoglu\Htmx\Component;
 use Totoglu\WireConsole\ConsoleRuntime;
 
-require_once dirname(__DIR__) . '/src/ConsoleRuntime.php';
-require_once dirname(__DIR__) . '/ui/ConsoleVersionStrip.php';
-require_once dirname(__DIR__) . '/ui/ConsoleOnboardingCard.php';
-require_once __DIR__ . '/Concerns/HandlesWorkspaceMutations.php';
-require_once __DIR__ . '/ConsolePanelComponent.php';
-require_once __DIR__ . '/ConsoleOverviewPanel.php';
-require_once __DIR__ . '/ConsoleMigrationsPanel.php';
-require_once __DIR__ . '/ConsoleQueuesPanel.php';
-require_once __DIR__ . '/ConsoleSeedingPanel.php';
-require_once __DIR__ . '/ConsoleSchedulingPanel.php';
-require_once __DIR__ . '/ConsoleBackupPanel.php';
-require_once __DIR__ . '/ConsoleTestingPanel.php';
-require_once __DIR__ . '/ConsoleBoostPanel.php';
-require_once __DIR__ . '/ConsoleLogsPanel.php';
-
 /**
  * ConsoleWorkspace
  *
@@ -192,7 +177,7 @@ class ConsoleWorkspace extends BaseWorkspace
 				'title' => $this->_('Access Denied'),
 			]);
 
-			return "<div id=\"{$this->id}\" class=\"wc-workspace\">{$denied->render()}</div>";
+			return "<div id=\"{$this->id}\" class=\"wk-workspace wc-workspace\">{$denied->render()}</div>";
 		}
 
 		$this->activeTab = $this->resolvePermittedTab($this->activeTab);
@@ -225,7 +210,7 @@ class ConsoleWorkspace extends BaseWorkspace
 
 		return <<<HTML
 		<div id="{$id}" class="wk-workspace wc-workspace" data-wk-active-tab="{$sanitizer->entities($this->activeTab)}" data-wk-active-tab-label="{$activeTabLabel}" data-wk-active-tab-url="{$sanitizer->entities($this->sectionUrl($this->activeTab))}" data-wc-active-tab="{$sanitizer->entities($this->activeTab)}" data-wc-active-tab-label="{$activeTabLabel}">
-			<form class="wc-workspace__form"
+			<form class="wk-workspace__form wc-workspace__form"
 				autocomplete="off"
 				hx-action="{$url}"
 				hx-method="post"
@@ -303,7 +288,7 @@ class ConsoleWorkspace extends BaseWorkspace
 			->icon('refresh')
 			->variant('neutral')
 			->size('sm')
-			->addClass('wc-btn-refresh')
+			->addClass('wk-btn-refresh wc-btn-refresh')
 			->hxAction($url)
 			->hxMethod('post')
 			->hxTarget('#' . $id)
