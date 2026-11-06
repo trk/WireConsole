@@ -10,8 +10,6 @@ use Htmx\Ui\KitCard;
 use Htmx\Ui\KitEmptyState;
 use Htmx\Ui\KitSelect;
 
-require_once __DIR__ . '/ConsolePanelComponent.php';
-
 /**
  * Standalone Scheduling tab panel component for ProcessWireConsole.
  */

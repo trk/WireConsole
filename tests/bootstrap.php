@@ -46,15 +46,12 @@ if (!function_exists('wcTestModule')) {
 	function wcTestModule(): ProcessWireConsole
 	{
 		$pw = ProcessWire::getCurrentInstance();
-		if ($pw && class_exists(WireKit::class)) {
-			WireKit::instance($pw)->bootComponents();
-		}
 
 		$module = new ProcessWireConsole();
 		if ($pw) {
 			$module->setWire($pw);
 		}
-		$module->bootComponents();
+		$module->init();
 
 		return $module;
 	}

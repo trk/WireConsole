@@ -4,19 +4,8 @@ declare(strict_types=1);
 
 namespace ProcessWire;
 
-use Htmx\Component\ConsoleBackupPanel;
-use Htmx\Component\ConsoleBoostPanel;
-use Htmx\Component\ConsoleLogsPanel;
-use Htmx\Component\ConsoleMigrationsPanel;
-use Htmx\Component\ConsoleOverviewPanel;
-use Htmx\Component\ConsoleQueuesPanel;
-use Htmx\Component\ConsoleSchedulingPanel;
-use Htmx\Component\ConsoleSeedingPanel;
-use Htmx\Component\ConsoleTestingPanel;
 use Htmx\Component\ConsoleWorkspace;
 use Totoglu\WireConsole\ConsoleRuntime;
-
-require_once __DIR__ . '/src/ConsoleRuntime.php';
 
 /**
  * ProcessWireConsole
@@ -32,19 +21,23 @@ require_once __DIR__ . '/src/ConsoleRuntime.php';
  */
 class ProcessWireConsole extends Process
 {
-	public const PERMISSION_VIEW = ConsoleRuntime::PERMISSION_VIEW;
-	public const PERMISSION_MIGRATIONS = ConsoleRuntime::PERMISSION_MIGRATIONS;
-	public const PERMISSION_QUEUES = ConsoleRuntime::PERMISSION_QUEUES;
-	public const PERMISSION_SEEDING = ConsoleRuntime::PERMISSION_SEEDING;
-	public const PERMISSION_SCHEDULING = ConsoleRuntime::PERMISSION_SCHEDULING;
-	public const PERMISSION_BACKUP = ConsoleRuntime::PERMISSION_BACKUP;
-	public const PERMISSION_TESTING = ConsoleRuntime::PERMISSION_TESTING;
-	public const PERMISSION_BOOST = ConsoleRuntime::PERMISSION_BOOST;
-	public const PERMISSION_LOGS = ConsoleRuntime::PERMISSION_LOGS;
+	public const PERMISSION_VIEW = 'wire-console';
+	public const PERMISSION_MIGRATIONS = 'wire-console-migrations';
+	public const PERMISSION_QUEUES = 'wire-console-queues';
+	public const PERMISSION_SEEDING = 'wire-console-seeding';
+	public const PERMISSION_SCHEDULING = 'wire-console-scheduling';
+	public const PERMISSION_BACKUP = 'wire-console-backup';
+	public const PERMISSION_TESTING = 'wire-console-testing';
+	public const PERMISSION_BOOST = 'wire-console-boost';
+	public const PERMISSION_LOGS = 'wire-console-logs';
 
-	protected bool $componentsBooted = false;
-	protected bool $breadcrumbsHooked = false;
 	protected ?ConsoleRuntime $runtimeInstance = null;
+
+	public function __construct()
+	{
+		parent::__construct();
+		$this->wire()->classLoader->addNamespace('Totoglu\\WireConsole', __DIR__ . '/src/');
+	}
 
 	/**
 	 * @return array<string, mixed>
@@ -95,113 +88,41 @@ class ProcessWireConsole extends Process
 		return true;
 	}
 
-	/**
-	 * Register PSR-4 namespaces and HTMX component paths as soon as the module is wired.
-	 */
-	public function wired(): void
-	{
-		parent::wired();
-		$this->bootComponents();
-	}
-
-	/**
-	 * Initialize module namespaces and HTMX component bindings without loading
-	 * Process CSS/JS assets on non-Console requests.
-	 */
 	public function init(): void
 	{
-		$this->bootComponents();
+		$this->registerWorkspace();
 	}
 
 	/**
-	 * Register `Totoglu\WireConsole`, `Htmx\Component`, and `Htmx\Ui` namespaces
-	 * and expose `ConsoleWorkspace` and its section panels to `Htmx` and `WireKit`.
+	 * Register `ConsoleWorkspace` with `WireKit`.
 	 */
-	public function bootComponents(): void
+	private function registerWorkspace(): void
 	{
-		if ($this->componentsBooted) {
-			return;
-		}
+		WireKit::instance($this)->registerWorkspace([
+			'id' => 'console',
+			'title' => $this->_('Console'),
+			'description' => $this->_('Monitor system health, background tasks, scheduled jobs, database backups, and activity logs.'),
+			'icon' => 'terminal',
+			'process' => 'ProcessWireConsole',
+			'component' => ConsoleWorkspace::class,
+			'category' => $this->_('System'),
+			'order' => 60,
+			'permission' => self::PERMISSION_VIEW,
+			'statsCallback' => function (): array {
+				$overview = $this->runtime()->getOverviewTelemetry();
+				$isDown = !empty($overview['maintenance']['isDown']);
+				$scheduledCount = (int) ($overview['scheduling']['totalCount'] ?? 0);
 
-		$modules = $this->wire()->modules;
-		if (class_exists(WireKit::class)) {
-			try {
-				$kit = WireKit::instance($this);
-				$kit->bootComponents();
-				$kit->registerWorkspace([
-					'id' => 'console',
-					'title' => $this->_('Console'),
-					'description' => $this->_('Monitor system health, background tasks, scheduled jobs, database backups, and activity logs.'),
-					'icon' => 'terminal',
-					'process' => 'ProcessWireConsole',
-					'component' => ConsoleWorkspace::class,
-					'category' => $this->_('System'),
-					'order' => 60,
-					'permission' => self::PERMISSION_VIEW,
-					'statsCallback' => function (): array {
-						$overview = $this->runtime()->getOverviewTelemetry();
-						$isDown = !empty($overview['maintenance']['isDown']);
-						$scheduledCount = (int) ($overview['scheduling']['totalCount'] ?? 0);
-
-						return [
-							[
-								'label' => $this->_('Status'),
-								'value' => $isDown ? $this->_('Maintenance') : $this->_('Online'),
-								'tone' => $isDown ? 'warning' : 'success',
-							],
-							['label' => $this->_('Scheduled'), 'value' => (string) $scheduledCount],
-						];
-					},
-				]);
-			} catch (\Throwable) {
-				// Fallback if WireKit is still initializing
-			}
-		}
-
-		$classLoader = $this->wire()->classLoader;
-		if ($classLoader) {
-			$classLoader->addNamespace('Totoglu\\WireConsole', __DIR__ . '/src/');
-			$classLoader->addNamespace('Htmx\\Component', __DIR__ . '/components/');
-			$classLoader->addNamespace('Htmx\\Ui', __DIR__ . '/ui/');
-		}
-
-		if ($modules && $modules->isInstalled('Htmx')) {
-			try {
-				/** @var Htmx|null $htmx */
-				$htmx = $modules->get('Htmx');
-				if ($htmx) {
-					$components = [
-						'ConsoleWorkspace' => ConsoleWorkspace::class,
-						'ConsoleOverviewPanel' => ConsoleOverviewPanel::class,
-						'ConsoleMigrationsPanel' => ConsoleMigrationsPanel::class,
-						'ConsoleQueuesPanel' => ConsoleQueuesPanel::class,
-						'ConsoleSeedingPanel' => ConsoleSeedingPanel::class,
-						'ConsoleSchedulingPanel' => ConsoleSchedulingPanel::class,
-						'ConsoleBackupPanel' => ConsoleBackupPanel::class,
-						'ConsoleTestingPanel' => ConsoleTestingPanel::class,
-						'ConsoleBoostPanel' => ConsoleBoostPanel::class,
-						'ConsoleLogsPanel' => ConsoleLogsPanel::class,
-					];
-
-					foreach ($components as $shortName => $fqcn) {
-						$htmx->registerComponent($shortName, $fqcn);
-						$htmx->registerComponent($fqcn, $fqcn);
-					}
-
-					$allowed = is_array($htmx->get('allowedComponentPaths')) ? $htmx->get('allowedComponentPaths') : [];
-					foreach ([__DIR__ . '/components', __DIR__ . '/ui'] as $dir) {
-						if (!in_array($dir, $allowed, true)) {
-							$allowed[] = $dir;
-						}
-					}
-					$htmx->set('allowedComponentPaths', $allowed);
-				}
-			} catch (\Throwable) {
-				// Htmx module will resolve via PSR-4 fallback if not yet ready
-			}
-		}
-
-		$this->componentsBooted = true;
+				return [
+					[
+						'label' => $this->_('Status'),
+						'value' => $isDown ? $this->_('Maintenance') : $this->_('Online'),
+						'tone' => $isDown ? 'warning' : 'success',
+					],
+					['label' => $this->_('Scheduled'), 'value' => (string) $scheduledCount],
+				];
+			},
+		]);
 	}
 
 	/**
@@ -209,8 +130,6 @@ class ProcessWireConsole extends Process
 	 */
 	public function runtime(): ConsoleRuntime
 	{
-		$this->bootComponents();
-
 		return $this->runtimeInstance ??= ConsoleRuntime::make($this->wire());
 	}
 
@@ -291,25 +210,15 @@ class ProcessWireConsole extends Process
 	 */
 	private function renderSection(string $section): string
 	{
-		$this->bootComponents();
 		$this->loadWorkspaceAssets();
 		$this->resetBreadcrumbsToConsoleRoot($section);
 
-		/** @var Htmx|null $htmx */
-		$htmx = $this->wire()->htmx;
-		if ($htmx instanceof Htmx) {
-			$html = $htmx->renderComponent(ConsoleWorkspace::class, [
-				'activeTab' => $section,
-			]);
-		} else {
-			$workspace = new ConsoleWorkspace();
-			$workspace->setWire($this->wire());
-			$workspace->fill(['activeTab' => $section]);
-			$workspace->mount($section);
-			$html = $workspace->renderToString();
-		}
+		$kit = WireKit::instance($this);
+		$html = $kit->renderComponent(ConsoleWorkspace::class, [
+			'activeTab' => $section,
+		]);
 
-		return WireKit::instance($this)->workspaceResponse($html);
+		return $kit->workspaceResponse($html);
 	}
 
 	/**
@@ -398,38 +307,6 @@ class ProcessWireConsole extends Process
 			$v = (string) (@filemtime($cssPath) ?: '2.0.0');
 			$config->styles->add($moduleUrl . 'ProcessWireConsole.css?v=' . $v);
 		}
-
-		if ($this->breadcrumbsHooked) {
-			return;
-		}
-		$this->breadcrumbsHooked = true;
-
-		$this->addHookAfter('AdminThemeUikit::renderBreadcrumbs', function (HookEvent $event): void {
-			$adminTheme = $event->object;
-			$breadcrumbs = $event->wire()->breadcrumbs;
-			if ($breadcrumbs === null || count($breadcrumbs) === 0) {
-				return;
-			}
-			if (isset($adminTheme->isModal) && $adminTheme->isModal) {
-				return;
-			}
-			$out = '';
-			if (method_exists($adminTheme, 'renderQuickTreeLink') && strpos((string) ($adminTheme->layout ?? ''), 'sidenav') === false) {
-				$out .= '<li>' . $adminTheme->renderQuickTreeLink() . '</li>';
-			}
-			$sanitizer = $event->wire()->sanitizer;
-			$index = 0;
-			foreach ($breadcrumbs as $breadcrumb) {
-				$title = $sanitizer ? $sanitizer->entities1((string) $breadcrumb->title) : htmlspecialchars((string) $breadcrumb->title, ENT_QUOTES, 'UTF-8', false);
-				$url = $sanitizer ? $sanitizer->entities((string) $breadcrumb->url) : htmlspecialchars((string) $breadcrumb->url, ENT_QUOTES, 'UTF-8');
-				$attr = $index === 0
-					? " data-wk-crumb-root='1' data-wc-crumb-root='1'"
-					: " data-wk-crumb-tab='1' data-wc-crumb-tab='1'";
-				$out .= "<li{$attr}><a href='{$url}'>{$title}</a></li>";
-				$index++;
-			}
-			$event->return = "<ul class='uk-breadcrumb'>{$out}</ul>";
-		});
 	}
 
 	/**
@@ -437,21 +314,26 @@ class ProcessWireConsole extends Process
 	 */
 	protected function resetBreadcrumbsToConsoleRoot(string $activeTab = 'overview'): void
 	{
-		$breadcrumbs = $this->wire()->breadcrumbs;
-		if ($breadcrumbs !== null) {
-			$breadcrumbs->removeAll();
-		}
-
 		$rootUrl = $this->rootUrl();
-		$this->breadcrumb($rootUrl, $this->_('Console'));
-
 		$cleanTab = strtolower(trim($activeTab));
+		$sectionLabel = '';
+		$sectionUrl = '';
+
 		if ($cleanTab !== '' && $cleanTab !== 'overview') {
 			$tabs = $this->runtime()->getAccessibleTabs();
 			if (isset($tabs[$cleanTab])) {
-				$this->breadcrumb($rootUrl . rawurlencode($cleanTab) . '/', $tabs[$cleanTab]['label']);
+				$sectionLabel = $tabs[$cleanTab]['label'];
+				$sectionUrl = $rootUrl . rawurlencode($cleanTab) . '/';
 			}
 		}
+
+		WireKit::instance($this)->resetBreadcrumbs(
+			$this,
+			$rootUrl,
+			$this->_('Console'),
+			$sectionLabel,
+			$sectionUrl
+		);
 	}
 
 	/**

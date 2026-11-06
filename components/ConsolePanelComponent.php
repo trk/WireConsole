@@ -13,8 +13,6 @@ use Htmx\Ui\KitSelect;
 use Totoglu\Htmx\Component;
 use Totoglu\WireConsole\ConsoleRuntime;
 
-require_once dirname(__DIR__) . '/src/ConsoleRuntime.php';
-
 /**
  * Abstract base class for standalone ProcessWireConsole tab panel components.
  *

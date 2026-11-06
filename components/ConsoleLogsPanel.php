@@ -15,8 +15,6 @@ use Htmx\Ui\KitSelect;
 use Htmx\Ui\KitTabs;
 use Totoglu\WireConsole\ConsoleRuntime;
 
-require_once __DIR__ . '/ConsolePanelComponent.php';
-
 /**
  * ConsoleLogsPanel
  *

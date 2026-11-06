@@ -12,9 +12,6 @@ use Htmx\Ui\KitProgressBar;
 use Htmx\Ui\KitSelect;
 use Htmx\Ui\KitStatCard;
 
-require_once __DIR__ . '/ConsolePanelComponent.php';
-require_once dirname(__DIR__) . '/ui/ConsoleOnboardingCard.php';
-
 /**
  * Standalone Overview tab panel component for ProcessWireConsole.
  *

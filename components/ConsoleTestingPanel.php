@@ -12,8 +12,6 @@ use Htmx\Ui\KitEmptyState;
 use Htmx\Ui\KitInput;
 use Htmx\Ui\KitSelect;
 
-require_once __DIR__ . '/ConsolePanelComponent.php';
-
 /**
  * Standalone Testing tab panel component for ProcessWireConsole.
  */

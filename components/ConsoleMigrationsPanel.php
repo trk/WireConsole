@@ -13,8 +13,6 @@ use Htmx\Ui\KitInput;
 use Htmx\Ui\KitProgressBar;
 use Htmx\Ui\KitSelect;
 
-require_once __DIR__ . '/ConsolePanelComponent.php';
-
 /**
  * Standalone Migrations tab panel component for ProcessWireConsole.
  */

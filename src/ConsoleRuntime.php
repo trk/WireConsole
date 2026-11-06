@@ -21,15 +21,6 @@ use Totoglu\WireConsole\Concerns\InteractsWithSeedingAndScheduling;
 use Totoglu\WireConsole\Concerns\InteractsWithSystemAndLogs;
 use Totoglu\WireConsole\Concerns\InteractsWithTesting;
 
-require_once __DIR__ . '/Concerns/InteractsWithMigrations.php';
-require_once __DIR__ . '/Concerns/InteractsWithQueues.php';
-require_once __DIR__ . '/Concerns/InteractsWithBackups.php';
-require_once __DIR__ . '/Concerns/InteractsWithBoost.php';
-require_once __DIR__ . '/Concerns/InteractsWithScaffolding.php';
-require_once __DIR__ . '/Concerns/InteractsWithSeedingAndScheduling.php';
-require_once __DIR__ . '/Concerns/InteractsWithSystemAndLogs.php';
-require_once __DIR__ . '/Concerns/InteractsWithTesting.php';
-
 /**
  * ConsoleRuntime
  *
