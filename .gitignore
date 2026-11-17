@@ -1,4 +1,7 @@
 .DS_Store
 Thumbs.db
 /vendor/
+/node_modules/
+/.turbo/
+/.phpstan.cache
 /.phpunit.result.cache

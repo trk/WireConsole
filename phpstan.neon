@@ -1,0 +1,17 @@
+parameters:
+	level: 8
+	phpVersion: 80400
+	bootstrapFiles:
+		- tests/phpstan-bootstrap.php
+	paths:
+		- src
+		- ProcessWireConsole.module.php
+	treatPhpDocTypesAsCertain: false
+	ignoreErrors:
+		# Defensive runtime guards against mixed/unwired ProcessWire properties
+		-
+			identifier: nullsafe.neverNull
+		-
+			identifier: function.alreadyNarrowedType
+		-
+			identifier: notIdentical.alwaysTrue
