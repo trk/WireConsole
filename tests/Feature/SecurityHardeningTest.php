@@ -1,4 +1,4 @@
-<?php
+<?php // __(file-not-translatable)
 
 declare(strict_types=1);
 
@@ -116,10 +116,10 @@ test('ConsoleRuntime integrates directly with upstream Migrator, QueueManager, a
 		]);
 
 	$versions = $runtime->getVersionMatrix();
-	expect($versions)->toHaveKeys(['php', 'processwire', 'database', 'htmx', 'wirekit', 'console', 'boost'])
+	expect($versions)->toHaveKeys(['php', 'processwire', 'database', 'inertia', 'workspace', 'console', 'boost'])
 		->and($versions['php'])->toContain(PHP_MAJOR_VERSION . '.')
-		->and($versions['htmx'])->toContain('.')
-		->and($versions['wirekit'])->toContain('.');
+		->and($versions['inertia'])->toContain('.')
+		->and($versions['workspace'])->toContain('.');
 
 	$installMig = $runtime->installMigrationsTable();
 	expect($installMig['ok'])->toBeTrue()
@@ -144,24 +144,26 @@ test('ConsoleRuntime integrates with BoostManager and discovers Boost-aware modu
 		->and(count($boost['availableAgents']))->toBeGreaterThan(5);
 
 	$moduleNames = array_column($boost['discoverableModules'], 'name');
-	expect($moduleNames)->toContain('Htmx')
+	expect($moduleNames)->toContain('Inertia')
 		->and($moduleNames)->toContain('WireConsole');
 
-	$htmxMeta = null;
+	$inertiaMeta = null;
 	foreach ($boost['discoverableModules'] as $mod) {
-		if ($mod['name'] === 'Htmx') {
-			$htmxMeta = $mod;
+		if ($mod['name'] === 'Inertia') {
+			$inertiaMeta = $mod;
 			break;
 		}
 	}
-	expect($htmxMeta)->toBeArray()
-		->and($htmxMeta['version'])->toContain('.')
-		->and($htmxMeta['hasGuidelines'])->toBeTrue()
-		->and($htmxMeta['hasSkills'])->toBeTrue();
+	expect($inertiaMeta)->toBeArray()
+		->and($inertiaMeta['version'])->toContain('.')
+		->and($inertiaMeta['hasGuidelines'])->toBeTrue()
+		->and($inertiaMeta['hasSkills'])->toBeTrue();
 
 	$mcpDiag = $runtime->getMcpServerDiagnostics();
 	expect($mcpDiag['available'])->toBeTrue()
 		->and($mcpDiag['protocolVersion'])->toBe('2024-11-05')
+		->and($mcpDiag['allowExecute'])->toBeBool()
+		->and($mcpDiag['allowRestore'])->toBeBool()
 		->and($mcpDiag['toolCount'])->toBe(28)
 		->and($mcpDiag['readOnlyCount'])->toBe(8)
 		->and($mcpDiag['mutationCount'])->toBe(20);
@@ -240,12 +242,12 @@ test('ConsoleRuntime inspectProjectFile reads allowlisted skills and seeders and
 	expect($runtime->inspectProjectFile('skill', '../config'))->toBeNull()
 		->and($runtime->inspectProjectFile('migration', '../../site/config.php'))->toBeNull()
 		->and($runtime->inspectProjectFile('backup', '../config.php'))->toBeNull()
-		->and($runtime->inspectProjectFile('unknown', 'pw-htmx'))->toBeNull();
+		->and($runtime->inspectProjectFile('unknown', 'pw-inertia'))->toBeNull();
 
-	$skillPreview = $runtime->inspectProjectFile('skill', 'pw-htmx');
+	$skillPreview = $runtime->inspectProjectFile('skill', 'pw-inertia');
 	expect($skillPreview)->toBeArray()
-		->and($skillPreview['relativePath'])->toContain('.agents/skills/pw-htmx/SKILL.md')
-		->and($skillPreview['content'])->toContain('pw-htmx');
+		->and($skillPreview['relativePath'])->toContain('.agents/skills/pw-inertia/SKILL.md')
+		->and($skillPreview['content'])->toContain('pw-inertia');
 
 	$boostDocPreview = $runtime->inspectProjectFile('boost-doc', 'agents-md');
 	expect($boostDocPreview)->toBeArray()
@@ -253,9 +255,18 @@ test('ConsoleRuntime inspectProjectFile reads allowlisted skills and seeders and
 
 	$discoveredTests = $runtime->getDiscoveredTestFiles();
 	expect($discoveredTests)->not->toBeEmpty();
+	$runners = array_unique(array_column($discoveredTests, 'runner'));
+	expect($runners)->toContain('pest')
+		->and($runners)->toContain('playwright');
+
 	$testPreview = $runtime->inspectProjectFile('test', 'ActionGuardsTest');
 	expect($testPreview)->toBeArray()
 		->and($testPreview['relativePath'])->toContain('ActionGuardsTest.php');
+
+	$e2ePreview = $runtime->inspectProjectFile('test', 'console-workspace.spec.ts');
+	expect($e2ePreview)->toBeArray()
+		->and($e2ePreview['relativePath'])->toBe('site/modules/WireConsole/tests/e2e/console-workspace.spec.ts')
+		->and($e2ePreview['content'])->toContain('@playwright/test');
 
 	// Verify queue batch worker and job dispatcher validation
 	$badDispatchJson = $runtime->dispatchQueueJob('NonExistentQueue', '{invalid json');
@@ -367,7 +378,7 @@ test('a role with only wire-console gets a refusal when inspecting a backup, tes
 		$targets = [
 			'backup' => $backupFile,
 			'test' => 'ActionGuardsTest',
-			'skill' => 'pw-htmx',
+			'skill' => 'pw-inertia',
 			'boost-doc' => 'agents-md',
 		];
 
@@ -375,34 +386,24 @@ test('a role with only wire-console gets a refusal when inspecting a backup, tes
 			expect($restrictedRuntime->userCanInspectCategory($category))->toBeFalse("Expected userCanInspectCategory('{$category}') to be false")
 				->and($restrictedRuntime->inspectProjectFile($category, $identifier))->toBeNull("Expected inspectProjectFile('{$category}', '{$identifier}') to return null");
 
-			// Action-time refusal via queryInspectFile
-			$workspace = new \Htmx\Component\ConsoleWorkspace();
-			$workspace->setWire($pw);
-			$workspace->mount('overview');
-			$workspace->queryInspectFile($category, $identifier);
-			$html = $workspace->render();
-
-			expect($workspace->inspectedCategory)->toBe('')
-				->and($workspace->inspectedIdentifier)->toBe('')
-				->and($html)->toContain('Permission Denied')
-				->and($html)->not->toContain('Read-only source preview')
-				->and($html)->not->toContain('SECRET SQL BACKUP CONTENT');
-
-			// Render-time refusal when state carries an unauthorized inspected category
-			$hydratedWorkspace = new \Htmx\Component\ConsoleWorkspace();
-			$hydratedWorkspace->setWire($pw);
-			$hydratedWorkspace->fill([
-				'activeTab' => 'overview',
-				'inspectedCategory' => $category,
-				'inspectedIdentifier' => $identifier,
+			// Action-time refusal via executeWorkspaceAction('inspectFile')
+			$actionRes = $restrictedRuntime->executeWorkspaceAction('inspectFile', [
+				'inspect_category' => $category,
+				'inspect_file' => $identifier,
 			]);
-			$renderedHtml = $hydratedWorkspace->render();
+			expect($actionRes['ok'])->toBeFalse()
+				->and($actionRes['message'])->toContain('Access denied');
 
-			expect($hydratedWorkspace->inspectedCategory)->toBe('')
-				->and($hydratedWorkspace->inspectedIdentifier)->toBe('')
-				->and($renderedHtml)->toContain('Permission Denied')
-				->and($renderedHtml)->not->toContain('Read-only source preview')
-				->and($renderedHtml)->not->toContain('SECRET SQL BACKUP CONTENT');
+			// Payload-time refusal when options carry an unauthorized inspected category
+			$payload = $restrictedRuntime->buildWorkspacePayload('overview', [
+				'inspectCategory' => $category,
+				'inspectId' => $identifier,
+			]);
+			expect($payload['inspectedFile'])->toBeNull()
+				->and($payload['backup'])->toBeNull()
+				->and($payload['overview']['backup']['totalCount'])->toBe(0)
+				->and($payload['overview']['backup']['latestFile'])->toBeNull()
+				->and($payload['overview']['backup']['latestTime'])->toBeNull();
 		}
 
 		// Even with wire-console-backup permission, a non-superuser cannot inspect backups (matches download-backup)
@@ -458,17 +459,12 @@ test('superuser with backup permission can still inspect', function (): void {
 		expect($preview)->toBeArray()
 			->and($preview['content'])->toContain('SUPERUSER SQL SNAPSHOT');
 
-		$workspace = new \Htmx\Component\ConsoleWorkspace();
-		$workspace->setWire($pw);
-		$workspace->mount('backup');
-		$workspace->queryInspectFile('backup', $backupFile);
-		$html = $workspace->render();
-
-		expect($workspace->inspectedCategory)->toBe('backup')
-			->and($workspace->inspectedIdentifier)->toBe($backupFile)
-			->and($html)->toContain('Read-only source preview')
-			->and($html)->toContain('SUPERUSER SQL SNAPSHOT')
-			->and($html)->not->toContain('Permission Denied');
+		$actionRes = $runtime->executeWorkspaceAction('inspectFile', [
+			'inspect_category' => 'backup',
+			'inspect_file' => $backupFile,
+		]);
+		expect($actionRes['ok'])->toBeTrue()
+			->and($actionRes['data']['content'])->toContain('SUPERUSER SQL SNAPSHOT');
 	} finally {
 		if (is_file($backupFullPath)) {
 			@unlink($backupFullPath);
@@ -661,6 +657,186 @@ PHP);
 		$pw->cache?->delete('wire-console:test:seeder-marker');
 		$pw->cache?->delete('wire-console:test:task-marker');
 		$pw->cache?->delete('wire-console:test:cache-canary');
+	}
+});
+
+test('non-scalar array payloads, JSON list arguments, and oversized JSON element counts are rejected cleanly without PHP warnings', function (): void {
+	wcSetSuperuser();
+	$pw = ProcessWire::getCurrentInstance();
+	$module = wcTestModule();
+	$runtime = $module->runtime();
+
+	$warnings = [];
+	set_error_handler(static function (int $errno, string $errstr) use (&$warnings): bool {
+		$warnings[] = [$errno, $errstr];
+		return true;
+	});
+
+	try {
+		// 1. Array-shaped confirmation and parameter payloads in executeWorkspaceAction
+		$res = $runtime->executeWorkspaceAction('runMigrations', [
+			'confirm_migrations_run' => ['RUN'],
+			'migration_steps' => ['bad'],
+		]);
+		expect($res['ok'])->toBeFalse()
+			->and($res['message'])->toContain('Confirmation failed');
+
+		// 2. Array-shaped POST parameters through ProcessWireConsole::executeAction
+		$pw->input->post->removeAll();
+		$pw->input->post->set('tab', ['migrations']);
+		$pw->input->post->set('action', ['runMigrations']);
+		$pw->input->post->set('_token', ['invalid']);
+		$html = $module->executeAction();
+		expect($html)->toBeString()->toContain('WireConsole/Workspace');
+
+		// 3. Array-shaped GET query parameter on executeDownloadBackup throws clean 404 without warning
+		$pw->input->get->set('file', ['evil.sql']);
+		expect(fn () => $module->executeDownloadBackup())->toThrow(\ProcessWire\Wire404Exception::class);
+
+		// 4. JSON list instead of JSON object in executeReadOnlyMcpTool
+		$mcpListRes = $runtime->executeReadOnlyMcpTool('pw_query', '[1, 2, 3]');
+		expect($mcpListRes['ok'])->toBeFalse()
+			->and($mcpListRes['isError'])->toBeTrue();
+
+		// 5. JSON payload exceeding ConsoleRuntime::MAX_JSON_ELEMENTS (512)
+		$hugeObject = [];
+		for ($i = 0; $i < 600; $i++) {
+			$hugeObject['k' . $i] = $i;
+		}
+		$hugeJson = (string) json_encode($hugeObject);
+		$queueHugeRes = $runtime->dispatchQueueJob('AnyQueue', $hugeJson);
+		expect($queueHugeRes['ok'])->toBeFalse()
+			->and($queueHugeRes['jobId'])->toBe(0);
+
+		$mcpHugeRes = $runtime->executeReadOnlyMcpTool('pw_query', $hugeJson);
+		expect($mcpHugeRes['ok'])->toBeFalse()
+			->and($mcpHugeRes['isError'])->toBeTrue();
+
+		expect($warnings)->toBe([]);
+	} finally {
+		restore_error_handler();
+		$pw->input->post->removeAll();
+		$pw->input->get->removeAll();
+	}
+});
+
+test('Playwright E2E sanitizer, TestE2eCommand --init, Make*Command scaffolding delegation, and Boost applyConfiguration work end-to-end', function (): void {
+	wcSetSuperuser();
+	$runtime = wcTestModule()->runtime();
+	$root = $runtime->getProjectRootPath();
+
+	// 1. Source verification: InteractsWithScaffolding delegates to Make*Command without local stub duplication,
+	//    InteractsWithBackups & InteractsWithSystemAndLogs delegate to BackupPurgeCommand / LogClear*Command,
+	//    and InteractsWithBoost delegates to BoostManager::applyConfiguration & SkillWriter::sanitizeSkillName
+	$scaffoldSource = (string) file_get_contents($root . 'site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php');
+	$backupsSource = (string) file_get_contents($root . 'site/modules/WireConsole/src/Concerns/InteractsWithBackups.php');
+	$sysLogsSource = (string) file_get_contents($root . 'site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php');
+	$boostSource = (string) file_get_contents($root . 'site/modules/WireConsole/src/Concerns/InteractsWithBoost.php');
+
+	expect($scaffoldSource)->toContain('MakeMigrationCommand::class')
+		->and($scaffoldSource)->toContain('MakeTestCommand::class')
+		->and($scaffoldSource)->toContain('MakeModuleCommand::class')
+		->and($scaffoldSource)->toContain('MakeQueueCommand::class')
+		->and($scaffoldSource)->toContain('MakeSeederCommand::class')
+		->and($scaffoldSource)->toContain('MakeTaskCommand::class')
+		->and($scaffoldSource)->not->toContain('renderConsoleStub');
+
+	expect($backupsSource)->toContain('BackupPurgeCommand::class')
+		->and($backupsSource)->toContain('is_link(')
+		->and($sysLogsSource)->toContain('LogClearCommand::class')
+		->and($sysLogsSource)->toContain('LogClearAllCommand::class')
+		->and($sysLogsSource)->toContain('is_link(');
+
+	expect($boostSource)->toContain('->applyConfiguration(')
+		->and($boostSource)->toContain('SkillWriter::sanitizeSkillName(')
+		->and($boostSource)->toContain("McpServer::isEnvEnabled('PW_MCP_ALLOW_EXECUTE')")
+		->and($boostSource)->toContain("McpServer::isEnvEnabled('PW_MCP_ALLOW_RESTORE')");
+
+	// 2. Testing environment & sanitizeE2eArgs validation
+	$testEnv = $runtime->getTestingEnvironment();
+	expect($testEnv['e2eReady'])->toBeTrue()
+		->and($testEnv['hasPlaywrightBinary'])->toBeTrue()
+		->and($testEnv['hasPlaywrightConfig'])->toBeTrue()
+		->and($testEnv['e2eFileCount'])->toBeGreaterThanOrEqual(1);
+
+	$validE2e = $runtime->sanitizeE2eArgs('--module=WireConsole --grep=accessibility --workers=1 --reporter=line');
+	expect($validE2e['ok'])->toBeTrue()
+		->and($validE2e['tokens'])->toBe([
+			'--module=WireConsole',
+			'--grep=accessibility',
+			'--workers=1',
+			'--reporter=line',
+		]);
+
+	$validE2ePath = $runtime->sanitizeE2eArgs('site/modules/WireConsole/tests/e2e/console-workspace.spec.ts');
+	expect($validE2ePath['ok'])->toBeTrue();
+
+	foreach ([
+		'--ui',
+		'--headed',
+		'--debug',
+		'--config=/etc/passwd',
+		'../../etc/passwd',
+		'--grep=test;whoami',
+		'--grep=' . str_repeat('X', 210),
+	] as $rejectedE2eArg) {
+		expect($runtime->sanitizeE2eArgs($rejectedE2eArg)['ok'])->toBeFalse("Expected E2E arg to be rejected: {$rejectedE2eArg}");
+	}
+
+	// 3. Non-destructive initPlaywrightE2e preserves existing configuration
+	$initRes = $runtime->initPlaywrightE2e();
+	expect($initRes['ok'])->toBeTrue()
+		->and($initRes['skipped'])->toContain('playwright.config.ts');
+
+	// 4. Scaffold typed migration, unit Pest test, and Playwright E2E spec via Make*Command delegation
+	$createdFiles = [];
+	$siteTestsExisted = is_dir($root . 'site/tests');
+	$migDirExisted = is_dir($root . 'site/migrations');
+
+	try {
+		$typedMig = $runtime->scaffoldComponentFile('migration', 'wc_typed_field_mig', ['type' => 'create-field']);
+		expect($typedMig['ok'])->toBeTrue()
+			->and($typedMig['path'])->toBeString();
+		$createdFiles[] = (string) $typedMig['path'];
+		expect((string) file_get_contents((string) $typedMig['path']))->toContain('FieldtypeText');
+
+		$badMigType = $runtime->scaffoldComponentFile('migration', 'wc_bad_type', ['type' => 'unknown-stub']);
+		expect($badMigType['ok'])->toBeFalse();
+
+		$unitTest = $runtime->scaffoldComponentFile('test', 'WcDelegatedUnitCheck', ['test_kind' => 'unit']);
+		expect($unitTest['ok'])->toBeTrue()
+			->and($unitTest['file'])->toBe('WcDelegatedUnitCheckTest.php')
+			->and($unitTest['path'])->toContain('site/tests/Unit/WcDelegatedUnitCheckTest.php');
+		$createdFiles[] = (string) $unitTest['path'];
+
+		$e2eSpec = $runtime->scaffoldComponentFile('test', 'wc-delegated-flow', ['test_kind' => 'e2e']);
+		expect($e2eSpec['ok'])->toBeTrue()
+			->and($e2eSpec['file'])->toBe('wc-delegated-flow.spec.ts')
+			->and($e2eSpec['path'])->toContain('site/tests/e2e/wc-delegated-flow.spec.ts');
+		$createdFiles[] = (string) $e2eSpec['path'];
+		expect((string) file_get_contents((string) $e2eSpec['path']))->toContain('@playwright/test');
+
+		// Verify newly scaffolded site tests are discovered by getDiscoveredTestFiles()
+		$discoveredNames = array_column($runtime->getDiscoveredTestFiles(), 'name');
+		expect($discoveredNames)->toContain('WcDelegatedUnitCheckTest')
+			->and($discoveredNames)->toContain('wc-delegated-flow.spec.ts');
+	} finally {
+		foreach ($createdFiles as $f) {
+			if ($f !== '' && is_file($f)) {
+				@unlink($f);
+			}
+		}
+		if (!$siteTestsExisted && is_dir($root . 'site/tests')) {
+			foreach (['site/tests/Unit', 'site/tests/Feature', 'site/tests/e2e', 'site/tests'] as $relDir) {
+				$absDir = $root . $relDir;
+				if (is_dir($absDir) && (glob($absDir . '/*') ?: []) === []) {
+					@rmdir($absDir);
+				}
+			}
+		}
+		if (!$migDirExisted && is_dir($root . 'site/migrations') && (glob($root . 'site/migrations/*') ?: []) === []) {
+			@rmdir($root . 'site/migrations');
+		}
 	}
 });
 

@@ -1,4 +1,4 @@
-<?php
+<?php // __(file-not-translatable)
 
 declare(strict_types=1);
 
@@ -18,26 +18,26 @@ final class LayeringScanner
 	public const string MAIN_MODULE = 'ProcessWireConsole';
 
 	/** @var list<string> Only this module and its allowed lower-layer dependencies. */
-	public const array ALLOWED_MODULES = ["WireConsole","WireKit","Htmx"];
+	public const array ALLOWED_MODULES = ['WireConsole', 'ProcessReactWorkspace', 'Inertia'];
 
 	/** @var list<string> Direct module dependencies that MAIN_MODULE must declare in getModuleInfo()['requires']. */
-	public const array REQUIRED_DIRECT = ["WireKit"];
+	public const array REQUIRED_DIRECT = ['Inertia', 'ProcessReactWorkspace'];
 
 	/** @var list<string> Allowed short CSS/data-* prefixes for this module and its lower layers. */
-	public const array ALLOWED_PREFIXES = ["wc-","wk-","hx-"];
+	public const array ALLOWED_PREFIXES = ['rw-'];
 
 	/** Whether optional sibling adapters under src/Integration/<Target>/ are permitted in this layer. */
 	public const bool ALLOW_SIBLING_INTEGRATIONS = false;
 
 	/** @var list<string> Third-party code shipped inside the module, relative to the module root. */
-	public const array VENDORED_PATHS = [];
+	public const array VENDORED_PATHS = ['dist/'];
 
 	/** @var list<string> */
 	public const array KNOWN_VIOLATIONS = [];
 
 	private const array EXCLUDED_DIRECTORIES = ['tests', 'vendor', 'node_modules', '.git'];
 
-	private const array SCANNED_EXTENSIONS = ['php', 'js', 'css'];
+	private const array SCANNED_EXTENSIONS = ['php', 'js', 'css', 'ts', 'tsx'];
 
 	private const array CORE_WIRE_CLASSES = [
 		'Wire',
@@ -124,7 +124,7 @@ final class LayeringScanner
 	}
 
 	/**
-	 * Module and component/ui class names owned by a module directory.
+	 * Module class names owned by a module directory.
 	 *
 	 * @return list<string>
 	 */
@@ -137,20 +137,6 @@ final class LayeringScanner
 		$directory = dirname(self::moduleRoot()) . '/' . $module;
 		foreach (glob($directory . '/*.module.php') ?: [] as $moduleFile) {
 			$names[] = basename($moduleFile, '.module.php');
-		}
-		foreach (['components', 'ui'] as $classDirectory) {
-			if (!is_dir($directory . '/' . $classDirectory)) {
-				continue;
-			}
-			$iterator = new \RecursiveIteratorIterator(
-				new \RecursiveDirectoryIterator($directory . '/' . $classDirectory, \FilesystemIterator::SKIP_DOTS)
-			);
-			foreach ($iterator as $file) {
-				/** @var \SplFileInfo $file */
-				if ($file->getExtension() === 'php') {
-					$names[] = $file->getBasename('.php');
-				}
-			}
 		}
 
 		return array_values(array_unique($names));
@@ -175,7 +161,7 @@ final class LayeringScanner
 		$disallowedModules = [];
 		foreach (glob(dirname(self::moduleRoot()) . '/*', GLOB_ONLYDIR) ?: [] as $siblingDir) {
 			$otherMod = basename($siblingDir);
-			if (!str_starts_with($otherMod, 'Wire') && $otherMod !== 'Htmx') {
+			if (!str_starts_with($otherMod, 'Wire') && $otherMod !== 'Inertia') {
 				continue;
 			}
 			if (!in_array($otherMod, self::ALLOWED_MODULES, true)) {

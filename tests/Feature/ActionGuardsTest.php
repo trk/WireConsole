@@ -1,10 +1,8 @@
-<?php
+<?php // __(file-not-translatable)
 
 declare(strict_types=1);
 
-use Htmx\Component\ConsoleWorkspace;
 use ProcessWire\ProcessWire;
-use Totoglu\WireConsole\ConsoleRuntime;
 
 require_once __DIR__ . '/../bootstrap.php';
 
@@ -18,9 +16,9 @@ afterEach(function (): void {
 	wcSetSuperuser();
 });
 
-test('mutations reject missing or mismatched confirmation words across all subsystems', function (): void {
-	$pw = ProcessWire::getCurrentInstance();
-	wcTestModule();
+test('mutations reject missing or mismatched confirmation words across all 34 workspace actions', function (): void {
+	$module = wcTestModule();
+	$runtime = $module->runtime();
 
 	$cases = [
 		['method' => 'installMigrationsTable', 'tab' => 'migrations', 'expected' => 'RUN'],
@@ -44,6 +42,8 @@ test('mutations reject missing or mismatched confirmation words across all subsy
 		['method' => 'purgeBackups', 'tab' => 'backup', 'expected' => 'PURGE'],
 		['method' => 'restoreBackup', 'tab' => 'backup', 'expected' => 'RESTORE'],
 		['method' => 'runTests', 'tab' => 'testing', 'expected' => 'TEST'],
+		['method' => 'runE2eTests', 'tab' => 'testing', 'expected' => 'E2E'],
+		['method' => 'initPlaywrightE2e', 'tab' => 'testing', 'expected' => 'INIT'],
 		['method' => 'makeTestFile', 'tab' => 'testing', 'expected' => 'CREATE'],
 		['method' => 'syncBoost', 'tab' => 'boost', 'expected' => 'SYNC'],
 		['method' => 'configureBoost', 'tab' => 'boost', 'expected' => 'SAVE'],
@@ -58,47 +58,43 @@ test('mutations reject missing or mismatched confirmation words across all subsy
 	];
 
 	foreach ($cases as $case) {
-		$pw->input->post->removeAll();
-		$workspace = new ConsoleWorkspace();
-		$workspace->setWire($pw);
-		$workspace->fill(['activeTab' => $case['tab']]);
+		$result = $runtime->executeWorkspaceAction($case['method'], []);
 
-		$method = $case['method'];
-		$workspace->{$method}();
-		$html = $workspace->render();
-
-		expect($workspace->activeTab)->toBe($case['tab'])
-			->and($html)->toContain('Confirmation Required')
-			->and($html)->toContain($case['expected']);
+		expect($result['ok'])->toBeFalse()
+			->and($result['tab'])->toBe($case['tab'])
+			->and($result['message'])->toContain('Confirmation failed')
+			->and($result['message'])->toContain($case['expected']);
 	}
+
+	// Generic `confirm` key without action-scoped `confirm_<guardKey>` must also be rejected
+	$genericOnly = $runtime->executeWorkspaceAction('runMigrations', [
+		'confirm' => 'RUN',
+	]);
+	expect($genericOnly['ok'])->toBeFalse()
+		->and($genericOnly['tab'])->toBe('migrations')
+		->and($genericOnly['message'])->toContain('Confirmation failed');
 });
 
 test('non-superuser is blocked from executing mutating actions even with valid confirmation word', function (): void {
 	$pw = ProcessWire::getCurrentInstance();
-	wcTestModule();
+	$module = wcTestModule();
+	$runtime = $module->runtime();
 
 	$guest = $pw->users->get('name=guest');
 	if ($guest && $guest->id) {
 		$pw->users->setCurrentUser($guest);
 	}
 
-	$pw->input->post->set('confirm_migrations_run', 'RUN');
+	$result = $runtime->executeWorkspaceAction('runMigrations', [
+		'confirm_migrations_run' => 'RUN',
+	]);
 
-	$workspace = new ConsoleWorkspace();
-	$workspace->setWire($pw);
-	$workspace->fill(['activeTab' => 'migrations']);
-	$workspace->runMigrations();
-
-	// Guest has no tabs, or if rendered, flashNotice is Permission Denied
-	$reflection = new ReflectionProperty(ConsoleWorkspace::class, 'flashNotice');
-	$notice = $reflection->getValue($workspace);
-
-	expect($notice)->toBeArray()
-		->and($notice['title'])->toBe('Permission Denied');
+	expect($result['ok'])->toBeFalse()
+		->and($result['tab'])->toBe('migrations')
+		->and($result['message'])->toContain('Access denied');
 });
 
 test('session rate limiter blocks rapid repeat executions within cooldown window', function (): void {
-	$pw = ProcessWire::getCurrentInstance();
 	$module = wcTestModule();
 	$runtime = $module->runtime();
 
