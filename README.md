@@ -1,6 +1,6 @@
 # ProcessWireConsole
 
-Admin module (`Setup > Console`) for managing **`trk/processwire-console`** and **`trk/processwire-boost`** from the ProcessWire backend.
+Full-page Inertia v3 + React 19 + Tailwind CSS v4 administrative workspace (`Setup > Console`, `/processwire/setup/wire-console/`) for operating **`trk/processwire-console`** and **`trk/processwire-boost`** from the ProcessWire backend.
 
 ![ProcessWire Console](https://raw.githubusercontent.com/trk/WireConsole/refs/heads/main/preview.jpg)
 
@@ -8,10 +8,10 @@ Admin module (`Setup > Console`) for managing **`trk/processwire-console`** and 
 
 - PHP `>= 8.4`
 - ProcessWire `>= 3.0.271`
-- ProcessWire modules: `WireKit`
+- ProcessWire modules: `Inertia`, `ProcessReactWorkspace`
 - Composer packages:
-  - `trk/processwire-console` (migrations, queues, seeders, scheduling, backups, testing)
-  - `trk/processwire-boost` (optional — AI guidelines, skills, MCP server)
+  - `trk/processwire-console` (`^0.2` — schema migrations, background queues, database seeders, scheduled cron tasks, SQL backups, Pest PHP runner, and Playwright E2E runner)
+  - `trk/processwire-boost` (`^0.3`, optional — AI guidelines, skills, and the 28-tool JSON-RPC MCP server)
 
 ## Installation
 
@@ -30,13 +30,13 @@ php vendor/bin/wire module:install ProcessWireConsole
    ```text
    https://github.com/trk/WireConsole/releases/latest/download/WireConsole.zip
    ```
-3. Or download the release archive manually, extract it to `site/modules/WireConsole/`, go to **Modules > Refresh**, and click **Install** next to **Console** (`ProcessWireConsole`).
-
-If `trk/processwire-console` is not installed yet, **Setup > Console** displays an onboarding screen with the required Composer commands.
+3. Or extract the archive to `site/modules/WireConsole/`, run **Modules > Refresh**, and click **Install** next to **Console** (`ProcessWireConsole`).
 
 ## Quick Start
 
-Open **Setup > Console** (`/processwire/setup/wire-console/`) in the ProcessWire admin, or access `ConsoleRuntime` from PHP:
+Navigate to **Setup > Console** (or open **Admin > Workspace > Console**) to inspect runtime health, run pending migrations, work queue batches, trigger scheduled tasks, manage SQL snapshots, execute Pest suites, or inspect AI guidelines and read-only MCP tools.
+
+Programmatic inspection via `ConsoleRuntime`:
 
 ```php
 <?php
@@ -45,63 +45,54 @@ declare(strict_types=1);
 
 namespace ProcessWire;
 
-use Totoglu\WireConsole\ConsoleRuntime;
-
 /** @var ProcessWireConsole $console */
 $console = $this->wire()->modules->get('ProcessWireConsole');
 $runtime = $console->runtime();
 
-$versions = $runtime->getVersionMatrix();
-if ($versions['console'] !== null) {
-	$migrations = $runtime->getMigrationsStatus();
+$telemetry = $runtime->getOverviewTelemetry();
+if ($telemetry['migrations']['pending'] > 0) {
+	$this->wire()->log->save(
+		$runtime::LOG_CHANNEL,
+		sprintf('Pending schema migrations: %d', $telemetry['migrations']['pending'])
+	);
 }
-
-// Or resolve ConsoleRuntime directly:
-$runtime = ConsoleRuntime::make($this->wire());
 ```
 
-## Tabs
+## Configuration & Workspace Sections
 
-- **Overview (`wire-console`):** System/package versions, status cards for each subsystem, maintenance mode (`wire down` / `wire up`), and cache clearing (`cache:clear`, `cache:wire:clear`, `module:refresh`).
-- **Migrations (`wire-console-migrations`):** Inspect `site/migrations/` files, install `wire_migrations`, run pending migrations, rollback batches, reset/refresh/fresh, or create new migration files (`make:migration`).
-- **Queues (`wire-console-queues`):** Inspect `site/queue/` handlers, create queue tables, process batches (`queue:work`), dispatch jobs (`queue:push`), retry/delete failed jobs, purge pending jobs, or create queue classes (`make:queue`).
-- **Seeding (`wire-console-seeding`):** Inspect `site/seeders/` classes, run `DatabaseSeeder` or individual seeders (`db:seed`), and create new seeders (`make:seeder`).
-- **Scheduling (`wire-console-scheduling`):** Inspect `site/schedule/` tasks, cron expressions, and next run times; run due or specific tasks (`schedule:run`) and create task classes (`make:task`).
-- **Backups (`wire-console-backup`):** Create, download, restore (`db:restore`), and purge (`backup:purge`) `.sql` backups under `site/assets/backups/database/`.
-- **Testing (`wire-console-testing`):** Browse `*Test.php` files, run Pest suites with filtered arguments (`--filter`, `--group`, `--testsuite`, `--stop-on-failure`, `--bail`, `--compact`), and create test files (`make:test`).
-- **Boost & AI (`wire-console-boost`):** Inspect `AGENTS.md`, `.agents/boost.json`, `.agents/map.json`, and `SKILL.md` files; run `boost:update` / `boost:install`, install remote skills (`boost:add-skill`), test read-only MCP tools, and scaffold modules (`make:module`).
-- **Logs & Audit (`wire-console-logs`):** Browse ProcessWire log channels (`wire-console-audit`, `errors`, `exceptions`, etc.) with live search, entry limit selection, and channel clearing (`log:clear`, `log:clear-all`).
+`ProcessWireConsole` is zero-configuration out of the box and automatically discovers project features from ProcessWire's native directories (`site/migrations/`, `site/queue/`, `site/seeders/`, `site/schedule/`, `site/assets/backups/database/`, `tests/`, `.agents/`) and installed modules via `ProcessReactWorkspace::deferModuleRegistration(...)`.
 
-## Directory Structure
+| Section | Route | Required Permission | Managed Subsystem |
+|---|---|---|---|
+| **Overview** | `./` | `wire-console` | Runtime stack versions, package readiness, maintenance mode (`wire down` / `wire up`), and system/WireCache flush |
+| **Migrations** | `./migrations/` | `wire-console-migrations` | `wire_migrations` table setup, pending runs, batch rollbacks, `reset`/`refresh`/`fresh` with optional SQL safety snapshot, and typed `make:migration` (`--type`) |
+| **Queues** | `./queues/` | `wire-console-queues` | `queue_jobs` & `failed_jobs` tables, synchronous worker batches, job dispatch, failed job retry/delete/clear, pending purge, and `make:queue` |
+| **Seeding** | `./seeding/` | `wire-console-seeding` | Discovered `*Seeder.php` execution (`db:seed`), FakerPHP readiness, and `make:seeder` |
+| **Scheduling** | `./scheduling/` | `wire-console-scheduling` | Discovered `*Task.php` cron expressions, next-run calculation, `schedule:run`, and `make:task` |
+| **Backups** | `./backup/` | `wire-console-backup` | `.sql` snapshot creation, preview, authenticated download, retention purge (`backup:purge`), and restore (`db:restore`) |
+| **Testing** | `./testing/` | `wire-console-testing` | `*Test.php` and `*.spec.ts` discovery, filtered Pest execution (`wire test`), headless Playwright E2E execution & setup (`wire test:e2e`, `wire test:e2e --init`), and `make:test` (`--unit`, `--e2e`, `--module`) |
+| **Boost & AI** | `./boost/` | `wire-console-boost` | `AGENTS.md` / `SKILL.md` inspection, `boost:update`, `.agents/boost.json` configuration, remote skill auditing/installation, in-process read-only MCP tool testing, MCP guard diagnostics (`PW_MCP_ALLOW_EXECUTE`, `PW_MCP_ALLOW_RESTORE`), and typed `make:module` (`--type`) |
+| **Logs & Audit** | `./logs/` | `wire-console-logs` | Structured `wire-console-audit` and ProcessWire log channel browsing, substring search, and channel truncation |
 
-```text
-site/modules/WireConsole/
-├── ProcessWireConsole.module.php     # Process module (Setup > Console)
-├── ProcessWireConsole.css            # Workspace styles
-├── src/
-│   ├── ConsoleRuntime.php            # Service layer (Totoglu\WireConsole\ConsoleRuntime)
-│   └── Concerns/                     # Subsystem traits
-├── components/
-│   ├── ConsoleWorkspace.php          # Main HTMX workspace component
-│   ├── ConsolePanelComponent.php     # Base class for tab panels
-│   ├── Console*Panel.php             # Individual tab components
-│   └── Concerns/
-│       └── HandlesWorkspaceMutations.php
-├── ui/
-│   ├── ConsoleVersionStrip.php
-│   └── ConsoleOnboardingCard.php
-└── tests/
-    └── Feature/
-```
+## Hooks & Events
 
-## Hooks
-
-Hookable methods on `ProcessWireConsole`:
+Hookable methods on `ProcessWire\ProcessWireConsole`:
 
 - `ProcessWireConsole::execute()`
+- `ProcessWireConsole::executeMigrations()`
+- `ProcessWireConsole::executeQueues()`
+- `ProcessWireConsole::executeSeeding()`
+- `ProcessWireConsole::executeScheduling()`
+- `ProcessWireConsole::executeBackup()`
+- `ProcessWireConsole::executeTesting()`
+- `ProcessWireConsole::executeBoost()`
+- `ProcessWireConsole::executeLogs()`
+- `ProcessWireConsole::executeAction()`
 - `ProcessWireConsole::executeNavJSON(array $options = [])`
 - `ProcessWireConsole::executeDownloadBackup()`
-- `ProcessWireConsole::breadcrumb(string $href, string $label = '')`
+- `ProcessWireConsole::translations()`
+- `ProcessWireConsole::install()`
+- `ProcessWireConsole::uninstall()`
 
 ```php
 <?php
@@ -118,36 +109,33 @@ $wire->addHookAfter('ProcessWireConsole::execute', function (HookEvent $event): 
 });
 ```
 
-## CLI Equivalents
+## CLI & MCP Integration
+
+Every operation in the Console workspace maps directly to `vendor/bin/wire` commands (`--json`, `--dry-run`, `--force`) and `McpServer` JSON-RPC 2.0 read-only tools:
 
 ```bash
+php vendor/bin/wire version --json
 php vendor/bin/wire migrate:status --json
 php vendor/bin/wire migrate --json
-php vendor/bin/wire migrate:rollback --json
-php vendor/bin/wire queue:work default --max-jobs=5 --json
-php vendor/bin/wire db:seed --class=DatabaseSeeder --json
+php vendor/bin/wire migrate:rollback --force --json
+php vendor/bin/wire queue:work --queue=default --once --json
+php vendor/bin/wire db:seed --class=DatabaseSeeder --force --json
 php vendor/bin/wire schedule:run --json
 php vendor/bin/wire db:backup --json
+php vendor/bin/wire backup:purge --days=30 --force --json
 php vendor/bin/wire test
-php vendor/bin/wire boost:update --discover
+php vendor/bin/wire test:e2e --module=WireConsole
+php vendor/bin/wire boost:update --discover --json
 php vendor/bin/wire log:tail wire-console-audit
 ```
 
-## Permissions & Security
+## Security & Permissions
 
-| Permission | Access |
-|---|---|
-| `wire-console` | Access `Setup > Console` and the Overview tab |
-| `wire-console-migrations` | View Migrations tab |
-| `wire-console-queues` | View Queues tab |
-| `wire-console-seeding` | View Seeding tab |
-| `wire-console-scheduling` | View Scheduling tab |
-| `wire-console-backup` | View Backups tab |
-| `wire-console-testing` | View Testing tab |
-| `wire-console-boost` | View Boost & AI tab |
-| `wire-console-logs` | View Logs & Audit tab |
-
-- Non-superuser roles with `wire-console-*` permissions get **read-only** access.
-- Read-only file inspection (`queryInspectFile` / `inspectProjectFile`) enforces the permission of the tab that owns the category (`wire-console-migrations`, `wire-console-queues`, `wire-console-seeding`, `wire-console-scheduling`, `wire-console-testing`, `wire-console-boost`), and inspecting or downloading `.sql` backups requires **superuser** privileges plus `wire-console-backup`.
-- Running migrations, queues, seeders, backups, restores, tests, cache flushes, or file generators requires a **superuser** account and confirmation input.
-- All state-changing actions are logged to the `wire-console-audit` log channel (which is removed automatically on module uninstall).
+- **Granular Section RBAC:** Non-superuser roles granted `wire-console` plus specific `wire-console-*` permissions receive **read-only** visibility restricted strictly to their permitted sections; unauthorized payload slices are omitted (`null`).
+- **Superuser & Confirmation Gate:** All mutating actions (`migrate`, `queue:work`, `db:seed`, `schedule:run`, `db:backup`, `db:restore`, `test`, `boost:*`, `make:*`, cache flushes, maintenance toggles, log clearing) enforce:
+  1. Valid ProcessWire `$session->CSRF` token (`_token` or `X-CSRF-Token` header)
+  2. Authenticated ProcessWire **superuser** account
+  3. Action-specific confirmation token (`RUN`, `ROLLBACK`, `RESET`, `BACKUP`, `RESTORE`, `PURGE`, etc.)
+  4. Per-action session cooldown rate-limiting
+- **File Inspection & Backup Isolation:** Read-only source inspection (`inspectFile`) validates strict identifier patterns, `basename()` / `realpath()` directory containment, and the owning section's permission. Inspecting or downloading `.sql` snapshots additionally requires **superuser** privileges plus `wire-console-backup`.
+- **Bounded Inputs & Redacted Audit Trail:** JSON payloads are bounded to `64 KB` and `16` nesting levels, Pest CLI arguments are token-allowlisted without shell interpolation, and all actions write structured entries (with automatic secret/token/password redaction) to `wire-console-audit`.
