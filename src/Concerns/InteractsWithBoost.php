@@ -26,8 +26,7 @@ trait InteractsWithBoost
 		if ($this->boostManagerInstance !== null) {
 			return $this->boostManagerInstance;
 		}
-		$this->ensureAutoload();
-		if (!class_exists(BoostManager::class)) {
+		if (!$this->isBoostPackageAvailable()) {
 			return null;
 		}
 
@@ -78,8 +77,7 @@ trait InteractsWithBoost
 			];
 		}
 
-		$this->ensureAutoload();
-		if (!class_exists(McpServer::class)) {
+		if (!$this->isBoostPackageAvailable()) {
 			return [
 				'ok' => false,
 				'tool' => $cleanTool,
@@ -92,8 +90,12 @@ trait InteractsWithBoost
 		$parsedArgs = [];
 		$trimmed = trim($rawJsonArguments);
 		if ($trimmed !== '' && $trimmed !== '{}') {
-			$decoded = json_decode($trimmed, true);
-			if (!is_array($decoded)) {
+			$decoded = strlen($trimmed) <= self::MAX_JSON_BODY_BYTES ? json_decode($trimmed, true, self::MAX_JSON_DEPTH) : null;
+			if (
+				!is_array($decoded)
+				|| ($decoded !== [] && array_is_list($decoded))
+				|| count($decoded, COUNT_RECURSIVE) > self::MAX_JSON_ELEMENTS
+			) {
 				return [
 					'ok' => false,
 					'tool' => $cleanTool,
@@ -106,7 +108,8 @@ trait InteractsWithBoost
 		}
 
 		if ($cleanTool === 'pw_query') {
-			$limit = isset($parsedArgs['limit']) ? (int) $parsedArgs['limit'] : 25;
+			$rawLimit = $parsedArgs['limit'] ?? null;
+			$limit = is_int($rawLimit) ? $rawLimit : (is_string($rawLimit) && is_numeric(trim($rawLimit)) ? (int) trim($rawLimit) : 25);
 			$parsedArgs['limit'] = max(1, min(50, $limit));
 		}
 
@@ -176,6 +179,7 @@ trait InteractsWithBoost
 	 *   serverName: string,
 	 *   serverVersion: string,
 	 *   allowExecute: bool,
+	 *   allowRestore: bool,
 	 *   toolCount: int,
 	 *   readOnlyCount: int,
 	 *   mutationCount: int,
@@ -184,14 +188,14 @@ trait InteractsWithBoost
 	 */
 	public function getMcpServerDiagnostics(): array
 	{
-		$this->ensureAutoload();
-		if (!class_exists(McpServer::class)) {
+		if (!$this->isBoostPackageAvailable()) {
 			return [
 				'available' => false,
 				'protocolVersion' => '—',
 				'serverName' => 'processwire-boost',
 				'serverVersion' => '0.0.0',
 				'allowExecute' => false,
+				'allowRestore' => false,
 				'toolCount' => 0,
 				'readOnlyCount' => 0,
 				'mutationCount' => 0,
@@ -217,7 +221,7 @@ trait InteractsWithBoost
 				: 'processwire-boost';
 			$serverVersion = isset($serverInfo['version']) && is_string($serverInfo['version'])
 				? $serverInfo['version']
-				: (class_exists(BoostManager::class) ? BoostManager::VERSION : '0.0.0');
+				: BoostManager::VERSION;
 
 			$readOnlyToolNames = $this->getReadOnlyMcpToolNames();
 
@@ -245,9 +249,8 @@ trait InteractsWithBoost
 				];
 			}
 
-			$allowExecEnv = getenv('PW_MCP_ALLOW_EXECUTE');
-			$allowExecute = $allowExecEnv === '1'
-				|| (isset($_ENV['PW_MCP_ALLOW_EXECUTE']) && (string) $_ENV['PW_MCP_ALLOW_EXECUTE'] === '1');
+			$allowExecute = McpServer::isEnvEnabled('PW_MCP_ALLOW_EXECUTE');
+			$allowRestore = McpServer::isEnvEnabled('PW_MCP_ALLOW_RESTORE');
 
 			return [
 				'available' => true,
@@ -255,6 +258,7 @@ trait InteractsWithBoost
 				'serverName' => $serverName,
 				'serverVersion' => $serverVersion,
 				'allowExecute' => $allowExecute,
+				'allowRestore' => $allowRestore,
 				'toolCount' => count($tools),
 				'readOnlyCount' => $readOnlyCount,
 				'mutationCount' => $mutationCount,
@@ -267,6 +271,7 @@ trait InteractsWithBoost
 				'serverName' => 'processwire-boost',
 				'serverVersion' => '0.0.0',
 				'allowExecute' => false,
+				'allowRestore' => false,
 				'toolCount' => 0,
 				'readOnlyCount' => 0,
 				'mutationCount' => 0,
@@ -453,25 +458,17 @@ trait InteractsWithBoost
 				}
 			}
 
-			$agents = $manager->resolveConfiguredAgents($agentNames);
-			$manager->install(
-				features: $features,
-				modules: $modules,
-				agents: $agents,
-			);
-
-			$config['modules'] = array_values($modules);
-			$config['agents'] = $manager->normalizeAgentNames($agentNames);
-			$manager->saveConfig($config);
+			$normalizedAgents = $manager->normalizeAgentNames($agentNames);
+			$manager->applyConfiguration($features, array_values($modules), $normalizedAgents);
 
 			return [
 				'ok' => true,
-				'modules' => $config['modules'],
-				'agents' => $config['agents'],
+				'modules' => array_values($modules),
+				'agents' => $normalizedAgents,
 				'message' => sprintf(
 					$this->_('Synchronized Boost resources for %d agent(s) and %d module(s).'),
-					count($config['agents']),
-					count($config['modules'])
+					count($normalizedAgents),
+					count($modules)
 				),
 			];
 		} catch (\Throwable $e) {
@@ -520,36 +517,7 @@ trait InteractsWithBoost
 				$normalizedAgents = $manager->detectAvailableAgents();
 			}
 
-			$currentConfig = $manager->loadConfig();
-			$installedAgentInstances = $manager->resolveConfiguredAgents($currentConfig['agents']);
-
-			foreach ($allowedFeatures as $featureKey) {
-				if (!in_array($featureKey, $selectedFeatures, true) && ($currentConfig[$featureKey] ?? false) === true) {
-					$manager->uninstallFeature($featureKey, $installedAgentInstances);
-				}
-			}
-
-			$agentsToRemove = array_values(array_diff($currentConfig['agents'], $normalizedAgents));
-			foreach ($manager->resolveConfiguredAgents($agentsToRemove) as $agent) {
-				$manager->uninstallAgent($agent);
-			}
-
-			$resolvedAgents = $manager->resolveConfiguredAgents($normalizedAgents);
-			$manager->install(
-				features: $selectedFeatures,
-				modules: $selectedModules,
-				agents: $resolvedAgents,
-			);
-
-			$manager->saveConfig([
-				'version' => BoostManager::VERSION,
-				'guidelines' => in_array('guidelines', $selectedFeatures, true),
-				'skills' => in_array('skills', $selectedFeatures, true),
-				'mcp' => in_array('mcp', $selectedFeatures, true),
-				'modules' => $selectedModules,
-				'agents' => $normalizedAgents,
-				'generated_at' => date('Y-m-d H:i:s'),
-			]);
+			$manager->applyConfiguration($selectedFeatures, $selectedModules, $normalizedAgents);
 
 			return [
 				'ok' => true,
@@ -590,8 +558,7 @@ trait InteractsWithBoost
 	 */
 	public function installRemoteBoostSkills(string $repoInput, bool $forceOverwrite = false): array
 	{
-		$this->ensureAutoload();
-		if (!class_exists(GitHubRepository::class) || !class_exists(GitHubSkillProvider::class) || !class_exists(SkillAuditor::class)) {
+		if (!$this->isBoostPackageAvailable()) {
 			return [
 				'ok' => false,
 				'repo' => '',
@@ -641,8 +608,7 @@ trait InteractsWithBoost
 			$candidates = [];
 			$skipped = [];
 			foreach ($discovered as $skill) {
-				$safeName = (string) preg_replace('/[^a-zA-Z0-9._-]/', '-', trim($skill->name));
-				$safeName = trim($safeName, '.-');
+				$safeName = trim(SkillWriter::sanitizeSkillName(basename(str_replace('\\', '/', $skill->name))), '.-');
 				if ($safeName === '') {
 					continue;
 				}
@@ -682,10 +648,9 @@ trait InteractsWithBoost
 					continue;
 				}
 
-				$safeName = (string) preg_replace('/[^a-zA-Z0-9._-]/', '-', trim($skill->name));
-				$safeName = trim($safeName, '.-');
+				$safeName = trim(SkillWriter::sanitizeSkillName(basename(str_replace('\\', '/', $skill->name))), '.-');
 				$targetPath = $skillsPath . '/' . $safeName;
-				if (is_dir($targetPath) && class_exists(SkillWriter::class)) {
+				if (is_dir($targetPath)) {
 					SkillWriter::deleteTree($targetPath);
 				}
 

@@ -19,7 +19,7 @@ trait InteractsWithQueues
 	{
 		try {
 			$db = $this->wire()->database;
-			if (!$db || !method_exists($db, 'tableExists')) {
+			if (!is_object($db) || !method_exists($db, 'tableExists')) {
 				return false;
 			}
 
@@ -35,7 +35,7 @@ trait InteractsWithQueues
 	 */
 	protected function createQueueManager(): ?QueueManager
 	{
-		if (!$this->ensureAutoload() || !class_exists(QueueManager::class)) {
+		if (!$this->isConsolePackageAvailable()) {
 			return null;
 		}
 
@@ -152,14 +152,15 @@ trait InteractsWithQueues
 		}
 		/** @var \ProcessWire\WireDatabasePDO $db */
 		$db = $ref->getProperty('db')->getValue($manager);
-		$jobsTable = (string) $ref->getProperty('jobsTable')->getValue($manager);
+		$jobsTable = $db->escapeTable((string) $ref->getProperty('jobsTable')->getValue($manager));
 		$sql = implode(' ', ['SEL' . 'ECT', '*', 'FROM', "`{$jobsTable}`", 'ORDER BY `id` ASC LIMIT :limit']);
 		$stmt = $db->prepare($sql);
 		$stmt->bindValue(':limit', max(1, $limit), \PDO::PARAM_INT);
 		$stmt->execute();
+		/** @var list<array<string, mixed>>|false $rows */
 		$rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-		return is_array($rows) ? $rows : [];
+		return is_array($rows) ? array_values($rows) : [];
 	}
 
 	/**
@@ -176,8 +177,6 @@ trait InteractsWithQueues
 		if (is_array($payload)) {
 			if (isset($payload['class']) && is_string($payload['class']) && $payload['class'] !== '') {
 				$jobClass = $payload['class'];
-			} elseif (isset($payload['job']) && is_string($payload['job']) && $payload['job'] !== '') {
-				$jobClass = $payload['job'];
 			}
 			$pretty = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 			if (is_string($pretty)) {
@@ -518,7 +517,7 @@ trait InteractsWithQueues
 	 */
 	public function workQueueBatch(string $queueName = 'default', int $maxJobs = 5, int $maxTries = 3): array
 	{
-		if (!$this->ensureAutoload() || !class_exists(QueueWorkCommand::class)) {
+		if (!$this->isConsolePackageAvailable()) {
 			return [
 				'ok' => false,
 				'processed' => 0,
@@ -567,9 +566,7 @@ trait InteractsWithQueues
 					break;
 				}
 				$processed += $stepProcessed;
-				$stepJobId = (int) ($res['data']['job_id'] ?? 0);
-				$stepClass = (string) ($res['data']['lastJob'] ?? $res['data']['class'] ?? 'Job');
-				$jobs[] = $stepJobId > 0 ? sprintf('#%d %s', $stepJobId, $stepClass) : $stepClass;
+				$jobs[] = (string) ($res['data']['lastJob'] ?? 'Job');
 				continue;
 			}
 
@@ -643,8 +640,13 @@ trait InteractsWithQueues
 			$rawJson = '{}';
 		}
 
-		$decoded = json_decode($rawJson, true);
-		if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+		$decoded = strlen($rawJson) <= self::MAX_JSON_BODY_BYTES ? json_decode($rawJson, true, self::MAX_JSON_DEPTH) : null;
+		if (
+			$decoded === null
+			|| json_last_error() !== JSON_ERROR_NONE
+			|| !is_array($decoded)
+			|| count($decoded, COUNT_RECURSIVE) > self::MAX_JSON_ELEMENTS
+		) {
 			return [
 				'ok' => false,
 				'jobId' => 0,

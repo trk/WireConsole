@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Totoglu\WireConsole\Concerns;
 
+use Cron\CronExpression;
 use Totoglu\Console\Commands\DbSeedCommand;
 use Totoglu\Console\Commands\ScheduleRunCommand;
 use Totoglu\Console\Database\Seeder;
@@ -24,9 +25,7 @@ trait InteractsWithSeedingAndScheduling
 	 */
 	public function hasFaker(): bool
 	{
-		$this->ensureAutoload();
-
-		return class_exists('Faker\\Factory');
+		return is_dir($this->getProjectRootPath() . 'vendor/fakerphp/faker');
 	}
 
 	/**
@@ -37,7 +36,7 @@ trait InteractsWithSeedingAndScheduling
 	public function getDiscoveredSeeders(): array
 	{
 		$discoverer = $this->createDiscoverer();
-		if ($discoverer === null || !class_exists(Seeder::class)) {
+		if ($discoverer === null) {
 			return [];
 		}
 
@@ -68,7 +67,7 @@ trait InteractsWithSeedingAndScheduling
 	public function runSeeders(string $seederNameOrAll): array
 	{
 		$discoverer = $this->createDiscoverer();
-		if ($discoverer === null || !class_exists(Seeder::class) || !class_exists(DbSeedCommand::class)) {
+		if ($discoverer === null) {
 			return [
 				'ok' => false,
 				'executed' => [],
@@ -176,7 +175,7 @@ trait InteractsWithSeedingAndScheduling
 	public function getScheduledTasks(): array
 	{
 		$discoverer = $this->createDiscoverer();
-		if ($discoverer === null || !class_exists(Task::class)) {
+		if ($discoverer === null) {
 			return [];
 		}
 
@@ -199,10 +198,8 @@ trait InteractsWithSeedingAndScheduling
 
 				try {
 					$isDue = $event->isDue($now);
-					if (class_exists('Cron\\CronExpression')) {
-						$cron = new \Cron\CronExpression($expression);
-						$nextRun = $cron->getNextRunDate($now)->format('Y-m-d H:i:s');
-					}
+					$cron = new CronExpression($expression);
+					$nextRun = $cron->getNextRunDate($now)->format('Y-m-d H:i:s');
 				} catch (\Throwable) {
 					// Keep fallback if cron expression is invalid
 				}
@@ -236,7 +233,7 @@ trait InteractsWithSeedingAndScheduling
 	public function runScheduledTasks(string $taskNameOrDue = 'due'): array
 	{
 		$discoverer = $this->createDiscoverer();
-		if ($discoverer === null || !class_exists(Task::class) || !class_exists(ScheduleRunCommand::class)) {
+		if ($discoverer === null) {
 			return [
 				'ok' => false,
 				'executed' => [],
@@ -260,52 +257,72 @@ trait InteractsWithSeedingAndScheduling
 
 			$target = trim($taskNameOrDue);
 			$onlyDue = strtolower($target) === 'due' || $target === '';
-			if (!$onlyDue && !isset($classes[$target])) {
-				return [
-					'ok' => false,
-					'executed' => [],
-					'errors' => [],
-					'details' => '',
-					'message' => sprintf($this->_('Scheduled task "%s" was not found.'), $target),
-				];
-			}
-
-			$res = $this->runConsoleCommandInProcess(ScheduleRunCommand::class);
-			$executedRaw = isset($res['data']['executed']) && is_array($res['data']['executed'])
-				? array_values(array_map('strval', $res['data']['executed']))
-				: [];
-			$errorsRaw = isset($res['data']['errors']) && is_array($res['data']['errors'])
-				? $res['data']['errors']
-				: [];
-
 			$cache = $this->wire()->cache;
 			$executed = [];
 			$errors = [];
 			$detailLines = [];
 
-			foreach ($executedRaw as $name) {
-				if (!$onlyDue && $name !== $target) {
-					continue;
+			if (!$onlyDue) {
+				$matchedTask = null;
+				if (isset($classes[$target])) {
+					$matchedTask = $target;
+				} elseif (isset($classes[$target . 'Task'])) {
+					$matchedTask = $target . 'Task';
 				}
-				$executed[] = $name;
-				if ($cache) {
-					$cache->save('wire-console:schedule:last-run:' . $name, date('Y-m-d H:i:s'), 86400 * 30);
+				if ($matchedTask === null) {
+					return [
+						'ok' => false,
+						'executed' => [],
+						'errors' => [],
+						'details' => '',
+						'message' => sprintf($this->_('Scheduled task "%s" was not found.'), $target),
+					];
 				}
-				$detailLines[] = sprintf('+ %s', $name);
-			}
 
-			foreach ($errorsRaw as $name => $errMsg) {
-				$taskName = (string) $name;
-				if (!$onlyDue && $taskName !== $target) {
-					continue;
+				$fqcn = $classes[$matchedTask];
+				/** @var Task $taskInstance */
+				$taskInstance = new $fqcn($this->wire());
+				try {
+					/** @var callable $handler */
+					$handler = [$taskInstance, 'handle'];
+					$handler();
+					$executed[] = $matchedTask;
+					if ($cache) {
+						$cache->save('wire-console:schedule:last-run:' . $matchedTask, date('Y-m-d H:i:s'), 86400 * 30);
+					}
+					$detailLines[] = sprintf('+ %s', $matchedTask);
+				} catch (\Throwable $taskErr) {
+					$errMsg = $taskErr->getMessage();
+					$errors[$matchedTask] = $errMsg;
+					$detailLines[] = sprintf('! %s: %s', $matchedTask, $errMsg);
 				}
-				$errors[$taskName] = (string) $errMsg;
-				$detailLines[] = sprintf('! %s: %s', $taskName, (string) $errMsg);
-			}
+			} else {
+				$res = $this->runConsoleCommandInProcess(ScheduleRunCommand::class);
+				$executedRaw = isset($res['data']['executed']) && is_array($res['data']['executed'])
+					? array_values(array_map('strval', $res['data']['executed']))
+					: [];
+				$errorsRaw = isset($res['data']['errors']) && is_array($res['data']['errors'])
+					? $res['data']['errors']
+					: [];
 
-			if (!$res['ok'] && $errors === [] && $res['error'] !== null) {
-				$errors['schedule:run'] = $res['error']['message'];
-				$detailLines[] = '! ' . $res['error']['message'];
+				foreach ($executedRaw as $name) {
+					$executed[] = $name;
+					if ($cache) {
+						$cache->save('wire-console:schedule:last-run:' . $name, date('Y-m-d H:i:s'), 86400 * 30);
+					}
+					$detailLines[] = sprintf('+ %s', $name);
+				}
+
+				foreach ($errorsRaw as $name => $errMsg) {
+					$taskName = (string) $name;
+					$errors[$taskName] = (string) $errMsg;
+					$detailLines[] = sprintf('! %s: %s', $taskName, (string) $errMsg);
+				}
+
+				if (!$res['ok'] && $errors === [] && $res['error'] !== null) {
+					$errors['schedule:run'] = $res['error']['message'];
+					$detailLines[] = '! ' . $res['error']['message'];
+				}
 			}
 
 			$details = implode("\n", $detailLines);

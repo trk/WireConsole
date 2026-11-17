@@ -12,6 +12,7 @@ use Symfony\Component\Console\Output\BufferedOutput;
 use Totoglu\Console\Boost\BoostManager;
 use Totoglu\Console\Migration\Migrator;
 use Totoglu\Console\Support\FeatureDiscoverer;
+use Totoglu\WireConsole\Concerns\HandlesWorkspaceActions;
 use Totoglu\WireConsole\Concerns\InteractsWithBackups;
 use Totoglu\WireConsole\Concerns\InteractsWithBoost;
 use Totoglu\WireConsole\Concerns\InteractsWithMigrations;
@@ -31,12 +32,13 @@ use Totoglu\WireConsole\Concerns\InteractsWithTesting;
  * - Database seeders (Totoglu\Console\Database\Seeder & FeatureDiscoverer)
  * - Scheduled tasks (Totoglu\Console\Scheduling\Task & Event)
  * - SQL backups (ProcessWire\WireDatabaseBackup)
- * - Pest test execution (vendor/bin/wire test)
+ * - Pest PHP and Playwright E2E test execution (vendor/bin/wire test, vendor/bin/wire test:e2e)
  * - Boost & MCP Server diagnostics (Totoglu\Console\Boost\BoostManager & McpServer)
  * - RBAC permission checks, session rate limiting, and audit logging
  */
 class ConsoleRuntime extends Wire
 {
+	use HandlesWorkspaceActions;
 	use InteractsWithMigrations;
 	use InteractsWithQueues;
 	use InteractsWithBackups;
@@ -60,14 +62,17 @@ class ConsoleRuntime extends Wire
 	public const TABLE_MIGRATIONS = 'wire_migrations';
 	public const TABLE_QUEUE_JOBS = 'queue_jobs';
 	public const TABLE_QUEUE_FAILED = 'failed_jobs';
+	public const MAX_JSON_BODY_BYTES = 65536;
+	public const MAX_JSON_DEPTH = 16;
+	public const MAX_JSON_ELEMENTS = 512;
 
 	/** @var array<string, mixed>|null */
 	protected ?array $packagesStatusCache = null;
 
-	/** @var array{php: string, processwire: string, database: string, htmx: string, wirekit: string, console: string, boost: string}|null */
+	/** @var array{php: string, processwire: string, database: string, inertia: string, workspace: string, console: string, boost: string}|null */
 	protected ?array $versionMatrixCache = null;
 
-	/** @var list<array{id: string, name: string, relativePath: string, path: string, suite: string}>|null */
+	/** @var list<array{id: string, name: string, relativePath: string, path: string, suite: string, runner: string}>|null */
 	protected ?array $discoveredTestFilesCache = null;
 
 	protected ?FeatureDiscoverer $discovererInstance = null;
@@ -99,60 +104,62 @@ class ConsoleRuntime extends Wire
 	 */
 	public function getTabDefinitions(): array
 	{
+		$decode = static fn(string $text): string => html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
 		return [
 			'overview' => [
-				'label' => $this->_('Overview'),
-				'icon' => 'dashboard',
+				'label' => $decode($this->_('Overview')),
+				'icon' => 'layout-dashboard',
 				'permission' => self::PERMISSION_VIEW,
-				'description' => $this->_('System readiness, maintenance mode, cache controls, and operational telemetry.'),
+				'description' => $decode($this->_('System readiness, maintenance mode, cache controls, and operational telemetry.')),
 			],
 			'migrations' => [
-				'label' => $this->_('Migrations'),
+				'label' => $decode($this->_('Migrations')),
 				'icon' => 'database',
 				'permission' => self::PERMISSION_MIGRATIONS,
-				'description' => $this->_('Track, scaffold, and execute timestamped ProcessWire schema migrations.'),
+				'description' => $decode($this->_('Track, scaffold, and execute timestamped database schema migrations.')),
 			],
 			'queues' => [
-				'label' => $this->_('Queues'),
-				'icon' => 'refresh',
+				'label' => $decode($this->_('Queues')),
+				'icon' => 'stack-2',
 				'permission' => self::PERMISSION_QUEUES,
-				'description' => $this->_('Monitor background queue jobs, scaffold handlers, and trigger retries.'),
+				'description' => $decode($this->_('Monitor background queue jobs, scaffold handlers, and trigger retries.')),
 			],
 			'seeding' => [
-				'label' => $this->_('Seeding'),
-				'icon' => 'bolt',
+				'label' => $decode($this->_('Seeding')),
+				'icon' => 'plant',
 				'permission' => self::PERMISSION_SEEDING,
-				'description' => $this->_('Discover, scaffold, and execute database seeders in site/seeders/.'),
+				'description' => $decode($this->_('Discover, scaffold, and execute database seeders in site/seeders/.')),
 			],
 			'scheduling' => [
-				'label' => $this->_('Scheduling'),
-				'icon' => 'clock-o',
+				'label' => $decode($this->_('Scheduling')),
+				'icon' => 'clock',
 				'permission' => self::PERMISSION_SCHEDULING,
-				'description' => $this->_('Inspect cron task schedules in site/schedule/, scaffold tasks, and trigger manual runs.'),
+				'description' => $decode($this->_('Inspect cron task schedules in site/schedule/, scaffold tasks, and trigger manual runs.')),
 			],
 			'backup' => [
-				'label' => $this->_('Backups'),
-				'icon' => 'hdd-o',
+				'label' => $decode($this->_('Backups')),
+				'icon' => 'server',
 				'permission' => self::PERMISSION_BACKUP,
-				'description' => $this->_('Create, download, purge, and restore ProcessWire SQL backups.'),
+				'description' => $decode($this->_('Create, download, purge, and restore SQL database backups.')),
 			],
 			'testing' => [
-				'label' => $this->_('Testing'),
-				'icon' => 'check-circle',
+				'label' => $decode($this->_('Testing')),
+				'icon' => 'flask',
 				'permission' => self::PERMISSION_TESTING,
-				'description' => $this->_('Scaffold and run Pest PHP test suites via vendor/bin/wire test.'),
+				'description' => $decode($this->_('Scaffold and run automated test suites.')),
 			],
 			'boost' => [
-				'label' => $this->_('Boost & AI'),
-				'icon' => 'rocket',
+				'label' => $decode($this->_('Boost & AI')),
+				'icon' => 'sparkles',
 				'permission' => self::PERMISSION_BOOST,
-				'description' => $this->_('Inspect and synchronize ProcessWire Boost AI guidelines, skills, and MCP configuration.'),
+				'description' => $decode($this->_('Inspect and synchronize AI guidelines, skills, and MCP configuration.')),
 			],
 			'logs' => [
-				'label' => $this->_('Logs & Audit'),
-				'icon' => 'list-alt',
+				'label' => $decode($this->_('Logs & Audit')),
+				'icon' => 'list-details',
 				'permission' => self::PERMISSION_LOGS,
-				'description' => $this->_('Inspect Console audit logs (wire-console-audit) and ProcessWire application log channels.'),
+				'description' => $decode($this->_('Inspect security audit logs and application log channels.')),
 			],
 		];
 	}
@@ -237,20 +244,19 @@ class ConsoleRuntime extends Wire
 	}
 
 	/**
-	 * Ensure the project's Composer autoloader is loaded if available.
+	 * Check whether trk/processwire-console is installed in the project vendor directory.
 	 */
-	protected function ensureAutoload(): bool
+	public function isConsolePackageAvailable(): bool
 	{
-		if (class_exists(Migrator::class)) {
-			return true;
-		}
+		return $this->getPackagesStatus()['console']['installed'];
+	}
 
-		$autoload = $this->getProjectRootPath() . 'vendor/autoload.php';
-		if (is_file($autoload)) {
-			require_once $autoload;
-		}
-
-		return class_exists(Migrator::class);
+	/**
+	 * Check whether trk/processwire-boost is installed in the project vendor directory.
+	 */
+	public function isBoostPackageAvailable(): bool
+	{
+		return $this->getPackagesStatus()['boost']['installed'];
 	}
 
 	/**
@@ -261,7 +267,7 @@ class ConsoleRuntime extends Wire
 		if ($this->discovererInstance !== null) {
 			return $this->discovererInstance;
 		}
-		if (!$this->ensureAutoload() || !class_exists(FeatureDiscoverer::class)) {
+		if (!$this->isConsolePackageAvailable()) {
 			return null;
 		}
 		$pw = $this->wire();
@@ -281,7 +287,7 @@ class ConsoleRuntime extends Wire
 	 */
 	protected function runConsoleCommandInProcess(string $commandClass, array $parameters = []): array
 	{
-		if (!$this->ensureAutoload() || !class_exists($commandClass) || !class_exists(ArrayInput::class) || !class_exists(BufferedOutput::class)) {
+		if (!$this->isConsolePackageAvailable()) {
 			return [
 				'ok' => false,
 				'exitCode' => 1,
@@ -387,7 +393,6 @@ class ConsoleRuntime extends Wire
 			return $this->packagesStatusCache;
 		}
 
-		$this->ensureAutoload();
 		$rootPath = $this->getProjectRootPath();
 		$composerJsonPath = $rootPath . 'composer.json';
 		$vendorDir = $rootPath . 'vendor';
@@ -435,9 +440,8 @@ class ConsoleRuntime extends Wire
 		}
 
 		$consoleInstalled = array_key_exists('trk/processwire-console', $installedVersions)
-			|| class_exists(Migrator::class);
+			|| is_dir($vendorDir . '/trk/processwire-console');
 		$boostInstalled = array_key_exists('trk/processwire-boost', $installedVersions)
-			|| class_exists(BoostManager::class)
 			|| is_dir($vendorDir . '/trk/processwire-boost');
 
 		return $this->packagesStatusCache = [
@@ -470,34 +474,46 @@ class ConsoleRuntime extends Wire
 	/**
 	 * Gather high-level KPI metrics across all subsystems for the Overview dashboard.
 	 *
+	 * @param ?array<string, mixed> $migrationsStatus
+	 * @param ?list<array{name: string, sizeBytes: int, sizeFormatted: string, modified: int, modifiedFormatted: string}> $backups
+	 * @param ?array<string, mixed> $testingEnvironment
+	 * @param ?array<string, mixed> $boostStatus
+	 * @param ?list<array{name: string, class: string, path: string}> $seeders
+	 * @param ?list<array{name: string, class: string, path: string, expression: string, description: string, isDue: bool, nextRun: string, lastTriggered: string}> $scheduledTasks
 	 * @return array{
 	 *   packages: array<string, mixed>,
-	 *   versions: array{php: string, processwire: string, database: string, htmx: string, wirekit: string, console: string, boost: string},
+	 *   versions: array{php: string, processwire: string, database: string, inertia: string, workspace: string, console: string, boost: string},
 	 *   migrations: array{tableExists: bool, total: int, ran: int, pending: int, lastBatch: int},
 	 *   queues: array{tablesExist: bool, queuedCount: int, failedCount: int, discoveredCount: int},
 	 *   seeding: array{discoveredCount: int, hasFaker: bool},
 	 *   scheduling: array{discoveredCount: int, dueCount: int},
 	 *   backup: array{totalCount: int, latestFile: ?string, latestTime: ?string, writable: bool},
-	 *   testing: array{ready: bool, testFileCount: int},
+	 *   testing: array{ready: bool, testFileCount: int, e2eReady: bool, e2eFileCount: int},
 	 *   boost: array{available: bool, hasConfig: bool, skillCount: int, agentCount: int, moduleCount: int, enabledModuleCount: int},
 	 *   maintenance: array{isDown: bool, file: string, status: int, retry: ?int, redirect: ?string, hasSecret: bool, sinceFormatted: ?string}
 	 * }
 	 */
-	public function getOverviewTelemetry(): array
-	{
+	public function getOverviewTelemetry(
+		?array $migrationsStatus = null,
+		?array $backups = null,
+		?array $testingEnvironment = null,
+		?array $boostStatus = null,
+		?array $seeders = null,
+		?array $scheduledTasks = null,
+	): array {
 		$packages = $this->getPackagesStatus();
 		$versions = $this->getVersionMatrix();
-		$migStatus = $this->getMigrationsStatus();
+		$migStatus = $migrationsStatus ?? $this->getMigrationsStatus();
 		$migrations = [
-			'tableExists' => $migStatus['tableExists'],
-			'total' => $migStatus['total'],
-			'ran' => $migStatus['ran'],
-			'pending' => $migStatus['pending'],
-			'lastBatch' => $migStatus['lastBatch'],
+			'tableExists' => (bool) $migStatus['tableExists'],
+			'total' => (int) $migStatus['total'],
+			'ran' => (int) $migStatus['ran'],
+			'pending' => (int) $migStatus['pending'],
+			'lastBatch' => (int) $migStatus['lastBatch'],
 		];
 		$queues = $this->getQueuesSummary();
-		$seeders = $this->getDiscoveredSeeders();
-		$tasks = $this->getScheduledTasks();
+		$resolvedSeeders = $seeders ?? $this->getDiscoveredSeeders();
+		$tasks = $scheduledTasks ?? $this->getScheduledTasks();
 		$dueCount = 0;
 		foreach ($tasks as $task) {
 			if ($task['isDue']) {
@@ -505,11 +521,12 @@ class ConsoleRuntime extends Wire
 			}
 		}
 
-		$backups = $this->listBackups(1000);
-		$latestBackup = $backups[0] ?? null;
+		$canViewBackups = $this->userCanView(self::PERMISSION_BACKUP);
+		$resolvedBackups = $canViewBackups ? ($backups ?? $this->listBackups(1000)) : [];
+		$latestBackup = $resolvedBackups[0] ?? null;
 		$backupDir = $this->getBackupDirectory();
-		$testingEnv = $this->getTestingEnvironment();
-		$boost = $this->getBoostStatus();
+		$testingEnv = $testingEnvironment ?? $this->getTestingEnvironment();
+		$boost = $boostStatus ?? $this->getBoostStatus();
 		$maintenance = $this->getMaintenanceStatus();
 
 		return [
@@ -518,7 +535,7 @@ class ConsoleRuntime extends Wire
 			'migrations' => $migrations,
 			'queues' => $queues,
 			'seeding' => [
-				'discoveredCount' => count($seeders),
+				'discoveredCount' => count($resolvedSeeders),
 				'hasFaker' => $this->hasFaker(),
 			],
 			'scheduling' => [
@@ -526,24 +543,133 @@ class ConsoleRuntime extends Wire
 				'dueCount' => $dueCount,
 			],
 			'backup' => [
-				'totalCount' => count($backups),
-				'latestFile' => $latestBackup['name'] ?? null,
-				'latestTime' => $latestBackup['modifiedFormatted'] ?? null,
+				'totalCount' => count($resolvedBackups),
+				'latestFile' => $canViewBackups ? ($latestBackup['name'] ?? null) : null,
+				'latestTime' => $canViewBackups ? ($latestBackup['modifiedFormatted'] ?? null) : null,
 				'writable' => is_dir($backupDir) && is_writable($backupDir),
 			],
 			'testing' => [
-				'ready' => $testingEnv['ready'],
-				'testFileCount' => $testingEnv['testFileCount'],
+				'ready' => (bool) $testingEnv['ready'],
+				'testFileCount' => (int) $testingEnv['testFileCount'],
+				'e2eReady' => (bool) ($testingEnv['e2eReady'] ?? false),
+				'e2eFileCount' => (int) ($testingEnv['e2eFileCount'] ?? 0),
 			],
 			'boost' => [
-				'available' => $boost['available'],
-				'hasConfig' => $boost['hasConfig'],
+				'available' => (bool) $boost['available'],
+				'hasConfig' => (bool) $boost['hasConfig'],
 				'skillCount' => count($boost['installedSkills']),
 				'agentCount' => count($boost['config']['agents']),
 				'moduleCount' => count($boost['discoverableModules']),
-				'enabledModuleCount' => $boost['enabledModuleCount'],
+				'enabledModuleCount' => (int) $boost['enabledModuleCount'],
 			],
 			'maintenance' => $maintenance,
+		];
+	}
+
+	/**
+	 * Build the complete structured payload for the WireConsole Inertia React workspace.
+	 *
+	 * @param string $activeTab
+	 * @param array<string, mixed> $options
+	 * @return array<string, mixed>
+	 */
+	public function buildWorkspacePayload(string $activeTab = 'overview', array $options = []): array
+	{
+		$accessibleTabs = $this->getAccessibleTabs();
+		if ($accessibleTabs !== [] && !isset($accessibleTabs[$activeTab])) {
+			$activeTab = (string) array_key_first($accessibleTabs);
+		}
+
+		$canViewBackups = $this->userCanView(self::PERMISSION_BACKUP);
+		$migrationsStatus = $this->getMigrationsStatus();
+		$allBackups = $canViewBackups ? $this->listBackups(1000) : [];
+		$testingEnvironment = $this->getTestingEnvironment();
+		$boostStatus = $this->getBoostStatus();
+		$seeders = $this->getDiscoveredSeeders();
+		$scheduledTasks = $this->getScheduledTasks();
+
+		$overview = $this->getOverviewTelemetry(
+			migrationsStatus: $migrationsStatus,
+			backups: $allBackups,
+			testingEnvironment: $testingEnvironment,
+			boostStatus: $boostStatus,
+			seeders: $seeders,
+			scheduledTasks: $scheduledTasks,
+		);
+		$logChannels = $this->userCanView(self::PERMISSION_LOGS) ? $this->getLogChannels() : [];
+		$selectedChannel = $this->payloadString($options, 'logChannel');
+		if ($selectedChannel === '' && $logChannels !== []) {
+			$selectedChannel = (string) ($logChannels[0]['name'] ?? self::LOG_CHANNEL);
+		} elseif ($selectedChannel === '') {
+			$selectedChannel = self::LOG_CHANNEL;
+		}
+		$logSearch = $this->payloadString($options, 'logSearch');
+		$logLimit = max(10, min(250, $this->payloadInt($options, 'logLimit', 50)));
+
+		$inspectCategory = $this->payloadString($options, 'inspectCategory');
+		$inspectId = $this->payloadString($options, 'inspectId');
+		$inspectedFile = null;
+		if ($inspectCategory !== '' && $inspectId !== '') {
+			$inspectedFile = $this->inspectProjectFile($inspectCategory, $inspectId);
+		}
+
+		return [
+			'activeTab' => $activeTab,
+			'tabs' => $accessibleTabs,
+			'isSuperuser' => $this->isSuperuser(),
+			'actionUrl' => $this->payloadString($options, 'actionUrl'),
+			'downloadBackupUrl' => $this->payloadString($options, 'downloadBackupUrl'),
+			'feedback' => $options['feedback'] ?? null,
+			'inspectedFile' => $inspectedFile,
+			'overview' => $overview,
+			'migrations' => $this->userCanView(self::PERMISSION_MIGRATIONS)
+				? $migrationsStatus
+				: null,
+			'queues' => $this->userCanView(self::PERMISSION_QUEUES)
+				? $this->getQueuesStatus(50)
+				: null,
+			'seeding' => $this->userCanView(self::PERMISSION_SEEDING)
+				? [
+					'hasFaker' => $overview['seeding']['hasFaker'],
+					'seeders' => $seeders,
+				]
+				: null,
+			'scheduling' => $this->userCanView(self::PERMISSION_SCHEDULING)
+				? [
+					'tasks' => $scheduledTasks,
+				]
+				: null,
+			'backup' => $this->userCanView(self::PERMISSION_BACKUP)
+				? [
+					'directory' => $this->getBackupDirectory(),
+					'writable' => $overview['backup']['writable'],
+					'items' => array_slice($allBackups, 0, 50),
+				]
+				: null,
+			'testing' => $this->userCanView(self::PERMISSION_TESTING)
+				? [
+					'environment' => $testingEnvironment,
+					'files' => $this->getDiscoveredTestFiles(),
+					'lastResult' => $options['testResult'] ?? null,
+				]
+				: null,
+			'boost' => $this->userCanView(self::PERMISSION_BOOST)
+				? [
+					'status' => $boostStatus,
+					'mcp' => $this->getMcpServerDiagnostics(),
+					'readOnlyTools' => $this->getReadOnlyMcpToolNames(),
+					'mcpResult' => $options['mcpResult'] ?? null,
+				]
+				: null,
+			'logs' => $this->userCanView(self::PERMISSION_LOGS)
+				? [
+					'channels' => $logChannels,
+					'selectedChannel' => $selectedChannel,
+					'search' => $logSearch,
+					'limit' => $logLimit,
+					'entries' => $this->readLogEntries($selectedChannel, $logLimit, $logSearch),
+				]
+				: null,
 		];
 	}
 
@@ -598,11 +724,43 @@ class ConsoleRuntime extends Wire
 			];
 			$json = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 			if (is_string($json)) {
-				$this->wire()->log?->save(self::LOG_CHANNEL, $json);
+				$this->wire()->log?->save(self::LOG_CHANNEL, $json, [
+					'url' => $this->resolveSafeLogUrl(),
+				]);
 			}
 		} catch (\Throwable) {
 			// Audit logging must never crash the request
 		}
+	}
+
+	/**
+	 * Build a scalar-safe request URL for WireLog so array query parameters never trigger PHP warnings.
+	 */
+	protected function resolveSafeLogUrl(): string
+	{
+		$input = $this->wire()->input;
+		$sanitizer = $this->wire()->sanitizer;
+		$url = $input ? (string) $input->httpUrl() : '';
+		if ($url === '' || $input === null) {
+			return '?';
+		}
+
+		if ($input->get->count() > 0) {
+			$pairs = [];
+			foreach ($input->get as $k => $v) {
+				$cleanKey = $sanitizer ? $sanitizer->name((string) $k) : (string) $k;
+				if ($cleanKey === '' || !is_scalar($v)) {
+					continue;
+				}
+				$cleanVal = rawurlencode($sanitizer ? $sanitizer->text((string) $v) : (string) $v);
+				$pairs[] = $cleanKey . '=' . $cleanVal;
+			}
+			if ($pairs !== []) {
+				$url .= '?' . implode('&', $pairs);
+			}
+		}
+
+		return strlen($url) > 500 ? substr($url, 0, 500) : $url;
 	}
 
 	/**

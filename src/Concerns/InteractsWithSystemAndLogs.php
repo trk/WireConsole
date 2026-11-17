@@ -7,6 +7,8 @@ namespace Totoglu\WireConsole\Concerns;
 use ProcessWire\ProcessWire;
 use Totoglu\Console\Commands\CacheClearCommand;
 use Totoglu\Console\Commands\DownCommand;
+use Totoglu\Console\Commands\LogClearAllCommand;
+use Totoglu\Console\Commands\LogClearCommand;
 use Totoglu\Console\Commands\UpCommand;
 
 /**
@@ -16,14 +18,14 @@ use Totoglu\Console\Commands\UpCommand;
 trait InteractsWithSystemAndLogs
 {
 	/**
-	 * Build the runtime version matrix (`wire version` equivalent) for PHP, ProcessWire, Database, Htmx, WireKit, Console, and Boost.
+	 * Build the runtime version matrix (`wire version` equivalent) for PHP, ProcessWire, Database, Inertia, ProcessReactWorkspace, Console, and Boost.
 	 *
 	 * @return array{
 	 *   php: string,
 	 *   processwire: string,
 	 *   database: string,
-	 *   htmx: string,
-	 *   wirekit: string,
+	 *   inertia: string,
+	 *   workspace: string,
 	 *   console: string,
 	 *   boost: string
 	 * }
@@ -35,7 +37,7 @@ trait InteractsWithSystemAndLogs
 		}
 
 		$pwVersion = (string) ($this->wire()->config?->version ?? '');
-		if ($pwVersion === '' && class_exists(ProcessWire::class)) {
+		if ($pwVersion === '') {
 			$pwVersion = ProcessWire::versionMajor . '.' . ProcessWire::versionMinor . '.' . ProcessWire::versionRevision;
 			if (ProcessWire::versionSuffix !== '') {
 				$pwVersion .= '-' . ProcessWire::versionSuffix;
@@ -58,8 +60,8 @@ trait InteractsWithSystemAndLogs
 			$dbVersion = '—';
 		}
 
-		$htmxVersion = $this->resolveReadableModuleVersion('Htmx');
-		$wireKitVersion = $this->resolveReadableModuleVersion('WireKit');
+		$inertiaVersion = $this->resolveReadableModuleVersion('Inertia');
+		$workspaceVersion = $this->resolveReadableModuleVersion('ProcessReactWorkspace');
 
 		$packages = $this->getPackagesStatus();
 		$consoleVer = is_string($packages['console']['version'] ?? null) ? $packages['console']['version'] : '—';
@@ -69,8 +71,8 @@ trait InteractsWithSystemAndLogs
 			'php' => PHP_VERSION,
 			'processwire' => $pwVersion !== '' ? $pwVersion : '—',
 			'database' => $dbVersion,
-			'htmx' => $htmxVersion,
-			'wirekit' => $wireKitVersion,
+			'inertia' => $inertiaVersion,
+			'workspace' => $workspaceVersion,
 			'console' => $consoleVer,
 			'boost' => $boostVer,
 		];
@@ -88,16 +90,24 @@ trait InteractsWithSystemAndLogs
 			}
 
 			$info = $modules->getModuleInfoVerbose($moduleName);
+			if (!is_array($info) || (($info['version'] ?? 0) === 0 && empty($info['versionStr']))) {
+				$staticInfo = $modules->getModuleInfo($moduleName);
+				if (is_array($staticInfo)) {
+					$info = is_array($info) ? array_merge($info, $staticInfo) : $staticInfo;
+				}
+			}
 			if (is_array($info)) {
-				if (isset($info['versionStr']) && is_string($info['versionStr']) && $info['versionStr'] !== '') {
+				if (isset($info['versionStr']) && is_string($info['versionStr']) && $info['versionStr'] !== '' && $info['versionStr'] !== '0.0.0') {
 					return $info['versionStr'];
 				}
 				if (isset($info['version'])) {
 					$raw = $info['version'];
 					if (is_int($raw) || (is_string($raw) && ctype_digit($raw))) {
-						return $modules->formatVersion((int) $raw);
+						if ((int) $raw > 0) {
+							return $modules->formatVersion((int) $raw);
+						}
 					}
-					if (is_string($raw) && $raw !== '') {
+					if (is_string($raw) && $raw !== '' && $raw !== '0') {
 						return $raw;
 					}
 				}
@@ -176,7 +186,7 @@ trait InteractsWithSystemAndLogs
 		$file = $this->getMaintenanceFilePath();
 		$cleanStatus = in_array($status, [503, 500, 404, 302, 307], true) ? $status : 503;
 
-		if (is_file($file) && class_exists(UpCommand::class)) {
+		if (is_file($file) && $this->isConsolePackageAvailable()) {
 			$this->runConsoleCommandInProcess(UpCommand::class);
 		}
 
@@ -205,6 +215,10 @@ trait InteractsWithSystemAndLogs
 			@chmod($file, 0600);
 		}
 
+		if ($secret !== null && trim($secret) !== '') {
+			$this->wire()->session?->set('maintenance_secret', trim($secret));
+		}
+
 		return [
 			'ok' => true,
 			'message' => $this->_('Application is now in maintenance mode (site/down.json created).'),
@@ -227,6 +241,7 @@ trait InteractsWithSystemAndLogs
 		}
 
 		$res = $this->runConsoleCommandInProcess(UpCommand::class);
+		clearstatcache(true, $file);
 		if ($res['ok'] || !is_file($file)) {
 			return [
 				'ok' => true,
@@ -259,7 +274,11 @@ trait InteractsWithSystemAndLogs
 			if ($resolvedMode === 'modules') {
 				$modules = $this->wire()->modules;
 				if ($modules) {
-					$modules->refresh();
+					try {
+						$modules->refresh();
+					} catch (\Error) {
+						$this->wire()->cache?->delete('Modules.*');
+					}
 					$cleared[] = 'ModulesRegistry';
 				}
 			}
@@ -446,7 +465,7 @@ trait InteractsWithSystemAndLogs
 	}
 
 	/**
-	 * Clear a specific ProcessWire log file.
+	 * Clear a specific ProcessWire log file by delegating to `LogClearCommand`.
 	 *
 	 * @return array{ok: bool, message: string}
 	 */
@@ -470,14 +489,18 @@ trait InteractsWithSystemAndLogs
 		}
 
 		$filePath = rtrim($logsDir, '/') . '/' . $cleanName . '.txt';
-		if (!is_file($filePath)) {
+		if (is_link($filePath) || !is_file($filePath)) {
 			return [
 				'ok' => false,
 				'message' => sprintf($this->_('Log file "%s" does not exist.'), $cleanName),
 			];
 		}
 
-		if (@file_put_contents($filePath, '') === false) {
+		$result = $this->runConsoleCommandInProcess(LogClearCommand::class, [
+			'name' => [$cleanName],
+			'--force' => true,
+		]);
+		if (!$result['ok']) {
 			return [
 				'ok' => false,
 				'message' => sprintf($this->_('Failed to clear log channel "%s".'), $cleanName),
@@ -491,7 +514,7 @@ trait InteractsWithSystemAndLogs
 	}
 
 	/**
-	 * Clear all ProcessWire log files (`log:clear-all` equivalent).
+	 * Clear all ProcessWire log files by delegating to `LogClearAllCommand`.
 	 *
 	 * @return array{ok: bool, clearedCount: int, message: string}
 	 */
@@ -515,12 +538,18 @@ trait InteractsWithSystemAndLogs
 			];
 		}
 
-		$clearedCount = 0;
-		foreach ($files as $filePath) {
-			if (is_file($filePath) && @file_put_contents($filePath, '') !== false) {
-				$clearedCount++;
-			}
+		$result = $this->runConsoleCommandInProcess(LogClearAllCommand::class, [
+			'--force' => true,
+		]);
+		if (!$result['ok']) {
+			return [
+				'ok' => false,
+				'clearedCount' => 0,
+				'message' => (string) ($result['error']['message'] ?? $this->_('Log directory is unavailable.')),
+			];
 		}
+
+		$clearedCount = count(array_filter($result['data'], static fn(mixed $val): bool => $val === true));
 
 		return [
 			'ok' => true,

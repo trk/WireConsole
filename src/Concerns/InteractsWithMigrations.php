@@ -18,13 +18,16 @@ trait InteractsWithMigrations
 	{
 		try {
 			$db = $this->wire()->database;
-			if ($db && method_exists($db, 'tableExists')) {
+			if (is_object($db) && method_exists($db, 'tableExists')) {
 				return (bool) $db->tableExists(self::TABLE_MIGRATIONS);
 			}
 			if ($db) {
-				$stmt = $db->query("SHOW TABLES LIKE '" . self::TABLE_MIGRATIONS . "'");
+				$table = $db->escapeTable(self::TABLE_MIGRATIONS);
+				$stmt = $db->prepare('SHOW TABLES LIKE :table');
+				$stmt->bindValue(':table', $table, \PDO::PARAM_STR);
+				$stmt->execute();
 
-				return $stmt !== false && $stmt->rowCount() > 0;
+				return $stmt->rowCount() > 0;
 			}
 		} catch (\Throwable) {
 			return false;
@@ -41,7 +44,7 @@ trait InteractsWithMigrations
 		if ($this->migratorInstance !== null) {
 			return $this->migratorInstance;
 		}
-		if (!$this->ensureAutoload() || !class_exists(Migrator::class)) {
+		if (!$this->isConsolePackageAvailable()) {
 			return null;
 		}
 
@@ -94,7 +97,7 @@ trait InteractsWithMigrations
 	 *   pending: int,
 	 *   lastBatch: int,
 	 *   rollbackPreview: list<string>,
-	 *   items: list<array{name: string, file: string, status: string, batch: ?int, migrated_at: ?string}>
+	 *   items: list<array{name: string, status: string, batch: ?int, migrated_at: ?string}>
 	 * }
 	 */
 	public function getMigrationsStatus(): array
@@ -133,7 +136,8 @@ trait InteractsWithMigrations
 				$db = $this->wire()->database;
 				if ($db) {
 					try {
-						$stmt = $db->query('SELECT `migration`, `applied_at` FROM `' . self::TABLE_MIGRATIONS . '`');
+						$table = $db->escapeTable(self::TABLE_MIGRATIONS);
+						$stmt = $db->query("SELECT `migration`, `applied_at` FROM `{$table}`");
 						if ($stmt !== false) {
 							while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
 								if (isset($row['migration'])) {
@@ -150,8 +154,7 @@ trait InteractsWithMigrations
 
 				$rawItems = $migrator->getStatus();
 				foreach ($rawItems as $item) {
-					$rawStatus = strtolower((string) ($item['status'] ?? ''));
-					$isRan = $rawStatus === 'applied' || $rawStatus === 'ran';
+					$isRan = ($item['status'] ?? '') === 'applied';
 					$batch = isset($item['batch']) && $item['batch'] !== null ? (int) $item['batch'] : null;
 					$migName = (string) ($item['name'] ?? '');
 					if ($isRan) {
@@ -164,7 +167,6 @@ trait InteractsWithMigrations
 					}
 					$items[] = [
 						'name' => $migName,
-						'file' => $migName,
 						'status' => $isRan ? 'Ran' : 'Pending',
 						'batch' => $batch,
 						'migrated_at' => $appliedAtMap[$migName] ?? null,
@@ -177,7 +179,6 @@ trait InteractsWithMigrations
 					$migName = (string) $fileName;
 					$items[] = [
 						'name' => $migName,
-						'file' => $migName,
 						'status' => 'Pending',
 						'batch' => null,
 						'migrated_at' => null,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Totoglu\WireConsole\Concerns;
 
 use ProcessWire\WireDatabaseBackup;
+use Totoglu\Console\Commands\BackupPurgeCommand;
 
 /**
  * SQL Database Backup domain operations for ConsoleRuntime.
@@ -70,7 +71,7 @@ trait InteractsWithBackups
 
 		$items = [];
 		foreach ($files as $filePath) {
-			if (!is_file($filePath)) {
+			if (is_link($filePath) || !is_file($filePath)) {
 				continue;
 			}
 			$mtime = (int) (@filemtime($filePath) ?: 0);
@@ -106,6 +107,9 @@ trait InteractsWithBackups
 		$dir = $this->getBackupDirectory();
 		$dirReal = realpath($dir);
 		$candidate = $dir . $clean;
+		if (is_link($candidate)) {
+			return null;
+		}
 		$candidateReal = realpath($candidate);
 
 		if ($dirReal === false || $candidateReal === false || !is_file($candidateReal)) {
@@ -172,14 +176,13 @@ trait InteractsWithBackups
 	}
 
 	/**
-	 * Purge SQL backups older than the given number of days (minimum 1 day).
+	 * Purge SQL backups older than the given number of days (minimum 1 day) by delegating to `BackupPurgeCommand`.
 	 *
 	 * @return array{ok: bool, deletedCount: int, message: string}
 	 */
 	public function purgeBackups(int $olderThanDays): array
 	{
 		$days = max(1, $olderThanDays);
-		$cutoff = time() - ($days * 86400);
 		$dir = $this->getBackupDirectory();
 		$files = is_dir($dir) ? glob($dir . '*.sql') : [];
 
@@ -191,18 +194,20 @@ trait InteractsWithBackups
 			];
 		}
 
-		$deleted = 0;
-		foreach ($files as $filePath) {
-			if (!is_file($filePath)) {
-				continue;
-			}
-			$mtime = (int) (@filemtime($filePath) ?: 0);
-			if ($mtime > 0 && $mtime < $cutoff) {
-				if (@unlink($filePath)) {
-					$deleted++;
-				}
-			}
+		$result = $this->runConsoleCommandInProcess(BackupPurgeCommand::class, [
+			'--days' => (string) $days,
+			'--force' => true,
+		]);
+
+		if (!$result['ok']) {
+			return [
+				'ok' => false,
+				'deletedCount' => 0,
+				'message' => (string) ($result['error']['message'] ?? $this->_('No backup files found to purge.')),
+			];
 		}
+
+		$deleted = (int) ($result['data']['deleted'] ?? 0);
 
 		return [
 			'ok' => true,

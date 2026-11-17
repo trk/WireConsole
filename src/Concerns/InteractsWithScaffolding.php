@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace Totoglu\WireConsole\Concerns;
 
+use Totoglu\Console\Commands\MakeMigrationCommand;
+use Totoglu\Console\Commands\MakeModuleCommand;
+use Totoglu\Console\Commands\MakeQueueCommand;
+use Totoglu\Console\Commands\MakeSeederCommand;
+use Totoglu\Console\Commands\MakeTaskCommand;
+use Totoglu\Console\Commands\MakeTestCommand;
+
 /**
  * Scaffolding (`make:*`) and Read-Only File Inspection (`inspectProjectFile`) operations for ConsoleRuntime.
  */
@@ -18,172 +25,112 @@ trait InteractsWithScaffolding
 	}
 
 	/**
-	 * Load a stub file from vendor/trk/processwire-console/resources/stubs/ and replace placeholders.
-	 *
-	 * @param array<string, string> $replacements
-	 */
-	protected function renderConsoleStub(string $stubFile, array $replacements = []): ?string
-	{
-		$stubPath = $this->getProjectRootPath() . 'vendor/trk/processwire-console/resources/stubs/' . ltrim($stubFile, '/');
-		if (!is_file($stubPath)) {
-			return null;
-		}
-
-		$content = @file_get_contents($stubPath);
-		if (!is_string($content)) {
-			return null;
-		}
-
-		if ($replacements !== []) {
-			$content = str_replace(array_keys($replacements), array_values($replacements), $content);
-		}
-
-		return $content;
-	}
-
-	/**
-	 * Scaffold a new timestamped migration file in site/migrations/ (`make:migration`).
-	 *
-	 * @return array{ok: bool, file: ?string, path: ?string, message: string}
-	 */
-	protected function scaffoldMigrationFile(string $rawName): array
-	{
-		$name = trim($rawName);
-		if (!$this->isValidIdentifier($name)) {
-			return [
-				'ok' => false,
-				'file' => null,
-				'path' => null,
-				'message' => $this->_('Invalid migration name. Use letters, numbers, and underscores starting with a letter (e.g. create_blog_fields).'),
-			];
-		}
-
-		$migrator = $this->createMigrator();
-		if ($migrator === null) {
-			return [
-				'ok' => false,
-				'file' => null,
-				'path' => null,
-				'message' => $this->_('Migration engine is unavailable.'),
-			];
-		}
-
-		$migrator->ensureMigrationsDirectory();
-		$timestamp = date('YmdHis');
-		$safeName = (string) preg_replace('/[^a-z0-9_]/', '_', strtolower($name));
-		$fileName = "{$timestamp}_{$safeName}.php";
-		$filePath = rtrim($migrator->getMigrationsPath(), '/') . '/' . $fileName;
-
-		if (file_exists($filePath)) {
-			return [
-				'ok' => false,
-				'file' => $fileName,
-				'path' => $filePath,
-				'message' => sprintf($this->_('Migration file already exists: %s'), $fileName),
-			];
-		}
-
-		$content = $this->renderConsoleStub('migration.stub');
-		if ($content === null) {
-			return [
-				'ok' => false,
-				'file' => null,
-				'path' => null,
-				'message' => $this->_('Migration stub file not found in trk/processwire-console.'),
-			];
-		}
-
-		if (@file_put_contents($filePath, $content) === false) {
-			return [
-				'ok' => false,
-				'file' => null,
-				'path' => null,
-				'message' => $this->_('Failed to write migration file to site/migrations/.'),
-			];
-		}
-
-		return [
-			'ok' => true,
-			'file' => $fileName,
-			'path' => $filePath,
-			'message' => sprintf($this->_('Created migration: site/migrations/%s'), $fileName),
-		];
-	}
-
-	/**
-	 * Scaffold a Migration, Queue, Seeder, Task, Pest Test, or ProcessWire Module file (`make:migration`, `make:queue`, `make:seeder`, `make:task`, `make:test`, `make:module`).
+	 * Scaffold a Migration, Queue, Seeder, Task, Pest/Playwright Test, or ProcessWire Module file
+	 * by delegating to upstream `trk/processwire-console` `Make*Command` classes in-process.
 	 *
 	 * @param string $kind One of: 'migration', 'queue', 'seeder', 'task', 'test', 'module'
+	 * @param string $rawName Target class, migration, or E2E spec identifier
+	 * @param array<string, mixed> $options Optional command parameters ('type', 'module_type', 'test_kind', 'module')
 	 * @return array{ok: bool, file: ?string, path: ?string, message: string}
 	 */
-	public function scaffoldComponentFile(string $kind, string $rawName): array
+	public function scaffoldComponentFile(string $kind, string $rawName, array $options = []): array
 	{
-		if ($kind === 'migration') {
-			return $this->scaffoldMigrationFile($rawName);
-		}
-
 		$name = trim($rawName);
-		if (!$this->isValidIdentifier($name)) {
+
+		if ($kind === 'migration') {
+			if (!$this->isValidIdentifier($name)) {
+				return [
+					'ok' => false,
+					'file' => null,
+					'path' => null,
+					'message' => $this->_('Invalid migration name. Use letters, numbers, and underscores starting with a letter (e.g. create_blog_fields).'),
+				];
+			}
+
+			$allowedTypes = [
+				'blank',
+				'create-field',
+				'create-template',
+				'attach-field',
+				'create-page',
+				'create-role',
+				'install-module',
+			];
+			$rawType = isset($options['type']) && is_string($options['type']) ? trim($options['type']) : 'blank';
+			$type = $rawType !== '' ? $rawType : 'blank';
+			if (!in_array($type, $allowedTypes, true)) {
+				return [
+					'ok' => false,
+					'file' => null,
+					'path' => null,
+					'message' => sprintf($this->_('Unsupported migration stub type "%s".'), $type),
+				];
+			}
+
+			$result = $this->runConsoleCommandInProcess(MakeMigrationCommand::class, [
+				'name' => $name,
+				'--type' => $type,
+			]);
+			$this->migratorInstance = null;
+
+			if (!$result['ok']) {
+				return [
+					'ok' => false,
+					'file' => null,
+					'path' => null,
+					'message' => (string) ($result['error']['message'] ?? $this->_('Failed to write migration file to site/migrations/.')),
+				];
+			}
+
+			$filePath = (string) ($result['data']['path'] ?? '');
+			$fileName = (string) ($result['data']['file'] ?? basename($filePath));
+
 			return [
-				'ok' => false,
-				'file' => null,
-				'path' => null,
-				'message' => $this->_('Invalid class name. Use PascalCase letters and numbers starting with a letter (e.g. SendWelcomeEmail).'),
+				'ok' => true,
+				'file' => $fileName,
+				'path' => $filePath,
+				'message' => sprintf($this->_('Created migration: site/migrations/%s'), $fileName),
 			];
 		}
 
-		$sitePath = rtrim((string) ($this->wire()->config?->paths?->site ?? ($this->getProjectRootPath() . 'site/')), '/') . '/';
-
 		if ($kind === 'module') {
-			$modulesDir = rtrim((string) ($this->wire()->config?->paths?->siteModules ?? ($sitePath . 'modules/')), '/') . '/';
-			$moduleDir = $modulesDir . $name . '/';
-			$fileName = $name . '.module.php';
-			$filePath = $moduleDir . $fileName;
-
-			if (is_dir($moduleDir) || file_exists($filePath)) {
+			if (!$this->isValidIdentifier($name)) {
 				return [
 					'ok' => false,
-					'file' => $fileName,
-					'path' => $filePath,
-					'message' => sprintf($this->_('Module directory already exists: site/modules/%s/'), $name),
+					'file' => null,
+					'path' => null,
+					'message' => $this->_('Invalid class name. Use PascalCase letters and numbers starting with a letter (e.g. SendWelcomeEmail).'),
 				];
 			}
 
-			$baseName = (string) preg_replace('/^Fieldtype/', '', $name);
-			if ($baseName === '') {
-				$baseName = $name;
+			$allowedModuleTypes = ['module', 'fieldtype', 'inputfield', 'process'];
+			$rawModType = isset($options['module_type']) && is_string($options['module_type']) ? strtolower(trim($options['module_type'])) : 'module';
+			$moduleType = $rawModType !== '' ? $rawModType : 'module';
+			if (!in_array($moduleType, $allowedModuleTypes, true)) {
+				return [
+					'ok' => false,
+					'file' => null,
+					'path' => null,
+					'message' => sprintf($this->_('Unsupported module stub type "%s".'), $moduleType),
+				];
 			}
 
-			$content = $this->renderConsoleStub('module.stub', [
-				'{{className}}' => $name,
-				'{{baseName}}' => $baseName,
-				'{{title}}' => addslashes($name),
-				'{{summary}}' => addslashes("A ProcessWire module scaffolded via ProcessWireConsole."),
-				'{{author}}' => 'ProcessWire Console',
-				'{{name}}' => addslashes(strtolower($name)),
+			$result = $this->runConsoleCommandInProcess(MakeModuleCommand::class, [
+				'name' => $name,
+				'--type' => $moduleType,
 			]);
 
-			if ($content === null) {
+			if (!$result['ok']) {
 				return [
 					'ok' => false,
 					'file' => null,
 					'path' => null,
-					'message' => $this->_('Stub file module.stub was not found.'),
+					'message' => (string) ($result['error']['message'] ?? sprintf($this->_('Failed to write module file to site/modules/%s/.'), $name)),
 				];
 			}
 
-			if (!is_dir($moduleDir)) {
-				@mkdir($moduleDir, 0755, true);
-			}
-
-			if (@file_put_contents($filePath, $content) === false) {
-				return [
-					'ok' => false,
-					'file' => null,
-					'path' => null,
-					'message' => sprintf($this->_('Failed to write module file to site/modules/%s/.'), $name),
-				];
-			}
+			$filePath = (string) ($result['data']['path'] ?? '');
+			$fileName = basename($filePath);
 
 			try {
 				$this->wire()->modules?->refresh();
@@ -199,39 +146,88 @@ trait InteractsWithScaffolding
 			];
 		}
 
-		$spec = match ($kind) {
-			'queue' => [
-				'suffix' => 'Queue',
-				'dir' => $sitePath . 'queue/',
-				'relDir' => 'site/queue/',
-				'namespace' => 'Site\\Queue',
-				'stub' => 'queue.stub',
-			],
-			'seeder' => [
-				'suffix' => 'Seeder',
-				'dir' => $sitePath . 'seeders/',
-				'relDir' => 'site/seeders/',
-				'namespace' => 'Site\\Seeders',
-				'stub' => 'seeder.stub',
-			],
-			'task' => [
-				'suffix' => 'Task',
-				'dir' => $sitePath . 'schedule/',
-				'relDir' => 'site/schedule/',
-				'namespace' => 'Site\\Schedule',
-				'stub' => 'task.stub',
-			],
-			'test' => [
-				'suffix' => 'Test',
-				'dir' => $this->getProjectRootPath() . 'tests/Feature/',
-				'relDir' => 'tests/Feature/',
-				'namespace' => '',
-				'stub' => 'pest.stub',
-			],
+		if ($kind === 'test') {
+			$rawTestKind = isset($options['test_kind']) && is_string($options['test_kind']) ? strtolower(trim($options['test_kind'])) : 'feature';
+			$testKind = $rawTestKind !== '' ? $rawTestKind : 'feature';
+			if (!in_array($testKind, ['feature', 'unit', 'e2e'], true)) {
+				return [
+					'ok' => false,
+					'file' => null,
+					'path' => null,
+					'message' => sprintf($this->_('Unsupported test scaffold kind "%s".'), $testKind),
+				];
+			}
+
+			if ($testKind === 'e2e') {
+				if (MakeTestCommand::normalizeE2eSpecSlug($name) === null) {
+					return [
+						'ok' => false,
+						'file' => null,
+						'path' => null,
+						'message' => $this->_('Invalid E2E spec name. Start with a letter and use letters, numbers, underscores, or hyphens (e.g. checkout-flow).'),
+					];
+				}
+			} elseif (!$this->isValidIdentifier($name)) {
+				return [
+					'ok' => false,
+					'file' => null,
+					'path' => null,
+					'message' => $this->_('Invalid class name. Use PascalCase letters and numbers starting with a letter (e.g. SendWelcomeEmail).'),
+				];
+			}
+
+			$params = ['name' => $name];
+			if ($testKind === 'unit') {
+				$params['--unit'] = true;
+			} elseif ($testKind === 'e2e') {
+				$params['--e2e'] = true;
+			}
+
+			$targetModule = isset($options['module']) && is_string($options['module']) ? trim($options['module']) : '';
+			if ($targetModule !== '') {
+				if (!$this->isValidIdentifier($targetModule)) {
+					return [
+						'ok' => false,
+						'file' => null,
+						'path' => null,
+						'message' => $this->_('Invalid target module name.'),
+					];
+				}
+				$params['--module'] = $targetModule;
+			}
+
+			$result = $this->runConsoleCommandInProcess(MakeTestCommand::class, $params);
+			$this->discoveredTestFilesCache = null;
+
+			if (!$result['ok']) {
+				return [
+					'ok' => false,
+					'file' => null,
+					'path' => null,
+					'message' => (string) ($result['error']['message'] ?? $this->_('Failed to create test file.')),
+				];
+			}
+
+			$filePath = (string) ($result['data']['path'] ?? '');
+			$fileName = basename($filePath);
+			$relPath = $this->toProjectRelativePath($filePath);
+
+			return [
+				'ok' => true,
+				'file' => $fileName,
+				'path' => $filePath,
+				'message' => sprintf($this->_('Created %s'), $relPath),
+			];
+		}
+
+		$commandClass = match ($kind) {
+			'queue' => MakeQueueCommand::class,
+			'seeder' => MakeSeederCommand::class,
+			'task' => MakeTaskCommand::class,
 			default => null,
 		};
 
-		if ($spec === null) {
+		if ($commandClass === null) {
 			return [
 				'ok' => false,
 				'file' => null,
@@ -240,59 +236,77 @@ trait InteractsWithScaffolding
 			];
 		}
 
-		if (!str_ends_with($name, $spec['suffix'])) {
-			$name .= $spec['suffix'];
-		}
-
-		if (!is_dir($spec['dir'])) {
-			@mkdir($spec['dir'], 0755, true);
-		}
-
-		$fileName = $name . '.php';
-		$filePath = $spec['dir'] . $fileName;
-		if (file_exists($filePath)) {
-			return [
-				'ok' => false,
-				'file' => $fileName,
-				'path' => $filePath,
-				'message' => sprintf($this->_('File already exists: %s%s'), $spec['relDir'], $fileName),
-			];
-		}
-
-		$content = $this->renderConsoleStub($spec['stub'], [
-			'{{namespace}}' => $spec['namespace'],
-			'{{class}}' => $name,
-		]);
-		if ($content === null) {
+		if (!$this->isValidIdentifier($name)) {
 			return [
 				'ok' => false,
 				'file' => null,
 				'path' => null,
-				'message' => sprintf($this->_('Stub file %s was not found.'), $spec['stub']),
+				'message' => $this->_('Invalid class name. Use PascalCase letters and numbers starting with a letter (e.g. SendWelcomeEmail).'),
 			];
 		}
 
-		if (@file_put_contents($filePath, $content) === false) {
-			return [
-				'ok' => false,
-				'file' => null,
-				'path' => null,
-				'message' => sprintf($this->_('Failed to write file to %s.'), $spec['relDir']),
-			];
+		$params = ['name' => $name];
+		$targetModule = isset($options['module']) && is_string($options['module']) ? trim($options['module']) : '';
+		if ($targetModule !== '') {
+			if (!$this->isValidIdentifier($targetModule)) {
+				return [
+					'ok' => false,
+					'file' => null,
+					'path' => null,
+					'message' => $this->_('Invalid target module name.'),
+				];
+			}
+			$params['--module'] = $targetModule;
 		}
 
-		if ($kind === 'test') {
-			$this->discoveredTestFilesCache = null;
-		} elseif ($kind === 'queue') {
+		$result = $this->runConsoleCommandInProcess($commandClass, $params);
+		if ($kind === 'queue') {
 			$this->discoveredQueuesCache = null;
 		}
+
+		if (!$result['ok']) {
+			return [
+				'ok' => false,
+				'file' => null,
+				'path' => null,
+				'message' => (string) ($result['error']['message'] ?? $this->_('Failed to create component file.')),
+			];
+		}
+
+		$filePath = (string) ($result['data']['path'] ?? '');
+		$fileName = basename($filePath);
+		$relPath = $this->toProjectRelativePath($filePath);
 
 		return [
 			'ok' => true,
 			'file' => $fileName,
 			'path' => $filePath,
-			'message' => sprintf($this->_('Created %s%s'), $spec['relDir'], $fileName),
+			'message' => sprintf($this->_('Created %s'), $relPath),
 		];
+	}
+
+	/**
+	 * Convert an absolute file path inside the project root into a normalized POSIX relative path.
+	 */
+	protected function toProjectRelativePath(string $filePath): string
+	{
+		$normalizedPath = str_replace('\\', '/', $filePath);
+		$normalizedRoot = rtrim(str_replace('\\', '/', $this->getProjectRootPath()), '/') . '/';
+		if (str_starts_with($normalizedPath, $normalizedRoot)) {
+			return ltrim(substr($normalizedPath, strlen($normalizedRoot)), '/');
+		}
+
+		$realPath = realpath($filePath);
+		$realRoot = realpath($this->getProjectRootPath());
+		if ($realPath !== false && $realRoot !== false) {
+			$normRealPath = str_replace('\\', '/', $realPath);
+			$normRealRoot = rtrim(str_replace('\\', '/', $realRoot), '/') . '/';
+			if (str_starts_with($normRealPath, $normRealRoot)) {
+				return ltrim(substr($normRealPath, strlen($normRealRoot)), '/');
+			}
+		}
+
+		return basename($normalizedPath);
 	}
 
 	/**
@@ -343,7 +357,8 @@ trait InteractsWithScaffolding
 			$targetPath = $files[$cleanId] ?? null;
 		} elseif ($cleanCategory === 'test') {
 			foreach ($this->getDiscoveredTestFiles() as $testFile) {
-				if ($testFile['id'] === $cleanId || $testFile['name'] === $cleanId || ($testFile['name'] . '.php') === $cleanId) {
+				$baseName = basename($testFile['path']);
+				if ($testFile['id'] === $cleanId || $testFile['name'] === $cleanId || $baseName === $cleanId) {
 					$targetPath = $testFile['path'];
 					break;
 				}
