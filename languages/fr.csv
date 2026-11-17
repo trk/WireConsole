@@ -1,0 +1,629 @@
+en,fr,description,file,hash
+Console,Console,,site/modules/WireConsole/ProcessWireConsole.module.php,bccaa4aa80831b76c11240a16447975f
+"Monitor system health, schema migrations, background queues, scheduled tasks, database backups, tests, AI skills, and activity logs.","Surveillez l’état du système, les migrations de schéma, les files d’attente en arrière-plan, les tâches planifiées, les sauvegardes de base de données, les tests, les compétences IA et les journaux d’activité.",,site/modules/WireConsole/ProcessWireConsole.module.php,18a89157fad992c2c5df1e72c52ae989
+System,Système,,site/modules/WireConsole/ProcessWireConsole.module.php,a45da96d0bf6575970f2d27af22be28a
+Status,Statut,,site/modules/WireConsole/ProcessWireConsole.module.php,ec53a8c4f07baed5d8825072c89799be
+Maintenance,Maintenance,,site/modules/WireConsole/ProcessWireConsole.module.php,10d0de28911c5f66463b9c8783f8148a
+Scheduled,Planifié,,site/modules/WireConsole/ProcessWireConsole.module.php,2b7dabba0077abe3732e0418b048a56b
+"System Health & Operations","État du système et opérations",,site/modules/WireConsole/ProcessWireConsole.module.php,ccb7e9c140b48c0466a068911b06871e
+"Application status, scheduled tasks, queues, and maintenance","Statut de l’application, tâches planifiées, files d’attente et maintenance",,site/modules/WireConsole/ProcessWireConsole.module.php,9f4bfb1e0155c5b07086d45e5c6007e1
+"Maintenance Mode Active (503)","Mode maintenance actif (503)",,site/modules/WireConsole/ProcessWireConsole.module.php,5adbb80a7a487209c57ba685dc02cbfd
+Tasks,Tâches,,site/modules/WireConsole/ProcessWireConsole.module.php,ef615563c8e8ea902c7fcac3cd2c4246
+"Pending Migrations","Migrations en attente",,site/modules/WireConsole/ProcessWireConsole.module.php,8780a08ab67134da10760aa5c9845305
+"Schema Migrations","Migrations de schéma",,site/modules/WireConsole/ProcessWireConsole.module.php,d9af8a386396d6158d8c10470ba77ae2
+"%d pending migration(s)","%d migration(s) en attente",,site/modules/WireConsole/ProcessWireConsole.module.php,9d2ca39b734de1cba76c8f856acd618a
+"Scheduled Tasks","Tâches planifiées",,site/modules/WireConsole/ProcessWireConsole.module.php,eeb32f8c09c2b66766fbe83a97da4e9e
+"Automated cron jobs and background schedules","Tâches cron automatisées et planifications en arrière-plan",,site/modules/WireConsole/ProcessWireConsole.module.php,5fd24bc90ac3b679b3818012a54e6ede
+"Activity & System Logs","Journaux d’activité et système",,site/modules/WireConsole/ProcessWireConsole.module.php,0bfd4b1fb0767d01fe312b77e905da2b
+"Audit trail and runtime log channels","Piste d’audit et canaux de journaux d’exécution",,site/modules/WireConsole/ProcessWireConsole.module.php,94e850994debfea214db265a7d3be762
+Logs,Journaux,,site/modules/WireConsole/ProcessWireConsole.module.php,b2d37ae1cedf42ff874289b721860af2
+"Open Console","Ouvrir la console",,site/modules/WireConsole/ProcessWireConsole.module.php,f1ea2ce47c3e71a6a3e3e2a6bb1164aa
+"System Logs","Journaux système",,site/modules/WireConsole/ProcessWireConsole.module.php,aeecbbb69417fe48f1eadcd84373a2b3
+"Invalid or missing CSRF token. Please refresh and try again.","Jeton CSRF invalide ou manquant. Veuillez actualiser la page et réessayer.",,site/modules/WireConsole/ProcessWireConsole.module.php,18adb91549b4b3324012ffd074ee2a78
+"Superuser permission is required to download SQL backups.","L’autorisation super-utilisateur est requise pour télécharger les sauvegardes SQL.",,site/modules/WireConsole/ProcessWireConsole.module.php,e149805ce7475964001173989df7eade
+"Requested SQL backup file was not found.","Le fichier de sauvegarde SQL demandé est introuvable.",,site/modules/WireConsole/ProcessWireConsole.module.php,985f890d9fdecc9ee00afaf460a728fa
+"System health, database maintenance, background tasks, and diagnostics.","État du système, maintenance de la base de données, tâches en arrière-plan et diagnostics.",,site/modules/WireConsole/ProcessWireConsole.module.php,b0e75e1af902cffbf913008d8c151593
+"Maintenance Mode (503)","Mode maintenance (503)",,site/modules/WireConsole/ProcessWireConsole.module.php,19ff9a2110b71d4aa245a06994ba85d4
+"System Online","Système en ligne",,site/modules/WireConsole/ProcessWireConsole.module.php,b1c8c60af117f0cfd160071155746165
+"Refresh Telemetry","Actualiser la télémétrie",,site/modules/WireConsole/ProcessWireConsole.module.php,3a673285fc6f69515571a7c155afe573
+Confirm,Confirmer,,site/modules/WireConsole/ProcessWireConsole.module.php,70d9be9b139893aa6c69b5e77e614311
+"CLI Equivalent","Équivalent CLI",,site/modules/WireConsole/ProcessWireConsole.module.php,333931486c6c0624729207e94ff9c015
+Source,Source,,site/modules/WireConsole/ProcessWireConsole.module.php,f31bbdd1b3e85bccd652680e16935819
+Preview,Aperçu,,site/modules/WireConsole/ProcessWireConsole.module.php,31fde7b05ac8952dacf4af8a704074ec
+Download,Télécharger,,site/modules/WireConsole/ProcessWireConsole.module.php,801ab24683a4a8c433c6eb40c48bcd9d
+Run,Exécuter,,site/modules/WireConsole/ProcessWireConsole.module.php,c5301693c4e792bcd5a479ef38fb8f8d
+Create,Créer,,site/modules/WireConsole/ProcessWireConsole.module.php,686e697538050e4664636337cc3b834f
+Delete,Supprimer,,site/modules/WireConsole/ProcessWireConsole.module.php,f2a6c498fb90ee345d997f888fce3b18
+Retry,Réessayer,,site/modules/WireConsole/ProcessWireConsole.module.php,6327b4e59f58137083214a1fec358855
+Purge,Purger,,site/modules/WireConsole/ProcessWireConsole.module.php,d67c704564d7976991e2f23e4315ccfd
+Actions,Actions,,site/modules/WireConsole/ProcessWireConsole.module.php,06df33001c1d7187fdd81ea1f5b277aa
+Inspect,Inspecter,,site/modules/WireConsole/ProcessWireConsole.module.php,35a9dbe6b748771b9ea4d5962d37ff6f
+ID,ID,,site/modules/WireConsole/ProcessWireConsole.module.php,b718adec73e04ce3ec720dd11a06a308
+Missing,Manquant,,site/modules/WireConsole/ProcessWireConsole.module.php,2aee0be2678ee90fd327cc186826438e
+Available,Disponible,,site/modules/WireConsole/ProcessWireConsole.module.php,78945de8de090e90045d299651a68a9b
+Unavailable,Indisponible,,site/modules/WireConsole/ProcessWireConsole.module.php,453e6aa38d87b28ccae545967c53004f
+"Action Completed ({action})","Action terminée ({action})",,site/modules/WireConsole/ProcessWireConsole.module.php,e22ed0d45345a10fcd618acd390b4b9c
+"Action Failed ({action})","Échec de l’action ({action})",,site/modules/WireConsole/ProcessWireConsole.module.php,e8bdcf695b3aabc678a362f666026b1c
+"Source Inspector","Inspecteur de code source",,site/modules/WireConsole/ProcessWireConsole.module.php,fd7b47d6ab193993481004fab80532b4
+"{category} • {lines} lines • {size}","{category} • {lines} lignes • {size}",,site/modules/WireConsole/ProcessWireConsole.module.php,062b36e2fe03b3aa232f0779ec2aa4b7
+"{count} pending migration(s)","{count} migration(s) en attente",,site/modules/WireConsole/ProcessWireConsole.module.php,39dee76552603df42a41ef7d7b258d05
+"All schema migrations applied","Toutes les migrations de schéma sont appliquées",,site/modules/WireConsole/ProcessWireConsole.module.php,ead186df9db1b7602f50fbf7b64fe0e6
+"Background Queues","Files d’attente en arrière-plan",,site/modules/WireConsole/ProcessWireConsole.module.php,0b817ad2eb16e393336b8d9a24913b29
+"{count} queued","{count} en file",,site/modules/WireConsole/ProcessWireConsole.module.php,6865dbd452279065e9b91cd5e5fc4075
+"{count} failed job(s) require attention","{count} tâche(s) échouée(s) requièrent votre attention",,site/modules/WireConsole/ProcessWireConsole.module.php,af296c48b8d793e5ceceb4ab4d7c4f77
+"{count} discovered handler(s)","{count} gestionnaire(s) détecté(s)",,site/modules/WireConsole/ProcessWireConsole.module.php,aeccdb1debc9540d37e66c2b78c95600
+"Database Backups","Sauvegardes de base de données",,site/modules/WireConsole/ProcessWireConsole.module.php,102db3791f50f85761ae97df4aabb113
+"{count} snapshots","{count} instantanés",,site/modules/WireConsole/ProcessWireConsole.module.php,33ad81d0629fdc653ed308b96873895a
+"Latest: {file}","Dernier : {file}",,site/modules/WireConsole/ProcessWireConsole.module.php,bbe485ecf516b1396ead2ce8317edf39
+"No SQL snapshots yet","Aucun instantané SQL pour le moment",,site/modules/WireConsole/ProcessWireConsole.module.php,d5e3ed9603eaffa35b36cec9ad731e90
+"Boost & AI Skills","Boost et compétences IA",,site/modules/WireConsole/ProcessWireConsole.module.php,0b7f06e400313153e5ce935e80ab8c35
+"{count} skills","{count} compétences",,site/modules/WireConsole/ProcessWireConsole.module.php,115cb057a8d882bfd646e879498b3c0b
+"{agents} agent(s), {enabled}/{total} module(s)","{agents} agent(s), {enabled}/{total} module(s)",,site/modules/WireConsole/ProcessWireConsole.module.php,4f32083a5e31caf17b53e144947f3f2c
+"Maintenance Mode","Mode maintenance",,site/modules/WireConsole/ProcessWireConsole.module.php,295c54be6a83de7aa3b31efc81ad2604
+"Maintenance Active (503)","Maintenance active (503)",,site/modules/WireConsole/ProcessWireConsole.module.php,b4483b841f0764ad3828556e83e71f04
+"Application Online","Application en ligne",,site/modules/WireConsole/ProcessWireConsole.module.php,1e47facb08bcacf6348d9a805767412e
+"Temporarily pause public site access with a friendly maintenance screen.","Suspendez temporairement l’accès public au site avec un écran de maintenance convivial.",,site/modules/WireConsole/ProcessWireConsole.module.php,bd8f190df844ba91559680a3bfadeb4c
+"Application is currently in maintenance mode","L’application est actuellement en mode maintenance",,site/modules/WireConsole/ProcessWireConsole.module.php,f381ae4237a4284f3e0084f77f58746e
+"Since: {since} • Status: HTTP {status}","Depuis : {since} • Statut : HTTP {status}",,site/modules/WireConsole/ProcessWireConsole.module.php,080bc21f4853951e380cd031d68bbbe2
+"Retry-After: {seconds}s","Réessayer après : {seconds}s",,site/modules/WireConsole/ProcessWireConsole.module.php,757686474e4ac63ac30f6fe9c0e4a5b8
+Unknown,Inconnu,,site/modules/WireConsole/ProcessWireConsole.module.php,88183b946cc5f0e8c96b2e66e1c74a7e
+"Bring Application Online","Remettre l’application en ligne",,site/modules/WireConsole/ProcessWireConsole.module.php,98df3ff93cdb6af0734181f94a2e43c4
+"Remove site/down.json and restore normal HTTP traffic immediately.","Supprimez site/down.json et rétablissez immédiatement le trafic HTTP normal.",,site/modules/WireConsole/ProcessWireConsole.module.php,53b19abd806188cad2facc75215c42c5
+"Bypass Secret Token (optional)","Jeton secret de contournement (facultatif)",,site/modules/WireConsole/ProcessWireConsole.module.php,15ef42e4200137d1a871241409e6074a
+"e.g. deploy-preview-token","ex. deploy-preview-token",,site/modules/WireConsole/ProcessWireConsole.module.php,ff46052eae887c0b4c28271978a3d78f
+"Retry-After Seconds","Délai Retry-After (secondes)",,site/modules/WireConsole/ProcessWireConsole.module.php,905b528089c48641c52e1ca545755d75
+"Enable Maintenance Mode","Activer le mode maintenance",,site/modules/WireConsole/ProcessWireConsole.module.php,fb97e723c5add3b15ed97a40679af2d8
+"Create site/down.json and intercept public HTTP traffic with a 503 response.","Créez site/down.json et interceptez le trafic HTTP public avec une réponse 503.",,site/modules/WireConsole/ProcessWireConsole.module.php,f732adcf247d97ee501d9cf2474553bf
+"System & WireCache Flush","Purge système et WireCache",,site/modules/WireConsole/ProcessWireConsole.module.php,acf6ac7bf465e1d94233204a2adae940
+"Cache Controls","Contrôles du cache",,site/modules/WireConsole/ProcessWireConsole.module.php,1361cbbc91d6a704d6c61a51b5cc3350
+"Clear template, module, and database caches when updates do not appear right away.","Videz les caches de modèles, de modules et de base de données lorsque les mises à jour n’apparaissent pas immédiatement.",,site/modules/WireConsole/ProcessWireConsole.module.php,fb862725cf908ba0400ad89833eb1569
+"Cache Target Scope","Portée cible du cache",,site/modules/WireConsole/ProcessWireConsole.module.php,38bba51e5d78bea8d25ff3778346d129
+"All Caches (Modules + FileCompiler + WireCache)","Tous les caches (Modules + FileCompiler + WireCache)",,site/modules/WireConsole/ProcessWireConsole.module.php,904a9efff9ec7a4aa53b32dedcd90d26
+"Core & FileCompiler Only (cache:clear)","Noyau et FileCompiler uniquement (cache:clear)",,site/modules/WireConsole/ProcessWireConsole.module.php,42db21f1e72657cb15db3ad56de11032
+"WireCache Database Entries Only (cache:wire:clear)","Entrées de base WireCache uniquement (cache:wire:clear)",,site/modules/WireConsole/ProcessWireConsole.module.php,be0b61fac0d3570e4f916d37d6cc00b7
+"Refresh Module Registry (module:refresh)","Actualiser le registre des modules (module:refresh)",,site/modules/WireConsole/ProcessWireConsole.module.php,4cc9b56d7536d0a44e15977ce3dc2fda
+"Flush Selected Caches","Vider les caches sélectionnés",,site/modules/WireConsole/ProcessWireConsole.module.php,eee0d6f5d03157ed7c4224c1025bf251
+"Clear cache scope ""{scope}"" across the ProcessWire runtime.","Vider la portée du cache « {scope} » dans l’environnement ProcessWire.",,site/modules/WireConsole/ProcessWireConsole.module.php,f425427dd43ab6f9542f2d5f1516a536
+"Composer Packages & Subsystem Readiness","Paquets Composer et disponibilité des sous-systèmes",,site/modules/WireConsole/ProcessWireConsole.module.php,6334a0a34d3a74194f6469ca331ba421
+"Installed CLI and AI tooling status in {path}","État des outils CLI et IA installés dans {path}",,site/modules/WireConsole/ProcessWireConsole.module.php,00a7b2513cd24c73f3db3d95f7c672b4
+"CLI binary: vendor/bin/wire ({status})","Binaire CLI : vendor/bin/wire ({status})",,site/modules/WireConsole/ProcessWireConsole.module.php,cdcb451d7ddc4ab746e31f9f08a6fdb5
+"AI Guidelines, Skills & 28-Tool JSON-RPC MCP Server","Directives IA, compétences et serveur MCP JSON-RPC à 28 outils",,site/modules/WireConsole/ProcessWireConsole.module.php,5cbe16005076102560d75fa0a7e94d57
+"Database Seeders","Seeders de base de données",,site/modules/WireConsole/ProcessWireConsole.module.php,b8ae6272740342af4bc6c8758779e524
+"FakerPHP: {status}","FakerPHP : {status}",,site/modules/WireConsole/ProcessWireConsole.module.php,b5b7a2e2f0d99a880674c3dc477abbf2
+"Due now: {count}","Échéance actuelle : {count}",,site/modules/WireConsole/ProcessWireConsole.module.php,f8d5edf32220d584c00789956bf5ff45
+"Automated Tests","Tests automatisés",,site/modules/WireConsole/ProcessWireConsole.module.php,1a9a4978776abb51bf449dbe357f9db8
+"{pest} Pest • {e2e} E2E","{pest} Pest • {e2e} E2E",,site/modules/WireConsole/ProcessWireConsole.module.php,27edb3fb21b89684bce3bd5b019914ac
+"Pest: {pest} • E2E: {e2e}","Pest : {pest} • E2E : {e2e}",,site/modules/WireConsole/ProcessWireConsole.module.php,c6adec98eeb21840a5459e46ce42d094
+"Security & Audit","Sécurité et audit",,site/modules/WireConsole/ProcessWireConsole.module.php,08bc59dc07b53b37defdab9bf093abdf
+"RBAC + Rate Limit","RBAC + Limite de débit",,site/modules/WireConsole/ProcessWireConsole.module.php,241e962a406b095c9deb303dc1f72d1a
+"Runtime Stack Versions","Versions de la pile d’exécution",,site/modules/WireConsole/ProcessWireConsole.module.php,229bf8b29294ed73b6edfe4f49f3373e
+"Active environment version matrix","Matrice des versions de l’environnement actif",,site/modules/WireConsole/ProcessWireConsole.module.php,1dd4a68c7120663f1ded0a0529e6c40a
+"PHP Runtime","Environnement PHP",,site/modules/WireConsole/ProcessWireConsole.module.php,efb047f0d43606a4225415478a4c931b
+"ProcessWire Core","Noyau ProcessWire",,site/modules/WireConsole/ProcessWireConsole.module.php,b9fd45a4e2a9b1fc79928ab842977652
+"Database Engine","Moteur de base de données",,site/modules/WireConsole/ProcessWireConsole.module.php,d07e3cfba4c070cf15423fd0462ba6b9
+"Inertia Runtime","Environnement Inertia",,site/modules/WireConsole/ProcessWireConsole.module.php,015ef18fc3fcb1ba5aef43157a01ca78
+"React Workspace Runtime","Environnement React Workspace",,site/modules/WireConsole/ProcessWireConsole.module.php,86d63b3eaa2c59953377e0f714749d5b
+"Console Package","Paquet Console",,site/modules/WireConsole/ProcessWireConsole.module.php,f483c8203e6bb97a58cfd25ce32a8d6f
+"Boost Package","Paquet Boost",,site/modules/WireConsole/ProcessWireConsole.module.php,7ba6513cd6420ff5681083ab7cc5dbcf
+"Migrations Section Unavailable","Section Migrations indisponible",,site/modules/WireConsole/ProcessWireConsole.module.php,ef482fe8e730f9bc1b99415dc2a20621
+"You do not have permission to view schema migrations.","Vous n’avez pas l’autorisation de consulter les migrations de schéma.",,site/modules/WireConsole/ProcessWireConsole.module.php,c2658eed1829aa15cf380e4d43345f73
+"Tracking Table","Table de suivi",,site/modules/WireConsole/ProcessWireConsole.module.php,a8cd9d4c60385151f019e2621b7b35cc
+"wire_migrations table","Table wire_migrations",,site/modules/WireConsole/ProcessWireConsole.module.php,32ffdaa1ecc1fb38dd99d8ce73784925
+Installed,Installé,,site/modules/WireConsole/ProcessWireConsole.module.php,98dd43dfae05b11befe1f140e0ec787a
+"Not Installed","Non installé",,site/modules/WireConsole/ProcessWireConsole.module.php,ddd8eef6f86868a07f62b0e3810711f0
+"Applied Migrations","Migrations appliquées",,site/modules/WireConsole/ProcessWireConsole.module.php,20596a974799fae536702f1c6b014b53
+"Total discovered: {count}","Total détecté : {count}",,site/modules/WireConsole/ProcessWireConsole.module.php,1ad74b12b4b0a14c6174aa30c3400b21
+"Ready to migrate","Prêt à migrer",,site/modules/WireConsole/ProcessWireConsole.module.php,80c5759b03631d8a7f23df4bccf322ad
+"Schema is up to date","Le schéma est à jour",,site/modules/WireConsole/ProcessWireConsole.module.php,5121c2af801b2aafb60fdef00a8830db
+"Last Batch Number","Dernier numéro de lot",,site/modules/WireConsole/ProcessWireConsole.module.php,abcb7f17f1cfaf0c9b5d152df32c4649
+"{count} in rollback preview","{count} dans l’aperçu d’annulation",,site/modules/WireConsole/ProcessWireConsole.module.php,aeb5e1eeca0f582517a95046275430b7
+"Run & Rollback","Exécuter et annuler",,site/modules/WireConsole/ProcessWireConsole.module.php,adbc436b416187ab30f08c1a33d3a8d5
+"Execute pending migrations or roll back recent batches.","Exécutez les migrations en attente ou annulez les lots récents.",,site/modules/WireConsole/ProcessWireConsole.module.php,b22bc1e7502fe5fd1949324c9093281d
+"Tracking table wire_migrations is not installed.","La table de suivi wire_migrations n’est pas installée.",,site/modules/WireConsole/ProcessWireConsole.module.php,fa7766116980d1e988ed1e3c701eda1e
+"Install Table","Installer la table",,site/modules/WireConsole/ProcessWireConsole.module.php,3b951f16b7ca27cce56e8b64ac4fcc0e
+"Install Migrations Table","Installer la table des migrations",,site/modules/WireConsole/ProcessWireConsole.module.php,38f0fe6fa535b47c212f314dfe541e1b
+"Create the wire_migrations tracking table in the database.","Créer la table de suivi wire_migrations dans la base de données.",,site/modules/WireConsole/ProcessWireConsole.module.php,ed9025beb5d6e19d52d7cec24530ab92
+"Migrate Steps (0 = all)","Étapes de migration (0 = toutes)",,site/modules/WireConsole/ProcessWireConsole.module.php,87ce9cbad1b075f2d30de443c0887868
+"Rollback Steps","Étapes d’annulation",,site/modules/WireConsole/ProcessWireConsole.module.php,db4b812f8c3793b994a9292cc09d9a06
+Rollback,Annuler,,site/modules/WireConsole/ProcessWireConsole.module.php,446c9e952debe114c86bbd9e5eea7d61
+"Rollback Schema Migrations","Annuler les migrations de schéma",,site/modules/WireConsole/ProcessWireConsole.module.php,60ff9539f69f732c4cf2a5bce88102ce
+"Roll back {steps} migration step(s).","Annuler {steps} étape(s) de migration.",,site/modules/WireConsole/ProcessWireConsole.module.php,6964aa1522a77260c5dcc28449981d91
+"Run Pending","Exécuter en attente",,site/modules/WireConsole/ProcessWireConsole.module.php,4e0d7f0a16c9216413aad24e3fd20c2d
+"Run Pending Migrations","Exécuter les migrations en attente",,site/modules/WireConsole/ProcessWireConsole.module.php,33b5613218a9c4cf401c1b83887334a8
+"Execute pending schema migrations in site/migrations/.","Exécuter les migrations de schéma en attente dans site/migrations/.",,site/modules/WireConsole/ProcessWireConsole.module.php,f0d3bf0f755997e4dc495a0451460040
+"Reset, Refresh & Fresh","Réinitialiser, actualiser et recréer",,site/modules/WireConsole/ProcessWireConsole.module.php,9a0c275f4b07c990b9765aa4fec11cf3
+"Full migration cycle controls with optional SQL safety snapshot.","Contrôles complets du cycle de migration avec instantané SQL de sécurité facultatif.",,site/modules/WireConsole/ProcessWireConsole.module.php,02376eb542b8134bc06bb09e19c6b63f
+"Operation Mode","Mode d’opération",,site/modules/WireConsole/ProcessWireConsole.module.php,d64851ed86febe900e5925123ba57e83
+"Refresh (Rollback All + Re-run All)","Actualiser (Tout annuler + Tout réexécuter)",,site/modules/WireConsole/ProcessWireConsole.module.php,c960eea0adf4b15990787fcde55d3014
+"Reset (Rollback All Applied Migrations)","Réinitialiser (Annuler toutes les migrations appliquées)",,site/modules/WireConsole/ProcessWireConsole.module.php,a9b6bbbdba6b2c7c1152bc8a488fc4d5
+"Fresh (Drop Tracking Table + Re-run All)","Neuf (Supprimer la table de suivi + Tout réexécuter)",,site/modules/WireConsole/ProcessWireConsole.module.php,97dddc1fb32cac892d750a873ce1ea19
+"Create SQL safety backup before running","Créer une sauvegarde SQL de sécurité avant l’exécution",,site/modules/WireConsole/ProcessWireConsole.module.php,523848733136f52800a6788ce9d59d52
+"Execute {mode}","Exécuter {mode}",,site/modules/WireConsole/ProcessWireConsole.module.php,1bd88cfe96902d821cc1f8f0bd83f92c
+"Execute migrate:{mode}","Exécuter migrate:{mode}",,site/modules/WireConsole/ProcessWireConsole.module.php,d49c8d0d6a75e1ef58d5a9bbf7d98b9f
+"Run migrate:{mode} across all schema migrations with a pre-backup snapshot.","Exécuter migrate:{mode} sur toutes les migrations avec une sauvegarde préalable.",,site/modules/WireConsole/ProcessWireConsole.module.php,ecbe8113fc26d1184c2b9870f41beacb
+"Run migrate:{mode} across all schema migrations without a pre-backup snapshot.","Exécuter migrate:{mode} sur toutes les migrations sans sauvegarde préalable.",,site/modules/WireConsole/ProcessWireConsole.module.php,16133d3a65b011ffbcefb8ec7d8ec9d9
+"Scaffold Migration","Générer une migration",,site/modules/WireConsole/ProcessWireConsole.module.php,15c8145bd1d2864b9ca27c60fa99fbcc
+"Create a new timestamped migration in site/migrations/.","Créer une nouvelle migration horodatée dans site/migrations/.",,site/modules/WireConsole/ProcessWireConsole.module.php,d038598ac584f4dab510e06e0e0a8307
+"Migration Identifier","Identifiant de migration",,site/modules/WireConsole/ProcessWireConsole.module.php,e3e499d257fc3628ad802b9e8e614609
+"e.g. create_product_fields","ex. create_product_fields",,site/modules/WireConsole/ProcessWireConsole.module.php,829fed72a3871258dc6675691183d66c
+"Migration Stub Type","Type de modèle de migration",,site/modules/WireConsole/ProcessWireConsole.module.php,2afdf2fb0788724bf979feeedc05d097
+"Blank Migration (up / down)","Migration vierge (up / down)",,site/modules/WireConsole/ProcessWireConsole.module.php,347f62dcfe23d2fc5bbfc24846b7b0fb
+"Create Field (create-field)","Créer un champ (create-field)",,site/modules/WireConsole/ProcessWireConsole.module.php,97b8df2e617b339c7bd2540303792a3d
+"Create Template (create-template)","Créer un modèle (create-template)",,site/modules/WireConsole/ProcessWireConsole.module.php,58ee8d48e89be087e763da4eebed6a5d
+"Attach Field to Template (attach-field)","Attacher un champ au modèle (attach-field)",,site/modules/WireConsole/ProcessWireConsole.module.php,81ed1ba6e850cccfc56229b7ecf70a44
+"Create Page (create-page)","Créer une page (create-page)",,site/modules/WireConsole/ProcessWireConsole.module.php,0e00434aeccb2ea25a162f315172a245
+"Create Role (create-role)","Créer un rôle (create-role)",,site/modules/WireConsole/ProcessWireConsole.module.php,f68d9e9f06704450da7a9b3dd3871089
+"Install Module (install-module)","Installer un module (install-module)",,site/modules/WireConsole/ProcessWireConsole.module.php,09cf639fc684c6eceeffef056f3e744f
+"Create Migration","Créer la migration",,site/modules/WireConsole/ProcessWireConsole.module.php,841a9f326502e573304face0100ac886
+"Scaffold New Migration","Générer une nouvelle migration",,site/modules/WireConsole/ProcessWireConsole.module.php,3868b59580cab370fe32f0e41ff62d94
+"Create a new migration file for ""{name}"" in site/migrations/.","Créer un nouveau fichier de migration pour « {name} » dans site/migrations/.",,site/modules/WireConsole/ProcessWireConsole.module.php,4e53a6674c07b014ed8e289ba548d9c4
+"Discovered Schema Migrations","Migrations de schéma détectées",,site/modules/WireConsole/ProcessWireConsole.module.php,dfa5ce5ad1544798af48e3bbc7429a0b
+"Files located in site/migrations/","Fichiers situés dans site/migrations/",,site/modules/WireConsole/ProcessWireConsole.module.php,85eb079bae7dbe0a740ea3fd284b187d
+"{count} file(s)","{count} fichier(s)",,site/modules/WireConsole/ProcessWireConsole.module.php,eb3a12f5e56cb9ea25098dc742bffa6f
+"Migration Name","Nom de la migration",,site/modules/WireConsole/ProcessWireConsole.module.php,bccf4a7624ac6a33e51beb2060a490a6
+Batch,Lot,,site/modules/WireConsole/ProcessWireConsole.module.php,51ffe9dd1b1e143c1b9f1144d040e454
+"Applied At","Appliquée le",,site/modules/WireConsole/ProcessWireConsole.module.php,49a9bb774e1dbe60a8cbd36cf719084a
+Ran,Exécutée,,site/modules/WireConsole/ProcessWireConsole.module.php,41b3f86e033ecec4c149f074610c9394
+Pending,"En attente",,site/modules/WireConsole/ProcessWireConsole.module.php,2d13df6f8b5e4c5af9f87e0dc39df69d
+"No Schema Migrations Found","Aucune migration de schéma trouvée",,site/modules/WireConsole/ProcessWireConsole.module.php,3d78a88617907b171e3455a9112a21a9
+"Scaffold your first migration above or run php vendor/bin/wire make:migration.","Générez votre première migration ci-dessus ou exécutez php vendor/bin/wire make:migration.",,site/modules/WireConsole/ProcessWireConsole.module.php,f7af0ad3bd883ccea757ff1bfb3b3e34
+"Queues Section Unavailable","Section Files d’attente indisponible",,site/modules/WireConsole/ProcessWireConsole.module.php,401965703ab7a262026a21bb6e7abe69
+"You do not have permission to view background queues.","Vous n’avez pas l’autorisation de consulter les files d’attente en arrière-plan.",,site/modules/WireConsole/ProcessWireConsole.module.php,0bbe9a22a3eaf29ebc71ad8594896a40
+"Queue Tables","Tables de file d’attente",,site/modules/WireConsole/ProcessWireConsole.module.php,db4e78c8a0fedbd3ff954fd996147973
+"queue_jobs & failed_jobs","queue_jobs et failed_jobs",,site/modules/WireConsole/ProcessWireConsole.module.php,68fc2d3d304f906efa2ad904ef195b76
+Ready,Prêt,,site/modules/WireConsole/ProcessWireConsole.module.php,e7d31fc0602fb2ede144d18cdffd816b
+"Pending Jobs","Tâches en attente",,site/modules/WireConsole/ProcessWireConsole.module.php,ddebde14113b8758e6a96a1ddd7478f5
+"Waiting or reserved in queue_jobs","En attente ou réservé dans queue_jobs",,site/modules/WireConsole/ProcessWireConsole.module.php,edc5bfe194b0067d99a946dc10901a8a
+"Failed Jobs","Tâches échouées",,site/modules/WireConsole/ProcessWireConsole.module.php,7e87367889b1151ff7849a580035c202
+"Requires retry or inspection","Nécessite une relance ou une inspection",,site/modules/WireConsole/ProcessWireConsole.module.php,c50220e547d5c1eccb57a28f5da53df5
+"Zero failed jobs","Aucune tâche échouée",,site/modules/WireConsole/ProcessWireConsole.module.php,30d24d373f2ba73a9d93b4e82b82bcc9
+"Discovered Handlers","Gestionnaires détectés",,site/modules/WireConsole/ProcessWireConsole.module.php,438547e02fbc09e9c99914d0ab6ef8a9
+"Classes in site/queue/","Classes dans site/queue/",,site/modules/WireConsole/ProcessWireConsole.module.php,a9e26ab954f667d7a09a98ca8273ec32
+"Queue Database Tables Required","Tables de file d’attente requises",,site/modules/WireConsole/ProcessWireConsole.module.php,2b2aa808ca2e62a3e16bce923ae874a4
+"Install queue_jobs and failed_jobs before dispatching or processing jobs.","Installez queue_jobs et failed_jobs avant d’envoyer ou de traiter des tâches.",,site/modules/WireConsole/ProcessWireConsole.module.php,9610fbbacfdb5e816c1a51b105f0f8d2
+"Install Queue Tables","Installer les tables de file",,site/modules/WireConsole/ProcessWireConsole.module.php,ac004a08eaf2392de96d1ba6282d7bc5
+"Create the queue_jobs and failed_jobs database tables.","Créer les tables de base de données queue_jobs et failed_jobs.",,site/modules/WireConsole/ProcessWireConsole.module.php,1291fe5a3e2a6568e5d49036fc84e4e6
+"Process Queue Batch","Traiter un lot de la file",,site/modules/WireConsole/ProcessWireConsole.module.php,8786fdce624ac058acaaa7f173e05710
+"Run a bounded synchronous worker batch (queue:work --once).","Exécuter un lot de traitement synchrone borné (queue:work --once).",,site/modules/WireConsole/ProcessWireConsole.module.php,df7d36b84dfad918a98ee6a5be2cf713
+"Process up to {max} job(s) on queue ""{queue}"".","Traiter jusqu’à {max} tâche(s) sur la file « {queue} ».",,site/modules/WireConsole/ProcessWireConsole.module.php,592fa3a49fca1a1036404e1158068023
+"Queue Name","Nom de la file",,site/modules/WireConsole/ProcessWireConsole.module.php,75773a8590f406cf1645ce1efd798899
+"Max Jobs (1-50)","Tâches max. (1-50)",,site/modules/WireConsole/ProcessWireConsole.module.php,cb6b4bd912ddd97e74eccc67952e35da
+"Max Tries","Tentatives max.",,site/modules/WireConsole/ProcessWireConsole.module.php,7c3ab3b16ee02f96aa376ed4f8325c5f
+"Work Batch","Traiter le lot",,site/modules/WireConsole/ProcessWireConsole.module.php,6ee771f450afc257a96fc9f409b3ea62
+"Dispatch Queue Job","Envoyer une tâche en file",,site/modules/WireConsole/ProcessWireConsole.module.php,21959af2c50f0f6e3c9360c2b4cb4e2d
+"Push a discovered queue handler onto queue_jobs.","Ajouter un gestionnaire de file détecté dans queue_jobs.",,site/modules/WireConsole/ProcessWireConsole.module.php,3efa56b29f77c3da877ef06978da94cc
+"Push {handler} onto queue ""{queue}"".","Envoyer {handler} dans la file « {queue} ».",,site/modules/WireConsole/ProcessWireConsole.module.php,abd6dbcd848a8f687c5a5a02397bbfdb
+"Queue Handler Class","Classe du gestionnaire de file",,site/modules/WireConsole/ProcessWireConsole.module.php,67f426f441db36e087a425d834346413
+"Select queue handler...","Sélectionner un gestionnaire...",,site/modules/WireConsole/ProcessWireConsole.module.php,9fe87b9c273235844d352cafbe78cea4
+Queue,File,,site/modules/WireConsole/ProcessWireConsole.module.php,722ad2d05ecf4868b00c5484b82fd808
+"Delay (sec)","Délai (s)",,site/modules/WireConsole/ProcessWireConsole.module.php,eeb9b201ceb2e0cf5e7a2212484a8930
+"JSON Payload","Charge utile JSON",,site/modules/WireConsole/ProcessWireConsole.module.php,4cf672c182469b2156c496a14a9fbe65
+"Dispatch Job","Envoyer la tâche",,site/modules/WireConsole/ProcessWireConsole.module.php,835fd06d9b74e992ae7d449e0618ab70
+"Scaffold & Queue Cleanup","Génération et nettoyage des files",,site/modules/WireConsole/ProcessWireConsole.module.php,d403e6a72bd09f8805508204050c8901
+"Create queue handlers in site/queue/ or purge queues.","Créer des gestionnaires dans site/queue/ ou purger les files.",,site/modules/WireConsole/ProcessWireConsole.module.php,2d15746ce07973b2186d861231931741
+"New Queue Class Name","Nom de la nouvelle classe de file",,site/modules/WireConsole/ProcessWireConsole.module.php,610a3dbc2801c230be55331b5c4962ab
+"e.g. SendWelcomeEmail","ex. SendWelcomeEmail",,site/modules/WireConsole/ProcessWireConsole.module.php,211542b99e419492149b07e60afb3556
+"Scaffold Queue Class","Générer une classe de file",,site/modules/WireConsole/ProcessWireConsole.module.php,cc521995c7f1b6a9fca84aa8fef77a48
+"Create queue handler ""{name}"" in site/queue/.","Créer le gestionnaire de file « {name} » dans site/queue/.",,site/modules/WireConsole/ProcessWireConsole.module.php,f27bf216fb36cfcb64664dbab171bff9
+"Purge Pending Queue","Purger la file en attente",,site/modules/WireConsole/ProcessWireConsole.module.php,b0c8977181f66755a21b349d46a94282
+"all or queue name","all ou nom de la file",,site/modules/WireConsole/ProcessWireConsole.module.php,ed4bcc9fe47a27ec46fa6321523fffbd
+"Purge Pending Jobs","Purger les tâches en attente",,site/modules/WireConsole/ProcessWireConsole.module.php,745e3cd599a1244ad76025d9c51391b1
+"Delete pending jobs from queue ""{queue}"".","Supprimer les tâches en attente de la file « {queue} ».",,site/modules/WireConsole/ProcessWireConsole.module.php,886108d14e7eab134a148cd26ec2e9ad
+"Retry All Failed","Réessayer tous les échecs",,site/modules/WireConsole/ProcessWireConsole.module.php,596b379eedaf9cda739337d9aba73993
+"Retry All Failed Jobs","Relancer toutes les tâches échouées",,site/modules/WireConsole/ProcessWireConsole.module.php,b0e37daadd092ed924601b7565248b89
+"Push all failed jobs back onto their queues for retry.","Remettre toutes les tâches échouées dans leurs files pour nouvel essai.",,site/modules/WireConsole/ProcessWireConsole.module.php,924621422ee89458f1ba9a846cf48824
+"Clear Failed","Effacer les échecs",,site/modules/WireConsole/ProcessWireConsole.module.php,664a5eddc9df681512fe674ea561e317
+"Clear All Failed Jobs","Effacer toutes les tâches échouées",,site/modules/WireConsole/ProcessWireConsole.module.php,baf80f1e9bbe5cd3657ce4bd139342dd
+"Permanently delete all records in the failed_jobs table.","Supprimer définitivement tous les enregistrements de la table failed_jobs.",,site/modules/WireConsole/ProcessWireConsole.module.php,7b3590d6be789a125eb9d4d381978689
+"Failed Jobs ({count})","Tâches échouées ({count})",,site/modules/WireConsole/ProcessWireConsole.module.php,78e7bc3a7a0aba964e33786507200ac8
+"Failed queue executions recorded in failed_jobs","Exécutions de file échouées enregistrées dans failed_jobs",,site/modules/WireConsole/ProcessWireConsole.module.php,992bf5037ecb01a37c8869408effcd4f
+"{count} Failed","{count} échouée(s)",,site/modules/WireConsole/ProcessWireConsole.module.php,9e2c8de5c63a8f4faf7c6a0b36db5e6e
+Handler,Gestionnaire,,site/modules/WireConsole/ProcessWireConsole.module.php,0bb4c52ba15ca41d65967d91840c66fb
+Exception,Exception,,site/modules/WireConsole/ProcessWireConsole.module.php,b0d4998a26f5b5742ad38c4af8817e32
+"Failed At","Échouée le",,site/modules/WireConsole/ProcessWireConsole.module.php,99f9bd3dee631a1a1f0d1bd0b510fcbc
+"Retry Failed Job #{id}","Relancer la tâche échouée #{id}",,site/modules/WireConsole/ProcessWireConsole.module.php,2fd624392180bdbc13c7880e96d3c8d4
+"Re-queue failed job #{id} ({handler}).","Remettre en file la tâche échouée #{id} ({handler}).",,site/modules/WireConsole/ProcessWireConsole.module.php,5e00c7252086a03e87323bf94b03271c
+"Delete Failed Job #{id}","Supprimer la tâche échouée #{id}",,site/modules/WireConsole/ProcessWireConsole.module.php,90d19d052d4a8ffc3c39e3cab2d45c2b
+"Delete failed job #{id} from failed_jobs.","Supprimer la tâche échouée #{id} de failed_jobs.",,site/modules/WireConsole/ProcessWireConsole.module.php,14c75eba418c961f4554c256d1239ebf
+"Pending Queue Jobs ({count})","Tâches en attente ({count})",,site/modules/WireConsole/ProcessWireConsole.module.php,b41177b677cfe6fb9b5cc54caf8b6c4b
+"Active rows in queue_jobs","Lignes actives dans queue_jobs",,site/modules/WireConsole/ProcessWireConsole.module.php,01e7419435573da6bf1aefd9e19ca2bd
+"Available At","Disponible à",,site/modules/WireConsole/ProcessWireConsole.module.php,039f9ec29017bb665079513a719b7961
+"{status} (tries: {attempts})","{status} (essais : {attempts})",,site/modules/WireConsole/ProcessWireConsole.module.php,746a095d0eec6fb352a8bfcc8a8faf98
+"Queue is Empty","La file est vide",,site/modules/WireConsole/ProcessWireConsole.module.php,2417dd37e7df613916f1c56c92f2b63e
+"No pending or delayed jobs waiting in queue_jobs.","Aucune tâche en attente ou différée dans queue_jobs.",,site/modules/WireConsole/ProcessWireConsole.module.php,60bf09c934191e1be2a8f25c256546d1
+"Discovered Queue Handlers ({count})","Gestionnaires de file détectés ({count})",,site/modules/WireConsole/ProcessWireConsole.module.php,6b802b7b1e0f1f94c8491acf9f7591f0
+"Classes discovered in site/queue/","Classes détectées dans site/queue/",,site/modules/WireConsole/ProcessWireConsole.module.php,a62d26ffb1f1ae14c901d722af2ab11f
+"Handler Name","Nom du gestionnaire",,site/modules/WireConsole/ProcessWireConsole.module.php,c2d86ed6859c2e8dfc279ac9452c366e
+"No Queue Handlers Discovered","Aucun gestionnaire de file détecté",,site/modules/WireConsole/ProcessWireConsole.module.php,b30f3ece378b11cefcb1a22730762eba
+"Scaffold a Queue class above or run php vendor/bin/wire make:queue.","Générez une classe Queue ci-dessus ou exécutez php vendor/bin/wire make:queue.",,site/modules/WireConsole/ProcessWireConsole.module.php,3e632f91217ee44e9db9b593ffdb5ec2
+"Seeding Section Unavailable","Section Seeding indisponible",,site/modules/WireConsole/ProcessWireConsole.module.php,c262f08272e72234a567099aab79a3aa
+"You do not have permission to view database seeders.","Vous n’avez pas l’autorisation de consulter les seeders de base de données.",,site/modules/WireConsole/ProcessWireConsole.module.php,c1940a1f661fe7fdb2f1695ffa037c40
+"Discovered Seeders","Seeders détectés",,site/modules/WireConsole/ProcessWireConsole.module.php,49ed149c0411edadf1579cbe96eadcf0
+"Classes in site/seeders/","Classes dans site/seeders/",,site/modules/WireConsole/ProcessWireConsole.module.php,0dc27b57079ae540ec6152f94db23711
+"FakerPHP Generator","Générateur FakerPHP",,site/modules/WireConsole/ProcessWireConsole.module.php,e0f148b2b84be0faf171e527d2a96dce
+"Faker\\Factory availability","Disponibilité de Faker\Factory",,site/modules/WireConsole/ProcessWireConsole.module.php,b3a2269e6a67a410f532a2fb5a5814d5
+"Default Entrypoint","Point d’entrée par défaut",,site/modules/WireConsole/ProcessWireConsole.module.php,0281b5dbc55965aad9e9c2abd5b31b8c
+"All Seeders","Tous les seeders",,site/modules/WireConsole/ProcessWireConsole.module.php,2107d9bc26bbb5481ede25bf3e46e742
+"All Seeders (or DatabaseSeeder)","Tous les seeders (ou DatabaseSeeder)",,site/modules/WireConsole/ProcessWireConsole.module.php,90ae9c0322085da40999a09329a7a51c
+"Execute Database Seeders","Exécuter les seeders de base de données",,site/modules/WireConsole/ProcessWireConsole.module.php,d4cea71c3c6051c600a004e9cd9350aa
+"Run a specific seeder class or execute all discovered seeders.","Exécutez une classe de seeder spécifique ou tous les seeders détectés.",,site/modules/WireConsole/ProcessWireConsole.module.php,8b14bf87d91c751d4861140ecc5c135d
+"Target Seeder","Seeder cible",,site/modules/WireConsole/ProcessWireConsole.module.php,5d5a7fd8c887a7fe865943cd98a3246b
+"Run Seeder","Exécuter le seeder",,site/modules/WireConsole/ProcessWireConsole.module.php,82e7ddc6f89119e3cdd36c011e292508
+"Run Database Seeders","Exécuter les seeders de base de données",,site/modules/WireConsole/ProcessWireConsole.module.php,8fc4a910fcd8bac769fd784edf208dac
+"Execute seeder target ""{target}"" against the active database.","Exécuter la cible seeder « {target} » sur la base de données active.",,site/modules/WireConsole/ProcessWireConsole.module.php,ab7ab420f493cf6aa647cbbeedfa70cc
+"Scaffold Seeder Class","Générer une classe Seeder",,site/modules/WireConsole/ProcessWireConsole.module.php,9c38be6ea8cc302d66fa2ea7b8996971
+"Create a new seeder class in site/seeders/.","Créer une nouvelle classe seeder dans site/seeders/.",,site/modules/WireConsole/ProcessWireConsole.module.php,9bf1039633626783fef91aa1ad2def2c
+"Seeder Class Name","Nom de la classe Seeder",,site/modules/WireConsole/ProcessWireConsole.module.php,8da68d3e181cf3450f38cf1c79915729
+"e.g. ProductCatalogSeeder","ex. ProductCatalogSeeder",,site/modules/WireConsole/ProcessWireConsole.module.php,f1ae42f367ba68fa707aa3ef78fe2f4c
+"Create Seeder","Créer le seeder",,site/modules/WireConsole/ProcessWireConsole.module.php,d15b308ffbb2b9e53526de75b6d6a229
+"Create seeder ""{name}"" in site/seeders/.","Créer le seeder « {name} » dans site/seeders/.",,site/modules/WireConsole/ProcessWireConsole.module.php,57d27a452ff6e6251896a7b55099903f
+"Discovered Seeders ({count})","Seeders détectés ({count})",,site/modules/WireConsole/ProcessWireConsole.module.php,c213219443a6078e4eff7d56c62013c1
+"Seeder classes registered in site/seeders/","Classes seeder enregistrées dans site/seeders/",,site/modules/WireConsole/ProcessWireConsole.module.php,8d2a2132f8d30bf4b2aa24029b153c3b
+"Seeder Name","Nom du seeder",,site/modules/WireConsole/ProcessWireConsole.module.php,27461d737afdba94b632674b71fdefb6
+FQCN,FQCN,,site/modules/WireConsole/ProcessWireConsole.module.php,a5a14d863015333c1588f0f9d0a21eca
+"Run {name}","Exécuter {name}",,site/modules/WireConsole/ProcessWireConsole.module.php,a2b501a44bff6e43fb39a9fb75fa83ac
+"Execute seeder ""{name}"" now.","Exécuter le seeder « {name} » maintenant.",,site/modules/WireConsole/ProcessWireConsole.module.php,d41c1684adadaae3f9bda94285081297
+"No Database Seeders Found","Aucun seeder de base de données trouvé",,site/modules/WireConsole/ProcessWireConsole.module.php,ddd4778700d6870523115f2fd7900aa8
+"Scaffold a Seeder class above to populate test or initial data.","Générez une classe Seeder ci-dessus pour insérer des données initiales ou de test.",,site/modules/WireConsole/ProcessWireConsole.module.php,5e0702c02e9f5d76d48f0b7f88174cf3
+"Scheduling Section Unavailable","Section Planification indisponible",,site/modules/WireConsole/ProcessWireConsole.module.php,5dffc2e8957aa3a7c1dca990c6a90573
+"You do not have permission to view scheduled tasks.","Vous n’avez pas l’autorisation de consulter les tâches planifiées.",,site/modules/WireConsole/ProcessWireConsole.module.php,1f817d442360cad814f292639d439279
+"Classes in site/schedule/","Classes dans site/schedule/",,site/modules/WireConsole/ProcessWireConsole.module.php,6869d714fa999c4caca5e232576a28b3
+"Due Right Now","Échues maintenant",,site/modules/WireConsole/ProcessWireConsole.module.php,5b53ba28a2ea89cce45cc84929c4bc74
+"Ready to execute on schedule:run","Prêt à être exécuté via schedule:run",,site/modules/WireConsole/ProcessWireConsole.module.php,3e79c301a872e537947c81e1eac82479
+"No tasks due at this minute","Aucune tâche prévue à cette minute",,site/modules/WireConsole/ProcessWireConsole.module.php,51eaa9139a76815534fcb3066baaac10
+"Cron Runner","Exécuteur Cron",,site/modules/WireConsole/ProcessWireConsole.module.php,2f4a236f92830f068781ffd0d36fa936
+"All Currently Due Tasks (schedule:run)","Toutes les tâches actuellement échues (schedule:run)",,site/modules/WireConsole/ProcessWireConsole.module.php,66b5815556a966aabe1e63f1d4a3c5b3
+"Run Scheduled Tasks","Exécuter les tâches planifiées",,site/modules/WireConsole/ProcessWireConsole.module.php,dda54924a5be7b8b1a278a636ff52b83
+"Trigger due cron tasks or run a specific task class immediately.","Déclenchez les tâches cron échues ou exécutez immédiatement une classe de tâche spécifique.",,site/modules/WireConsole/ProcessWireConsole.module.php,973a1cb77d975bd3c9a5e13b4144745c
+"Target Scope","Portée cible",,site/modules/WireConsole/ProcessWireConsole.module.php,501609829d318f22c2d0615649f8b16a
+"CLI Cron Entry","Entrée Cron CLI",,site/modules/WireConsole/ProcessWireConsole.module.php,64a2e3abcb5b60b9c7548b12e5f5c342
+"Run Scheduler","Lancer le planificateur",,site/modules/WireConsole/ProcessWireConsole.module.php,7debd187b8fbed1505a532205994bc48
+"Execute scheduled task target ""{target}"".","Exécuter la tâche planifiée « {target} ».",,site/modules/WireConsole/ProcessWireConsole.module.php,6fd456833aa00f0d5c9212bee6099ebd
+"Scaffold Scheduled Task","Générer une tâche planifiée",,site/modules/WireConsole/ProcessWireConsole.module.php,48c44152c9958ba6c0e3f2e25a790f00
+"Create a new scheduled task class in site/schedule/.","Créer une nouvelle classe de tâche planifiée dans site/schedule/.",,site/modules/WireConsole/ProcessWireConsole.module.php,6596af93c8ec1d6612e6cbb72720e2e7
+"Task Class Name","Nom de la classe de tâche",,site/modules/WireConsole/ProcessWireConsole.module.php,00b7d4a0d48a2ab9e2502df96ae19f38
+"e.g. PruneExpiredSessionsTask","ex. PruneExpiredSessionsTask",,site/modules/WireConsole/ProcessWireConsole.module.php,11e85a8221486946504a467c11d26af3
+"Create Task","Créer la tâche",,site/modules/WireConsole/ProcessWireConsole.module.php,a5a65f03604c8c15dfec7e7a2e645e4f
+"Create task class ""{name}"" in site/schedule/.","Créer la classe de tâche « {name} » dans site/schedule/.",,site/modules/WireConsole/ProcessWireConsole.module.php,60ae87b7be0439827cfb4ea4abe5fc64
+"Registered Cron Tasks ({count})","Tâches Cron enregistrées ({count})",,site/modules/WireConsole/ProcessWireConsole.module.php,24d8e614732f2ae9cad08dd5e5033252
+"Task schedules discovered in site/schedule/","Planifications de tâches détectées dans site/schedule/",,site/modules/WireConsole/ProcessWireConsole.module.php,44289291131e50a7009213da87f1dfc9
+"Task Name","Nom de la tâche",,site/modules/WireConsole/ProcessWireConsole.module.php,36f2406fef7445e028ed881a6393d85f
+"Cron Expression","Expression Cron",,site/modules/WireConsole/ProcessWireConsole.module.php,019ca1c3176645a7594ea87bd18816a6
+"Next Run","Prochaine exécution",,site/modules/WireConsole/ProcessWireConsole.module.php,9da1d7d297bfbe58a2b93cbdb9353017
+"Last Triggered","Dernier déclenchement",,site/modules/WireConsole/ProcessWireConsole.module.php,868147b3ebe3b5aaf13507708e034a37
+"Due Now",Échue,,site/modules/WireConsole/ProcessWireConsole.module.php,f13bd596ca574d452226b5266418b53b
+"No Scheduled Tasks Found","Aucune tâche planifiée trouvée",,site/modules/WireConsole/ProcessWireConsole.module.php,2de13fc2b273a4ea2e51f1ec436311dd
+"Scaffold a Task class above to automate recurring jobs.","Générez une classe Task ci-dessus pour automatiser les tâches récurrentes.",,site/modules/WireConsole/ProcessWireConsole.module.php,1ea6ad114fc176d04d6488afe17931d4
+"Backups Section Unavailable","Section Sauvegardes indisponible",,site/modules/WireConsole/ProcessWireConsole.module.php,93fe94871d965e3f52df6fc3f14b3789
+"You do not have permission to view SQL database backups.","Vous n’avez pas l’autorisation de consulter les sauvegardes SQL.",,site/modules/WireConsole/ProcessWireConsole.module.php,e4fa15c12d60bf5101c983b9be26750f
+"SQL Snapshots","Instantanés SQL",,site/modules/WireConsole/ProcessWireConsole.module.php,a570d464f54fda05e3544c6f2259cbfe
+"Stored in site/assets/backups/database/","Stocké dans site/assets/backups/database/",,site/modules/WireConsole/ProcessWireConsole.module.php,fc2221d217fb583381465383c9231990
+"Storage Directory","Répertoire de stockage",,site/modules/WireConsole/ProcessWireConsole.module.php,8d1698a67c23c1da7b1b439b965b2cca
+Writable,"Accessible en écriture",,site/modules/WireConsole/ProcessWireConsole.module.php,a1915263415d561ab5f8c7a7fcaa60af
+Read-Only,"Lecture seule",,site/modules/WireConsole/ProcessWireConsole.module.php,3cf4ecb609fc583ccfba718afb7d4ff6
+"Latest Snapshot","Dernier instantané",,site/modules/WireConsole/ProcessWireConsole.module.php,23dff1434b9c8b33bf7cf8606bfd2810
+"No backups created yet","Aucune sauvegarde créée pour le moment",,site/modules/WireConsole/ProcessWireConsole.module.php,e6d382be6b4654b2993f8933a2ce50fe
+"Create Database Snapshot","Créer un instantané de base de données",,site/modules/WireConsole/ProcessWireConsole.module.php,c4e1e11f69cea217590b0d533f0359f4
+"Generate a full SQL dump via WireDatabaseBackup.","Générer un export SQL complet via WireDatabaseBackup.",,site/modules/WireConsole/ProcessWireConsole.module.php,0f80d281f16a43b0c0e55e93993a6dcc
+"Snapshot Description (optional)","Description de l’instantané (facultatif)",,site/modules/WireConsole/ProcessWireConsole.module.php,b36075f1f2d88f2df645511570ab726d
+"e.g. Pre-release schema snapshot","ex. Instantané du schéma avant mise en production",,site/modules/WireConsole/ProcessWireConsole.module.php,5b3a38432973dd6f9a30c8909b8233ff
+"Create Snapshot","Créer l’instantané",,site/modules/WireConsole/ProcessWireConsole.module.php,a7a384e6f13cae2ef877b4dd78fd48ad
+"Create SQL Database Backup","Créer une sauvegarde SQL de la base de données",,site/modules/WireConsole/ProcessWireConsole.module.php,efb0ee6cffe9919445c81a9c09b1c7cc
+"Dump all database tables to a new .sql snapshot in site/assets/backups/database/.","Exporter toutes les tables vers un nouvel instantané .sql dans site/assets/backups/database/.",,site/modules/WireConsole/ProcessWireConsole.module.php,fb1442c99762409b1f2d019549418df0
+"Retention & Restore Policy","Politique de rétention et restauration",,site/modules/WireConsole/ProcessWireConsole.module.php,30bb3c370c15370107b3cd3cf8117972
+"Purge aged SQL dumps and configure pre-restore safety snapshots.","Purgez les anciens dumps SQL et configurez des instantanés de sécurité avant restauration.",,site/modules/WireConsole/ProcessWireConsole.module.php,b745a92f548a80e3ec90824824acf511
+"Purge Backups Older Than (Days)","Purger les sauvegardes de plus de (jours)",,site/modules/WireConsole/ProcessWireConsole.module.php,1e0a61bbf4e82f90d506b56977ac06ff
+"Purge Old SQL Backups","Purger les anciennes sauvegardes SQL",,site/modules/WireConsole/ProcessWireConsole.module.php,8f5005c0bffbfd65a95bb4df559dfe7e
+"Delete SQL backup files older than {days} day(s).","Supprimer les fichiers de sauvegarde SQL de plus de {days} jour(s).",,site/modules/WireConsole/ProcessWireConsole.module.php,dfd76c3aa7625b87fbd7de3cefd8f7bc
+"Automatically create a safety backup before restoring any SQL file","Créer automatiquement une sauvegarde de sécurité avant toute restauration SQL",,site/modules/WireConsole/ProcessWireConsole.module.php,968e66e5b7ca040f45461e74dd142028
+"SQL Backup Files ({count})","Fichiers de sauvegarde SQL ({count})",,site/modules/WireConsole/ProcessWireConsole.module.php,7ea9e333fa05c2e70045cc4743018e94
+"Available snapshots in site/assets/backups/database/","Instantanés disponibles dans site/assets/backups/database/",,site/modules/WireConsole/ProcessWireConsole.module.php,cf6b7964a04cf8e9471fbba89a1ca3cd
+Filename,"Nom du fichier",,site/modules/WireConsole/ProcessWireConsole.module.php,1351017ac6423911223bc19a8cb7c653
+Size,Taille,,site/modules/WireConsole/ProcessWireConsole.module.php,6f6cb72d544962fa333e2e34ce64f719
+"Created At","Créé le",,site/modules/WireConsole/ProcessWireConsole.module.php,6e9a375edaa0f55f2b86e1f415a33172
+Restore,Restaurer,,site/modules/WireConsole/ProcessWireConsole.module.php,2bd339d85ee3b33e513359ce781b60cc
+"Restore {file}","Restaurer {file}",,site/modules/WireConsole/ProcessWireConsole.module.php,1ad8cd867285443688f37131256b2a1b
+"Overwrite the current database with ""{file}"" (a safety snapshot will be created first).","Écraser la base actuelle avec « {file} » (une sauvegarde de sécurité sera créée d’abord).",,site/modules/WireConsole/ProcessWireConsole.module.php,afa01c33c6dcff1b7ff9fea5ec942f73
+"Overwrite the current database with ""{file}"" without a pre-restore safety snapshot.","Écraser la base actuelle avec « {file} » sans sauvegarde de sécurité préalable.",,site/modules/WireConsole/ProcessWireConsole.module.php,5a89c8ab39a4248038523cc95bdc085a
+"No SQL Backups Found","Aucune sauvegarde SQL trouvée",,site/modules/WireConsole/ProcessWireConsole.module.php,7089ba26851f7da8c40eb8e958a8c179
+"Create your first database snapshot above.","Créez votre premier instantané de base de données ci-dessus.",,site/modules/WireConsole/ProcessWireConsole.module.php,3d35cb11515783c5ae447cd8cef6124b
+"Testing Section Unavailable","Section Tests indisponible",,site/modules/WireConsole/ProcessWireConsole.module.php,b273bbdf61e7a320faf3435696563b25
+"You do not have permission to view the automated test runners.","Vous n’avez pas la permission d’afficher les exécuteurs de tests automatisés.",,site/modules/WireConsole/ProcessWireConsole.module.php,227a9c28d561b05e89cb3bb697ecf3c1
+"Pest Test Runner","Exécuteur de tests Pest",,site/modules/WireConsole/ProcessWireConsole.module.php,1a400750a0cc000fa1237e46f9d8a2d1
+"{count} *Test.php file(s) • vendor/bin/pest","{count} fichier(s) *Test.php • vendor/bin/pest",,site/modules/WireConsole/ProcessWireConsole.module.php,b5e426fdd50602583163bc775963c948
+"Playwright E2E Runner","Exécuteur E2E Playwright",,site/modules/WireConsole/ProcessWireConsole.module.php,931da4c1e9221a0a6ef2542c21953317
+"{count} *.spec.ts file(s) • @playwright/test","{count} fichier(s) *.spec.ts • @playwright/test",,site/modules/WireConsole/ProcessWireConsole.module.php,8048092c740e56449aef5eb784cb00e5
+"Runner Configurations","Configurations des exécuteurs",,site/modules/WireConsole/ProcessWireConsole.module.php,ab24d9e2d7cb4c0e201e3047df4f45e5
+"Pest: {phpunit} • E2E: {playwright}","Pest : {phpunit} • E2E : {playwright}",,site/modules/WireConsole/ProcessWireConsole.module.php,fe08f12e14d00d94c39b4981e8fa8f74
+Detected,Détecté,,site/modules/WireConsole/ProcessWireConsole.module.php,495ede3d060199c507c8708600b51784
+Default,"Par défaut",,site/modules/WireConsole/ProcessWireConsole.module.php,7a1920d61156abc05a60135aefe8bc67
+"phpunit.xml • playwright.config.ts","phpunit.xml • playwright.config.ts",,site/modules/WireConsole/ProcessWireConsole.module.php,0841c5363cb89dcbbd2df74421022421
+"Last Run Status","Statut de la dernière exécution",,site/modules/WireConsole/ProcessWireConsole.module.php,7232cc207d04580f7bc752f9269ee419
+Passed,Réussi,,site/modules/WireConsole/ProcessWireConsole.module.php,a0d0628f6b4e4d78d2ffef4d4d1c4b15
+"Exit {code}","Code {code}",,site/modules/WireConsole/ProcessWireConsole.module.php,efe5d24e55534dd2145567a352d7541b
+"Not Run","Non exécuté",,site/modules/WireConsole/ProcessWireConsole.module.php,3cc31b15bdd773ab1048c4c77243c162
+"All Pest Test Suites","Toutes les suites de tests Pest",,site/modules/WireConsole/ProcessWireConsole.module.php,cc77a28af3638dd5231502bbdd2c59d4
+"Execute Pest Test Suite","Exécuter la suite de tests Pest",,site/modules/WireConsole/ProcessWireConsole.module.php,f1f579645048d5aa6a60e710367b853b
+"Run allowlisted Pest PHP suites or filter by test name via isolated proc_open.","Exécuter les suites Pest PHP autorisées ou filtrer par nom de test via un proc_open isolé.",,site/modules/WireConsole/ProcessWireConsole.module.php,955dcc50deeaf828ab03dd9e151611c5
+"Target File / Suite Path","Fichier cible / chemin de la suite",,site/modules/WireConsole/ProcessWireConsole.module.php,63145bd7c1dba02d56b69cf164788676
+"Filter Pattern (--filter)","Motif de filtre (--filter)",,site/modules/WireConsole/ProcessWireConsole.module.php,4a2da7fcc680ffa679274b1c930396f3
+"e.g. InertiaTest","ex. InertiaTest",,site/modules/WireConsole/ProcessWireConsole.module.php,4d705462447e1f45dbb762913bcbc41a
+"Group (--group)","Groupe (--group)",,site/modules/WireConsole/ProcessWireConsole.module.php,22e0c67ad27abc0c93631d662afe9d5d
+"e.g. unit","ex. unit",,site/modules/WireConsole/ProcessWireConsole.module.php,dc3469df270d908beb3b57636cd8eec0
+"Stop immediately on first failure (--stop-on-failure)","Arrêter immédiatement au premier échec (--stop-on-failure)",,site/modules/WireConsole/ProcessWireConsole.module.php,045b8919b9b21ac76fd2880484840534
+"Run Pest Suite","Exécuter la suite Pest",,site/modules/WireConsole/ProcessWireConsole.module.php,493054f1527fecdbe0bd64cece94a321
+"Run vendor/bin/wire test {target} with a 60s timeout.","Exécuter vendor/bin/wire test {target} avec un délai de 60s.",,site/modules/WireConsole/ProcessWireConsole.module.php,1a1e4e54763626b70ce66b2df10ca4d7
+"Execute Playwright E2E Suite","Exécuter la suite E2E Playwright",,site/modules/WireConsole/ProcessWireConsole.module.php,464938550a7e3606779000b3f82df09b
+"Run headless browser and WCAG accessibility specs via vendor/bin/wire test:e2e.","Exécuter les tests navigateur sans tête et d’accessibilité WCAG via vendor/bin/wire test:e2e.",,site/modules/WireConsole/ProcessWireConsole.module.php,55b1b35aef2a4af88ef27bd1762a3822
+"All Discovered E2E Specs","Toutes les spécifications E2E détectées",,site/modules/WireConsole/ProcessWireConsole.module.php,0d2d41835947a8089e44a5847af4856a
+"Target E2E Spec Path","Chemin de la spécification E2E cible",,site/modules/WireConsole/ProcessWireConsole.module.php,73976b6963d31bd691dd1dd05e891021
+"Module Filter (--module)","Filtre de module (--module)",,site/modules/WireConsole/ProcessWireConsole.module.php,894b7449e488131ab9b19eb2d1bf7827
+"e.g. WireConsole","ex. WireConsole",,site/modules/WireConsole/ProcessWireConsole.module.php,ddf4af33ec35cd88ba555e6e59186c63
+"Title Filter (--grep)","Filtre de titre (--grep)",,site/modules/WireConsole/ProcessWireConsole.module.php,ec408bab2573c2c5d64e21b987c2fb0a
+"e.g. accessibility","ex. accessibility",,site/modules/WireConsole/ProcessWireConsole.module.php,633317796a9312a5a5be0c852a73840a
+"Init E2E (--init)","Initialiser E2E (--init)",,site/modules/WireConsole/ProcessWireConsole.module.php,37f42952ac2aef4ffd10b520b3245116
+"Initialize Playwright E2E Configuration","Initialiser la configuration E2E Playwright",,site/modules/WireConsole/ProcessWireConsole.module.php,24740ca34901151d6b57a30611cc1134
+"Non-destructively scaffold playwright.config.ts and tests/e2e/ helpers if missing.","Générer sans écrasement playwright.config.ts et les utilitaires tests/e2e/ s’ils sont absents.",,site/modules/WireConsole/ProcessWireConsole.module.php,7fb32091d987a4cf2066e64710ecc493
+"Run E2E Suite","Exécuter la suite E2E",,site/modules/WireConsole/ProcessWireConsole.module.php,69e32326f038ef2e0b3da37e13bdfc2b
+"Run vendor/bin/wire test:e2e {target} with a 120s timeout.","Exécuter vendor/bin/wire test:e2e {target} avec un délai maximal de 120 s.",,site/modules/WireConsole/ProcessWireConsole.module.php,d7bb04066fb65eb152a1b929f76375aa
+"Scaffold Test or E2E Spec","Générer un test ou une spécification E2E",,site/modules/WireConsole/ProcessWireConsole.module.php,2776aade204f8fed7e261f5c4a689adc
+"Create a Pest PHP test or Playwright E2E spec in site/tests/ or an installed module.","Créer un test Pest PHP ou une spécification E2E Playwright dans site/tests/ ou un module installé.",,site/modules/WireConsole/ProcessWireConsole.module.php,a5d0ab724c3fca007fd724d61d9893b1
+"Test Kind","Type de test",,site/modules/WireConsole/ProcessWireConsole.module.php,067eeaf867a636d50429cf3bb25307d0
+"Pest Feature Test (Feature/)","Test fonctionnel Pest (Feature/)",,site/modules/WireConsole/ProcessWireConsole.module.php,fcb5197ef7435261d893ae1225185adb
+"Pest Unit Test (--unit)","Test unitaire Pest (--unit)",,site/modules/WireConsole/ProcessWireConsole.module.php,2bedc5e3d13179d283bcae87908fffa0
+"Playwright E2E Spec (--e2e)","Spécification E2E Playwright (--e2e)",,site/modules/WireConsole/ProcessWireConsole.module.php,b4b5adb1e54bd8cb585b8de5cf35c004
+"Test / Spec Name","Nom du test / de la spécification",,site/modules/WireConsole/ProcessWireConsole.module.php,c654ef07391c342a00e8503f036742e0
+"e.g. PageRoutingTest","ex. PageRoutingTest",,site/modules/WireConsole/ProcessWireConsole.module.php,42bdd6e72264059f5496d33c2a4b7a50
+"e.g. checkout-flow","ex. checkout-flow",,site/modules/WireConsole/ProcessWireConsole.module.php,23384261c1424a6dd4fa02e508801ca1
+"Target Module (optional --module)","Module cible (--module facultatif)",,site/modules/WireConsole/ProcessWireConsole.module.php,54279ad15b81c26957f06dde0449c8ad
+"Create Test","Créer le test",,site/modules/WireConsole/ProcessWireConsole.module.php,c2c007afa9a53bf9d8074954247a01e3
+"Scaffold Test File","Générer un fichier de test",,site/modules/WireConsole/ProcessWireConsole.module.php,ab6d793c4b93ebf7a2b2cfe6997e8c8c
+"Create {kind} test ""{name}"" via make:test.","Créer le test {kind} « {name} » via make:test.",,site/modules/WireConsole/ProcessWireConsole.module.php,3fcb70935baa0369689d8b598ea093c4
+"Test Runner Output ({command})","Sortie de l’exécuteur de tests ({command})",,site/modules/WireConsole/ProcessWireConsole.module.php,0f58c23e7a368887f366c9e72ad7988b
+"(no output)","(aucune sortie)",,site/modules/WireConsole/ProcessWireConsole.module.php,a42887abf6805b3e0d307e111a6abf8e
+"Discovered Test & E2E Files ({count})","Fichiers de test et E2E détectés ({count})",,site/modules/WireConsole/ProcessWireConsole.module.php,5227d830d9a344648c08f027ea56eb33
+"All *Test.php and *.spec.ts files across project, site, and active modules","Tous les fichiers *Test.php et *.spec.ts du projet, du site et des modules actifs",,site/modules/WireConsole/ProcessWireConsole.module.php,adb37859161d44d7f3dc901f1a2e002e
+"Test Name","Nom du test",,site/modules/WireConsole/ProcessWireConsole.module.php,9c356468df3cc00c20f9b91bef618e67
+Runner,Exécuteur,,site/modules/WireConsole/ProcessWireConsole.module.php,db345a3ee8f610a90768e0d381ac2443
+Pest,Pest,,site/modules/WireConsole/ProcessWireConsole.module.php,8f2aee794286772a06ad3133d0a64c72
+Playwright,Playwright,,site/modules/WireConsole/ProcessWireConsole.module.php,26d8d43780cfccc345b54194fba41ad9
+Suite,Suite,,site/modules/WireConsole/ProcessWireConsole.module.php,6a3b8215faeec4fea38723d91dfb5df6
+"Relative Path","Chemin relatif",,site/modules/WireConsole/ProcessWireConsole.module.php,465276e11fd8383a81b22dc3080f8106
+"Execute {path} via vendor/bin/wire test.","Exécuter {path} via vendor/bin/wire test.",,site/modules/WireConsole/ProcessWireConsole.module.php,89b17d25d4f93504535841cacce97761
+"Execute {path} via vendor/bin/wire test:e2e.","Exécuter {path} via vendor/bin/wire test:e2e.",,site/modules/WireConsole/ProcessWireConsole.module.php,49ca3341412c2b8d712603c6fc1b20c4
+"No Test Files Discovered","Aucun fichier de test détecté",,site/modules/WireConsole/ProcessWireConsole.module.php,25e4174ffc8a2ced1bfecbe62fec59c5
+"Scaffold your first Pest test or Playwright E2E spec above.","Générez votre premier test Pest ou spécification E2E Playwright ci-dessus.",,site/modules/WireConsole/ProcessWireConsole.module.php,a0457db67047016a51a9229c248c1a69
+"Boost & AI Section Unavailable","Section Boost et IA indisponible",,site/modules/WireConsole/ProcessWireConsole.module.php,4e3e9d45742640dca14236341be0d0c2
+"You do not have permission to view ProcessWire Boost & MCP settings.","Vous n’avez pas l’autorisation de consulter les paramètres ProcessWire Boost et MCP.",,site/modules/WireConsole/ProcessWireConsole.module.php,b2a86bfff24616fc85df15881c876b50
+"Boost Engine","Moteur Boost",,site/modules/WireConsole/ProcessWireConsole.module.php,0b1fdc98bb8bbf2170cdd2c3168eb8e6
+".agents/boost.json active",".agents/boost.json actif",,site/modules/WireConsole/ProcessWireConsole.module.php,5750a7f17bc6c5a0b92dc67c0fcddb7d
+"Default configuration","Configuration par défaut",,site/modules/WireConsole/ProcessWireConsole.module.php,7c584a16cbf4210dc0a344179e274e09
+"Installed AI Skills","Compétences IA installées",,site/modules/WireConsole/ProcessWireConsole.module.php,21ec4f4d0ba7b0b080b2ed0d3c594133
+"MCP JSON-RPC Server","Serveur MCP JSON-RPC",,site/modules/WireConsole/ProcessWireConsole.module.php,101896ddef324f786b53e9ce5de447c4
+"{count} tools","{count} outils",,site/modules/WireConsole/ProcessWireConsole.module.php,510d5cdd682ca56938838c0ef5d923d6
+"{readOnly} read-only • {mutation} mutation","{readOnly} lecture seule • {mutation} mutation",,site/modules/WireConsole/ProcessWireConsole.module.php,7915f898a635e1de236992775dcb722a
+"Discoverable Modules","Modules détectables",,site/modules/WireConsole/ProcessWireConsole.module.php,57d19a3958996c0c2256bc06ec2ad76c
+"Modules with AI guidelines or skills","Modules dotés de directives ou compétences IA",,site/modules/WireConsole/ProcessWireConsole.module.php,2fe2bd76490b74ce739e0a0145a74fd6
+"Synchronize & Configure Boost","Synchroniser et configurer Boost",,site/modules/WireConsole/ProcessWireConsole.module.php,e00838e9918e0025e36f0bce29edeeee
+"Regenerate AGENTS.md, skills, and schema map.","Régénérer AGENTS.md, les compétences et la carte de schéma.",,site/modules/WireConsole/ProcessWireConsole.module.php,53587e12749635ad471d54bae9c7e26a
+"Auto-discover newly installed ProcessWire modules","Détecter automatiquement les nouveaux modules ProcessWire installés",,site/modules/WireConsole/ProcessWireConsole.module.php,adab464dc1e4c21cb1ddde398729a631
+"Sync Boost Now","Synchroniser Boost maintenant",,site/modules/WireConsole/ProcessWireConsole.module.php,63ca8c270c13a2239e4b77bc6dabee6a
+"Synchronize ProcessWire Boost","Synchroniser ProcessWire Boost",,site/modules/WireConsole/ProcessWireConsole.module.php,857b756e86193445cee0173f5b9e9565
+"Regenerate AI guidelines, skills, and .agents/map.json.","Régénérer les directives IA, les compétences et .agents/map.json.",,site/modules/WireConsole/ProcessWireConsole.module.php,61d44635ac2cda39b3d4cb71ba63080d
+"Enabled Features (CSV)","Fonctionnalités activées (CSV)",,site/modules/WireConsole/ProcessWireConsole.module.php,8132b2da8bf270fd378dd13e3338f1ae
+"Target Agents (CSV)","Agents cibles (CSV)",,site/modules/WireConsole/ProcessWireConsole.module.php,52a7d4e3fc52d83b079b2afc03cf4953
+"claude_code,cursor,codex","claude_code,cursor,codex",,site/modules/WireConsole/ProcessWireConsole.module.php,6ac62e02fe46ca51a83c433c52c396b7
+"Enabled Modules (CSV)","Modules activés (CSV)",,site/modules/WireConsole/ProcessWireConsole.module.php,15f846f2a3f51248336722c9517dc6aa
+"Save Configuration","Enregistrer la configuration",,site/modules/WireConsole/ProcessWireConsole.module.php,08580e93520802cb11555ba3d1a7b842
+"Save Boost Configuration","Enregistrer la configuration Boost",,site/modules/WireConsole/ProcessWireConsole.module.php,855b07eb348c6b4c9e635ad64f6ef3cb
+"Persist .agents/boost.json and reinstall selected features.","Enregistrer .agents/boost.json et réinstaller les fonctionnalités choisies.",,site/modules/WireConsole/ProcessWireConsole.module.php,ef7502b2bede28d27fea79c9339f5f91
+"MCP JSON-RPC Tool Inspector","Inspecteur d’outils MCP JSON-RPC",,site/modules/WireConsole/ProcessWireConsole.module.php,f64e36d27c2ed97bf8f7a6b6b6c3c3d1
+"Execute allowlisted read-only MCP tools in-process.","Exécutez en processus les outils MCP en lecture seule autorisés.",,site/modules/WireConsole/ProcessWireConsole.module.php,ea9209a9f674bd345872da6c98707c31
+"Read-Only MCP Tool","Outil MCP en lecture seule",,site/modules/WireConsole/ProcessWireConsole.module.php,3b284004338c8d0d7ee6f88a9c2cc27e
+"JSON-RPC Arguments","Arguments JSON-RPC",,site/modules/WireConsole/ProcessWireConsole.module.php,bb3eef947e5031a66701c7197e025803
+"MCP Server Entry","Entrée du serveur MCP",,site/modules/WireConsole/ProcessWireConsole.module.php,a718bf268f0b242aafad89cf4c9bc266
+"Run MCP Tool","Exécuter l’outil MCP",,site/modules/WireConsole/ProcessWireConsole.module.php,be3f6b3c1c1f49215b00a34fd96ecf8b
+"Execute MCP Tool {tool}","Exécuter l’outil MCP {tool}",,site/modules/WireConsole/ProcessWireConsole.module.php,3794bec873e9c33a5a6454e20d9c5dc4
+"Call {tool} via JSON-RPC 2.0 in-process.","Appeler {tool} via JSON-RPC 2.0 dans le processus.",,site/modules/WireConsole/ProcessWireConsole.module.php,c31b2a48eaa7eacb7c244745d7b29ac7
+"Remote Skills & Module Scaffold","Compétences distantes et génération de module",,site/modules/WireConsole/ProcessWireConsole.module.php,2dbd56a3684545004b85383023653b57
+"Audit & install GitHub skills or scaffold a new ProcessWire module.","Auditez et installez des compétences GitHub ou générez un nouveau module ProcessWire.",,site/modules/WireConsole/ProcessWireConsole.module.php,bf085e183ecb0918b92f03931fbc09a7
+"GitHub Repository (owner/repo)","Dépôt GitHub (owner/repo)",,site/modules/WireConsole/ProcessWireConsole.module.php,8cd0721cadd1bb06b7bf58748f10f657
+"e.g. trk/processwire-skills","ex. trk/processwire-skills",,site/modules/WireConsole/ProcessWireConsole.module.php,63f969447454cc07f4cba5ffd4eb1c65
+"Overwrite existing skill directories","Écraser les répertoires de compétences existants",,site/modules/WireConsole/ProcessWireConsole.module.php,9dfbc90c98bf659dd4bb4bc7e78094f2
+"Install Skills","Installer les compétences",,site/modules/WireConsole/ProcessWireConsole.module.php,f9c2511d586f45bce9f569e9add96afb
+"Audit & Install Remote Skills","Auditer et installer des compétences distantes",,site/modules/WireConsole/ProcessWireConsole.module.php,547e6f70d72910185536a9f0ad3113de
+"Fetch and security-audit skills from ""{repo}"".","Récupérer et auditer les compétences depuis « {repo} ».",,site/modules/WireConsole/ProcessWireConsole.module.php,8f5988e79c59625d734613e8fbe6b849
+"Scaffold ProcessWire Module","Générer un module ProcessWire",,site/modules/WireConsole/ProcessWireConsole.module.php,5c5ddbc3256b0c2ac06f56b5c4faf211
+"Module Stub Type","Type de modèle de module",,site/modules/WireConsole/ProcessWireConsole.module.php,2e98c5b577dcb968809dd717f38bdced
+"Standard Module (module)","Module standard (module)",,site/modules/WireConsole/ProcessWireConsole.module.php,3456f711574a87ffe396aacf244693d6
+"Admin Process Module (process)","Module de processus d’administration (process)",,site/modules/WireConsole/ProcessWireConsole.module.php,42fb9c0a3c021b86659ce71ba7b8edb6
+"Database Fieldtype (fieldtype)","Type de champ de base de données (fieldtype)",,site/modules/WireConsole/ProcessWireConsole.module.php,28e565d14a14c63b5a3e28b3ee436aa7
+"Admin Inputfield (inputfield)","Champ de saisie d’administration (inputfield)",,site/modules/WireConsole/ProcessWireConsole.module.php,98f2a7d75195a31b6bfa5b9faea521c1
+"e.g. ProcessCustomDashboard","ex. ProcessCustomDashboard",,site/modules/WireConsole/ProcessWireConsole.module.php,5607d8edf7d8e1942f52ac470722d01c
+"Create {type} module at site/modules/{name}/{name}.module.php.","Créer le module {type} dans site/modules/{name}/{name}.module.php.",,site/modules/WireConsole/ProcessWireConsole.module.php,5cc80793f4c078f83a1d5f2f24bafb95
+"MCP JSON-RPC Response ({tool})","Réponse MCP JSON-RPC ({tool})",,site/modules/WireConsole/ProcessWireConsole.module.php,718dc463cdbf14b5a4851cdff9baf967
+"Installed Skills ({count})","Compétences installées ({count})",,site/modules/WireConsole/ProcessWireConsole.module.php,afc1fac5b17c95d8422d7fd8704a9af8
+"Select any skill to inspect its SKILL.md playbook","Sélectionnez une compétence pour inspecter son guide SKILL.md",,site/modules/WireConsole/ProcessWireConsole.module.php,c94444981d58c9aebd23f0ab4326d127
+"MCP Tool Catalog ({count})","Catalogue d’outils MCP ({count})",,site/modules/WireConsole/ProcessWireConsole.module.php,b5da226d4a38bce1eebb70ddbeffd52d
+"Protocol {protocol} • {server} v{version}","Protocole {protocol} • {server} v{version}",,site/modules/WireConsole/ProcessWireConsole.module.php,064a81a412d2ef51ed981a1e84eb97a4
+"Execute: {state}","Exécution : {state}",,site/modules/WireConsole/ProcessWireConsole.module.php,a397427ddc13682e5927ba8d3d9d1f12
+"Restore: {state}","Restauration : {state}",,site/modules/WireConsole/ProcessWireConsole.module.php,03a0cd70917a402e23b9b4810a04399b
+Enabled,Activé,,site/modules/WireConsole/ProcessWireConsole.module.php,00d23a76e43b46dae9ec7aa9dcbebb32
+Locked,Verrouillé,,site/modules/WireConsole/ProcessWireConsole.module.php,d0f2e5376298c880665077b565ffd7dd
+"Tool Name","Nom de l’outil",,site/modules/WireConsole/ProcessWireConsole.module.php,ddfcd3fb0558eb5e866ce6ee396050bf
+Mode,Mode,,site/modules/WireConsole/ProcessWireConsole.module.php,650be61892bf690026089544abbd9d26
+Description,Description,,site/modules/WireConsole/ProcessWireConsole.module.php,b5a7adde1af5c87d7fd797b6245c2a39
+Mutation,Mutation,,site/modules/WireConsole/ProcessWireConsole.module.php,59016373e3e4440ecf76c1d4b6bcd97d
+"Logs & Audit Section Unavailable","Section Journaux et audit indisponible",,site/modules/WireConsole/ProcessWireConsole.module.php,086d1ae9dfe0c2801e2d17c6946e5612
+"You do not have permission to view Console audit trails or ProcessWire logs.","Vous n’avez pas l’autorisation de consulter les pistes d’audit de la console ou les journaux ProcessWire.",,site/modules/WireConsole/ProcessWireConsole.module.php,5bce5cd85f4e40e02b29bdb3c68715bc
+"Log Channels & Audit Trail","Canaux de journaux et piste d’audit",,site/modules/WireConsole/ProcessWireConsole.module.php,e464b125c1dc220edcdcf5b246c8e9dd
+"Inspect structured wire-console-audit entries and ProcessWire runtime logs.","Inspecter les entrées structurées wire-console-audit et les journaux ProcessWire.",,site/modules/WireConsole/ProcessWireConsole.module.php,a9b77f59c87e1161bd81f3ea7e744ae9
+"Clear Channel","Vider le canal",,site/modules/WireConsole/ProcessWireConsole.module.php,4dd313bffc040ec2d00a510b29c8b78f
+"Clear Log Channel ""{channel}""","Vider le canal de journal « {channel} »",,site/modules/WireConsole/ProcessWireConsole.module.php,4c4c39463b45296229ea0da99e408fd0
+"Truncate all entries in site/assets/logs/{channel}.txt.","Vider toutes les entrées de site/assets/logs/{channel}.txt.",,site/modules/WireConsole/ProcessWireConsole.module.php,49b5be2ee3fee77dde3e669464cde010
+"Clear All Logs","Vider tous les journaux",,site/modules/WireConsole/ProcessWireConsole.module.php,596fc9655542574341672b9dfcf71efc
+"Clear All Log Channels","Vider tous les canaux de journaux",,site/modules/WireConsole/ProcessWireConsole.module.php,246736348907e0da86c75a95ed7f6663
+"Truncate all .txt log files in site/assets/logs/.","Vider tous les fichiers journaux .txt dans site/assets/logs/.",,site/modules/WireConsole/ProcessWireConsole.module.php,aa694ca480981379ddd2bb5d72a5a4df
+Channel,Canal,,site/modules/WireConsole/ProcessWireConsole.module.php,781dc97dc62331eec3ea9ec4373a3ca8
+"Substring Filter","Filtre de sous-chaîne",,site/modules/WireConsole/ProcessWireConsole.module.php,357c496aeb48ccf20f0d9e9878feed1e
+"Search by user, IP, action, or message...","Rechercher par utilisateur, IP, action ou message...",,site/modules/WireConsole/ProcessWireConsole.module.php,0853738541f2df286ef8fa3f73be6002
+Limit,Limite,,site/modules/WireConsole/ProcessWireConsole.module.php,80d2677cf518f4d04320042f4ea6c146
+"{count} rows","{count} lignes",,site/modules/WireConsole/ProcessWireConsole.module.php,76b016e2bc74c912708fdd408798b722
+Filter,Filtrer,,site/modules/WireConsole/ProcessWireConsole.module.php,d7778d0c64b6ba21494c97f77a66885a
+"Channel Entries: {channel}","Entrées du canal : {channel}",,site/modules/WireConsole/ProcessWireConsole.module.php,af35d405d52541573cc4a11ac9905f14
+"{count} entry(s)","{count} entrée(s)",,site/modules/WireConsole/ProcessWireConsole.module.php,6ccbeb7d8f7947003a703738b3553065
+"No Log Entries Found","Aucune entrée de journal trouvée",,site/modules/WireConsole/ProcessWireConsole.module.php,90c789125609130476cbc607dfcda421
+"No matching log entries in channel ""{channel}"".","Aucune entrée correspondante dans le canal ""{channel}"".",,site/modules/WireConsole/ProcessWireConsole.module.php,265a777d40b5bb1aae84316e5d15181e
+Timestamp,Horodatage,,site/modules/WireConsole/ProcessWireConsole.module.php,a3d5de3eac8bb00ae86fd1a1005f1500
+User,Utilisateur,,site/modules/WireConsole/ProcessWireConsole.module.php,8f9bfe9d1345237cb3b2b205864da075
+"Event / Message","Événement / Message",,site/modules/WireConsole/ProcessWireConsole.module.php,084c14b722c6f8e4f8a54950f2eb9c0d
+"IP: {ip}","IP : {ip}",,site/modules/WireConsole/ProcessWireConsole.module.php,ea7ffac374262c927b0cc0be91ab475c
+"Unknown workspace action: %s","Action d’espace de travail inconnue : %s",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,c8173c1d7a28b3a96fe8488278753c7e
+"Access denied: missing required permission for this workspace section.","Accès refusé : autorisation requise manquante pour cette section.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,5d4fa11df7c1af962f7d2820366224ea
+"Mutations and destructive operations require a ProcessWire superuser account.","Les modifications et opérations destructrices nécessitent un compte super-utilisateur ProcessWire.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,a432dfc3adf29a42ffb1696eee74fef3
+"Confirmation failed: please type ""%s"" to confirm this operation.","Échec de la confirmation : veuillez saisir ""%s"" pour confirmer cette opération.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,f329811fe4fb65e19e7e852032fd76fb
+"Rate limit active: please wait %d seconds before repeating this action.","Limite de fréquence active : veuillez patienter %d secondes avant de répéter cette action.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,c07ab996f8014267baa19acd146a5eab
+"Access denied: missing permission to inspect files in this category.","Accès refusé : autorisation manquante pour inspecter les fichiers de cette catégorie.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,d6b990f1ae05d3e733c87f0442b3a62b
+"Requested file could not be found or is outside the allowlisted directories.","Le fichier demandé est introuvable ou se situe hors des répertoires autorisés.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,6679d8a0758a2fa3f91ba494b7ee4d2d
+"Loaded preview for %s (%s).","Aperçu chargé pour %s (%s).",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,24dc489f62c7c82edbbc5607a610b1cb
+"Database backup manager is unavailable.","Le gestionnaire de sauvegarde de base de données est indisponible.",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,4b58227b04f65c8271ab11b4a87b06c5
+"Backup file could not be written.","Impossible d’écrire le fichier de sauvegarde.",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,88810f594fad01fd310f3c549027a3be
+"Created SQL backup snapshot: %s","Instantané de sauvegarde SQL créé : %s",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,c7af0375fb35ec47f8c8464164e4c1dd
+"No backup files found to purge.","Aucun fichier de sauvegarde à purger.",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,07f243707ddbbd30f3cb234dfd402589
+"Purged %d backup file(s) older than %d day(s).","%d fichier(s) de sauvegarde de plus de %d jour(s) purgé(s).",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,5d052c1bab49006a5a6d20d8037a9441
+"No backup files were older than %d day(s).","Aucun fichier de sauvegarde n’avait plus de %d jour(s).",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,af90f4f1e97fa76fb52be81787901cb8
+"Invalid or missing SQL backup filename.","Nom de fichier de sauvegarde SQL invalide ou manquant.",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,26e5b9e1afe25a014e269f3e828ab2ca
+"Restore aborted because safety snapshot failed: %s","Restauration annulée car l’instantané de sécurité a échoué : %s",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,62bb36fc89f1b5a6f327ba54def609b0
+"Safety snapshot created prior to restore: %s","Instantané de sécurité créé avant la restauration : %s",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,147059e495cb71bbbefb1537d792f548
+"Database restore failed.","Échec de la restauration de la base de données.",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,0a8707ee09a256c767810e16577dd9f8
+"Successfully restored database from %s.","Base de données restaurée avec succès depuis %s.",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,d695874d1198f49c16e7723dcfa90a50
+"MCP tool ""%s"" is not in the read-only allowlist. Only read-only inspection tools can be tested here.","L’outil MCP ""%s"" ne figure pas dans la liste blanche en lecture seule. Seuls les outils d’inspection en lecture seule peuvent être testés ici.",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,e7df735dbffcc9aa13238f3cbee2d50a
+"McpServer is unavailable because trk/processwire-boost is not installed.","McpServer est indisponible car trk/processwire-boost n’est pas installé.",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,885b6ba8c322d48a9dfbc329f2e9dbd0
+"MCP tool arguments must be a valid JSON object (e.g. {""selector"": ""id>0, limit=5""}).","Les arguments de l’outil MCP doivent être un objet JSON valide (ex. {""selector"": ""id>0, limit=5""}).",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,da81545076c03a6dca21b7fb021a0d3d
+"Executed read-only MCP tool ""%s"" via JSON-RPC 2.0.","Outil MCP en lecture seule ""%s"" exécuté via JSON-RPC 2.0.",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,6f6c2913e805460c85bffbd22038e44a
+"MCP tool ""%s"" returned an error response.","L’outil MCP ""%s"" a renvoyé une réponse d’erreur.",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,e48d12c12b605757e0318e3d7a9a90bd
+"BoostManager is unavailable because trk/processwire-boost is not installed.","BoostManager est indisponible car trk/processwire-boost n’est pas installé.",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,6232b4f6d62c16ce6c22fddcc03665e6
+"No AI agents configured or detected. Run php vendor/bin/wire boost:install first.","Aucun agent IA configuré ou détecté. Exécutez d’abord php vendor/bin/wire boost:install.",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,3d661c85a4b9e8e1273361e59a2f8aab
+"Synchronized Boost resources for %d agent(s) and %d module(s).","Ressources Boost synchronisées pour %d agent(s) et %d module(s).",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,aedc1992107ee3e6425b992c1568a8fc
+"Saved Boost configuration (%d feature(s), %d agent(s), %d module(s)).","Configuration Boost enregistrée (%d fonctionnalité(s), %d agent(s), %d module(s)).",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,a25b741114b52ef8118b42efabeb1927
+"Remote skill installer is unavailable because trk/processwire-boost is not installed.","L’installateur de compétences distantes est indisponible car trk/processwire-boost n’est pas installé.",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,25e37c49166d3b061fae52a53c329447
+"No valid SKILL.md definitions found in %s.","Aucune définition SKILL.md valide trouvée dans %s.",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,cfe0264cec824ac229311d8824e7a395
+"All %d skill(s) from %s are already installed.","Les %d compétence(s) de %s sont déjà toutes installées.",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,f5a6936a039562990db55dd8bfdc26f0
+"Download failed.","Échec du téléchargement.",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,85b511ea9d5d69a4cdd19bff8a598c32
+"Remote skills from %s: %d installed, %d skipped, %d blocked by audit.","Compétences distantes de %s : %d installée(s), %d ignorée(s), %d bloquée(s) par l’audit.",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,417c9791a8c80106b89b8ff87db7b4a6
+"Migration engine is unavailable because trk/processwire-console is not installed.","Le moteur de migration est indisponible car trk/processwire-console n’est pas installé.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,37ac36fddb57845946de370caf411baa
+"Created the wire_migrations tracking table.","Table de suivi wire_migrations créée.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,01f7392be01acb41c14af50e5e1f12b6
+"The wire_migrations tracking table already exists.","La table de suivi wire_migrations existe déjà.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,46ef94149fc1ab4fe781c7e189b782a5
+"Migration engine is unavailable.","Le moteur de migration est indisponible.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,55972fbf4445712cd6ca7f556b89bdde
+"Successfully executed %d pending migration(s).","%d migration(s) en attente exécutée(s) avec succès.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,519c1cb449914ea6288911d0db14b05f
+"Nothing to migrate. All schema migrations are up to date.","Rien à migrer. Toutes les migrations de schéma sont à jour.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,f745431e5ddcc728f2f296adc1210ffb
+"Rolled back %d migration(s).","%d migration(s) annulée(s).",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,3be01193473a9b3d69b95b42763be765
+"No executed migrations found to roll back.","Aucune migration exécutée à annuler.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,093333437ca326086ab6429cab8b774a
+"Migration %s aborted because safety snapshot failed: %s","Migration %s annulée car l’instantané de sécurité a échoué : %s",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,c7ed0bc049d3cadf04e199cce93d044d
+"Recreated wire_migrations table and applied %d migration(s) from scratch.","Table wire_migrations recréée et %d migration(s) appliquée(s) depuis le début.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,819b399e77373ffe8cab32d335307f2c
+"Refreshed schema migrations: rolled back %d and applied %d migration(s).","Migrations de schéma actualisées : %d annulée(s) et %d migration(s) appliquée(s).",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,a2389e507afb1a646f5e14478ce6c409
+"Reset %d applied migration(s).","%d migration(s) appliquée(s) réinitialisée(s).",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,b4f4fed18d9b90bd14ed53591de44b33
+"No applied migrations found to reset.","Aucune migration appliquée à réinitialiser.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,e3ef9dd5ddefc92f270400ccef5b1b0c
+"Queue manager is unavailable because trk/processwire-console is not installed.","Le gestionnaire de files d’attente est indisponible car trk/processwire-console n’est pas installé.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,df9d112ce2adee11be4e32992e2eee6a
+"Queue database tables (queue_jobs, failed_jobs) are ready.","Les tables de file d’attente (queue_jobs, failed_jobs) sont prêtes.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,592269cbd81d45d14868c8ad9e1c1a23
+"Unknown Job","Tâche inconnue",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,4e462e9702ffebd1aee5f9e2061889c3
+"Queue jobs table is unavailable.","La table des tâches en file d’attente est indisponible.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,2f1762a90bce95085c0c253da4371d90
+"Purged %d pending job(s) from all queues.","%d tâche(s) en attente purgée(s) de toutes les files.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,f3b9134ce23adba5521b6a83827ff9c0
+"No pending jobs found in queue_jobs.","Aucune tâche en attente trouvée dans queue_jobs.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,56e9e136a670761110f78e101b07fc75
+"Invalid queue name.","Nom de file d’attente invalide.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,78d9da36d7b9ffbc68328cd51b5864d8
+"Purged %d pending job(s) from queue ""%s"".","%d tâche(s) en attente purgée(s) de la file ""%s"".",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,21c017892b00e573e3359d5299aa09ea
+"No pending jobs found on queue ""%s"".","Aucune tâche en attente trouvée dans la file ""%s"".",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,259a4790fdc64050063004a772321d88
+"Queue manager is unavailable.","Le gestionnaire de files d’attente est indisponible.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,28f21243f41cba2280b2c885c95e94dd
+"Re-queued %d failed job(s) for processing.","%d tâche(s) échouée(s) remise(s) en file pour traitement.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,15b4b3fd50609478e1bdc6b979c38c68
+"No failed jobs found to retry.","Aucune tâche échouée à réessayer.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,7d87e9bbc989b6d5790173706a9e1085
+"Provide a valid failed job ID or select ""all"".","Fournissez un identifiant de tâche échouée valide ou sélectionnez ""all"".",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,0be01af0abdda14f3964daa4fed45ac0
+"Failed job #%d has been pushed back onto the queue.","La tâche échouée #%d a été remise dans la file d’attente.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,a84e4b62c318a74bf4fc47e8ab265765
+"Failed job #%d was not found.","La tâche échouée #%d est introuvable.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,8de9ababb4f5e21e3d2112480d5f28d6
+"Purged %d failed job record(s).","%d enregistrement(s) de tâches échouées purgé(s).",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,1d6ed292af598fd02c3bc52230c95e67
+"No failed job records to clear.","Aucun enregistrement de tâche échouée à effacer.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,cf02755eba362a9ed79e5c9cf06ea1cd
+"Provide a valid failed job ID to delete.","Fournissez un identifiant de tâche échouée valide à supprimer.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,9a019a7d2faa76256e4ec8e71a3d33de
+"Failed jobs table is unavailable.","La table des tâches échouées est indisponible.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,5adcd5a3ed215245e6762517c6d5c76d
+"Deleted failed job #%d.","Tâche échouée #%d supprimée.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,09eb0ca8cd3e9618d2a79c5b332b813f
+"Queue tables are not installed yet.","Les tables de file d’attente ne sont pas encore installées.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,a77c55dd33c38214b8b87dbe829debf1
+"Queue worker execution failed.","L’exécution du worker de file d’attente a échoué.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,d801fe149e5ea4881203d4084ba09724
+"No available jobs waiting on queue ""%s"".","Aucune tâche disponible en attente dans la file ""%s"".",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,f984aaed4d5dafaeb22e951648c83322
+"Processed %d job(s) and recorded %d failure(s) on queue ""%s"".","%d tâche(s) traitée(s) et %d échec(s) enregistré(s) sur la file ""%s"".",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,255d1c5c6597607b3572a451e4cfc92a
+"Select or provide a valid Queue handler class to dispatch.","Sélectionnez ou indiquez une classe de gestionnaire de file valide à envoyer.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,77f1392b6f605bf4a6c82d96bae39cb2
+"Payload must be a valid JSON object or array (e.g. {""userId"": 42}).","La charge utile doit être un objet ou un tableau JSON valide (ex. {""userId"": 42}).",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,20927649d7238aac79fbb44290cdeef7
+"Dispatched %s onto queue ""%s"" (Job #%d).","%s envoyé dans la file ""%s"" (Tâche #%d).",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,c9cff64ff7c8b4ca86444bed2d7cfec8
+"Invalid migration name. Use letters, numbers, and underscores starting with a letter (e.g. create_blog_fields).","Nom de migration invalide. Utilisez des lettres, chiffres et tirets bas en commençant par une lettre (ex. create_blog_fields).",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,c80b6ba17f79032be8a9a37f358b58f5
+"Unsupported migration stub type ""%s"".","Type de modèle de migration non pris en charge « %s ».",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,127216a3a52d3b041a41aa55f711e8df
+"Failed to write migration file to site/migrations/.","Impossible d’écrire le fichier de migration dans site/migrations/.",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,0e82be7910067fac535a1a000ccdaf5d
+"Created migration: site/migrations/%s","Migration créée : site/migrations/%s",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,fc2de1d041684ff223d388b107ff3bed
+"Invalid class name. Use PascalCase letters and numbers starting with a letter (e.g. SendWelcomeEmail).","Nom de classe invalide. Utilisez des lettres et chiffres en PascalCase en commençant par une lettre (ex. SendWelcomeEmail).",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,b67e82610dcc758221ab31cac8a600a7
+"Unsupported module stub type ""%s"".","Type de modèle de module non pris en charge « %s ».",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,ccd947f7276db03e79e86ce8573440ce
+"Failed to write module file to site/modules/%s/.","Impossible d’écrire le fichier du module dans site/modules/%s/.",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,86d566aa0ef0732a4e35c8a6a6b9692f
+"Created site/modules/%s/%s and refreshed module registry.","site/modules/%s/%s créé et registre des modules actualisé.",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,3af188c0b68edb8e6a2384e146d52fcd
+"Unsupported test scaffold kind ""%s"".","Type de modèle de test non pris en charge « %s ».",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,5a12028896cfa51432ca7bb735109c7d
+"Invalid E2E spec name. Start with a letter and use letters, numbers, underscores, or hyphens (e.g. checkout-flow).","Nom de spécification E2E invalide. Commencez par une lettre et utilisez uniquement des lettres, chiffres, tirets bas ou tirets (ex. checkout-flow).",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,30eb9d8bd7a0939907b311c938ba9b27
+"Invalid target module name.","Nom du module cible invalide.",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,9ae6a4bbf4973b28e48b81d1652f2454
+"Failed to create test file.","Impossible de créer le fichier de test.",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,d62b313ae96e6d4c2f3628c35266054b
+"Created %s","%s créé",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,9529e508b42de230e3df2b7846e2388e
+"Unsupported scaffold type.","Type de génération non pris en charge.",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,f896257a734e91b2936e84375296700d
+"Failed to create component file.","Impossible de créer le fichier du composant.",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,a47ec9e57a4a8c29308c162a19c0d25c
+"Seeder runtime is unavailable because trk/processwire-console is not installed.","L’environnement d’exécution des seeders est indisponible car trk/processwire-console n’est pas installé.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,df9916cc95e1da0e3591fd65922be916
+"No seeder classes found in site/seeders/.","Aucune classe de seeder trouvée dans site/seeders/.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,dece0e565901325c8c54557e8bc2ac92
+"Seeder ""%s"" was not found.","Le seeder ""%s"" est introuvable.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,ff3defc05d19aea7c5622c56339e864f
+"Seeder execution failed.","Échec de l’exécution du seeder.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,1fa9ae662c6b3f2cdc98997be16c92be
+"Successfully executed %d seeder(s): %s","%d seeder(s) exécuté(s) avec succès : %s",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,2dcb82f511f3024bcd41f5e4eaf8f0fa
+Unknown,Inconnu,,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,88183b946cc5f0e8c96b2e66e1c74a7e
+"Scheduler runtime is unavailable because trk/processwire-console is not installed.","L’environnement du planificateur est indisponible car trk/processwire-console n’est pas installé.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,7833784d0cf3b861eb7c95999a80ef9b
+"No scheduled tasks discovered in site/schedule/.","Aucune tâche planifiée détectée dans site/schedule/.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,48aaa96baca445de18692fd1e30a8bb3
+"Scheduled task ""%s"" was not found.","La tâche planifiée ""%s"" est introuvable.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,5515ca8a093716aa03c384d349dd197b
+"Executed %d task(s) with %d error(s).","%d tâche(s) exécutée(s) avec %d erreur(s).",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,8c88f30b5f9c4495d2aa64e2d5edbf21
+"No scheduled tasks are due to run right now.","Aucune tâche planifiée n’arrive à échéance en ce moment.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,4c6759483e3ab81339c26c74d243a32d
+"Successfully ran %d scheduled task(s): %s","%d tâche(s) planifiée(s) exécutée(s) avec succès : %s",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,e10d622e8af282ea93372917f141f80b
+"Failed to write site/down.json maintenance file.","Impossible d’écrire le fichier de maintenance site/down.json.",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,801030d5ea21f133472146618f61f719
+"Application is now in maintenance mode (site/down.json created).","L’application est maintenant en mode maintenance (site/down.json créé).",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,70c0c4b8365ee0911a2a89308eeab9ec
+"Application is already live.","L’application est déjà en ligne.",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,dd6f5d50b2f1597cf98186e110464a8b
+"Application is now live (site/down.json removed).","L’application est maintenant en ligne (site/down.json supprimé).",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,69a8ce6f7332d8466b1f897f3a5a8be8
+"Failed to remove site/down.json.","Impossible de supprimer site/down.json.",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,561211a1ff0a016a0c1e548045483e1f
+"Failed to clear core caches.","Impossible de vider les caches principaux.",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,6846a8042974a3c9b775636bd2217093
+"Cleared caches: %s.","Caches vidés : %s.",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,7018358aea343b4b3dfe599d3d02e560
+"Log directory is unavailable.","Le répertoire des journaux est indisponible.",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,f15476bc4096471f1d779cb4ec688921
+"Invalid log channel name.","Nom de canal de journal invalide.",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,4d5d4f0557cc0d8725ece93c2cc018c1
+"Log file ""%s"" does not exist.","Le fichier journal ""%s"" n’existe pas.",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,79d913dd86be83544946b8fdcda1b99b
+"Failed to clear log channel ""%s"".","Impossible de vider le canal de journal ""%s"".",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,5f5199deab593689ca4ca913e3aac284
+"Cleared log channel ""%s"".","Canal de journal ""%s"" vidé.",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,f162ff137f340ba29589aefe54d00b0e
+"No log files found to clear.","Aucun fichier journal à vider.",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,8cdd593e9ff0531ccd5bba1a1b753276
+"Cleared %d log channel(s).","%d canal/canaux de journaux vidé(s).",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,8ca239016a71b30028a3ad2dd9bd3b85
+"Test arguments cannot exceed 200 characters.","Les arguments de test ne peuvent pas dépasser 200 caractères.",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,a7c3a0205392658838e5950d25343bfa
+"Test arguments contain disallowed shell or path traversal characters.","Les arguments de test contiennent des caractères shell ou de traversée de chemin non autorisés.",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,883b43921ece739e4748b389156c79a3
+"Unsupported test argument ""%s"". Allowed: --filter=Name, --group=name, --testsuite=name, --stop-on-failure, --bail, --compact, or a tests/ path.","Argument de test non pris en charge ""%s"". Autorisés : --filter=Name, --group=name, --testsuite=name, --stop-on-failure, --bail, --compact ou un chemin tests/.",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,68077c00ac4d75195b17107c558e007c
+"E2E test arguments cannot exceed 200 characters.","Les arguments de test E2E ne peuvent pas dépasser 200 caractères.",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,d4b78f1d65350832623a57eba1414762
+"E2E test arguments contain disallowed shell or path traversal characters.","Les arguments de test E2E contiennent des caractères shell ou de traversée de chemin interdits.",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,0a767978280f584a167d60be298f0a58
+"Unsupported E2E argument ""%s"". Allowed: --module=Name, --grep=pattern, --project=name, --workers=N, --retries=N, --reporter=line, or a tests/e2e/ path.","Argument E2E non pris en charge « %s ». Autorisés : --module=Nom, --grep=motif, --project=nom, --workers=N, --retries=N, --reporter=line ou un chemin tests/e2e/.",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,98c5b16b8f40b49c9aeb7b2a21914415
+"Pest test runner is not available in this environment.","L’exécuteur de tests Pest n’est pas disponible dans cet environnement.",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,6c654678c5ad9bbc8d103a28b8ab6d19
+"Playwright binary is not installed in node_modules/.bin/playwright.","Le binaire Playwright n’est pas installé dans node_modules/.bin/playwright.",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,322f60e8cffec9fb82e0e1c4a2043fc7
+"Playwright E2E configuration (playwright.config.ts) is missing. Initialize Playwright first.","La configuration E2E Playwright (playwright.config.ts) est absente. Initialisez d’abord Playwright.",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,526d4065f5c1d8a3727e99eeb9531e19
+"Failed to initialize Playwright E2E configuration.","Impossible d’initialiser la configuration E2E Playwright.",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,8f55e60ba893e8ca13f0767170522a24
+"Initialized Playwright E2E configuration (%d created, %d preserved).","Configuration E2E Playwright initialisée (%d créé(s), %d conservé(s)).",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,79d1508026b721a4e0669118ed2ee23d
+"Failed to start the test runner process.","Impossible de démarrer le processus d’exécution des tests.",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,cbffd25389fa8adc82eeae7d74dce791
+"Test execution timed out after %d seconds.","L’exécution des tests a expiré après %d secondes.",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,46ea68c22111c28effbd2ef2d7630a54
+"Test suite completed with zero failures.","La suite de tests s’est terminée sans aucun échec.",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,304ece3ad23bbc7fc508149e9d744b06
+"Test suite exited with code %d.","La suite de tests s’est terminée avec le code %d.",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,e784c1540e8989dbef71cfab516dcf08
+Overview,"Vue d’ensemble",,site/modules/WireConsole/src/ConsoleRuntime.php,3b878279a04dc47d60932cb294d96259
+"System readiness, maintenance mode, cache controls, and operational telemetry.","Disponibilité du système, mode maintenance, contrôles du cache et télémétrie opérationnelle.",,site/modules/WireConsole/src/ConsoleRuntime.php,ff50f650379405f3a16f2f3b2a3f8424
+Migrations,Migrations,,site/modules/WireConsole/src/ConsoleRuntime.php,93735cd742fbfd0bc4709b8eab7b7a9c
+"Track, scaffold, and execute timestamped database schema migrations.","Suivez, générez et exécutez des migrations de schéma de base de données horodatées.",,site/modules/WireConsole/src/ConsoleRuntime.php,ec0a1b5daa729b849ebc54a855704fe9
+Queues,"Files d’attente",,site/modules/WireConsole/src/ConsoleRuntime.php,af78cb64324f55ab355daad0c1934bab
+"Monitor background queue jobs, scaffold handlers, and trigger retries.","Surveillez les tâches en arrière-plan, générez des gestionnaires et relancez les échecs.",,site/modules/WireConsole/src/ConsoleRuntime.php,03b3cab7decd33caf449dcbedf53ce39
+Seeding,Seeding,,site/modules/WireConsole/src/ConsoleRuntime.php,daf4e2a400f3027eefc04cda823cb9d9
+"Discover, scaffold, and execute database seeders in site/seeders/.","Découvrez, générez et exécutez les seeders de base de données dans site/seeders/.",,site/modules/WireConsole/src/ConsoleRuntime.php,51e0884266a39d41230f81bf041dcc6a
+Scheduling,Planification,,site/modules/WireConsole/src/ConsoleRuntime.php,ddfdc2a2b4c277158589a9f95fa2fbd8
+"Inspect cron task schedules in site/schedule/, scaffold tasks, and trigger manual runs.","Inspectez les planifications cron dans site/schedule/, générez des tâches et déclenchez des exécutions manuelles.",,site/modules/WireConsole/src/ConsoleRuntime.php,6b67c775015fe5395f835914e2675c9f
+Backups,Sauvegardes,,site/modules/WireConsole/src/ConsoleRuntime.php,1414cdc093d39dd56d0b0d20049e17fc
+"Create, download, purge, and restore SQL database backups.","Créez, téléchargez, purgez et restaurez des sauvegardes SQL de base de données.",,site/modules/WireConsole/src/ConsoleRuntime.php,ec75323158fc06c1739dd0f4a2c55af6
+Testing,Tests,,site/modules/WireConsole/src/ConsoleRuntime.php,fa6a5a3224d7da66d9e0bdec25f62cf0
+"Scaffold and run automated test suites.","Générez et exécutez des suites de tests automatisés.",,site/modules/WireConsole/src/ConsoleRuntime.php,c10b2a79ce0f7f9c4bb1233abb574e52
+"Boost & AI","Boost et IA",,site/modules/WireConsole/src/ConsoleRuntime.php,cc22866ad04f8f196ae2d2831c6e6c10
+"Inspect and synchronize AI guidelines, skills, and MCP configuration.","Inspectez et synchronisez les directives IA, compétences et configuration MCP.",,site/modules/WireConsole/src/ConsoleRuntime.php,4a2a049da7a5937519005d659239d5b2
+"Logs & Audit","Journaux et audit",,site/modules/WireConsole/src/ConsoleRuntime.php,5a2de0481b85697c35470643ae976f1e
+"Inspect security audit logs and application log channels.","Inspectez les journaux d’audit de sécurité et les canaux de journaux de l’application.",,site/modules/WireConsole/src/ConsoleRuntime.php,5f52b87c5ad38f50b39044623199ff84
+"Console command runtime is unavailable because trk/processwire-console is not installed.","L’environnement d’exécution des commandes console est indisponible car trk/processwire-console n’est pas installé.",,site/modules/WireConsole/src/ConsoleRuntime.php,784ba7cac1718e957a2ae2d54a4bd0f7
+"Command execution failed.","Échec de l’exécution de la commande.",,site/modules/WireConsole/src/ConsoleRuntime.php,a32283796554c6533b2a0f79fc5de2ad
