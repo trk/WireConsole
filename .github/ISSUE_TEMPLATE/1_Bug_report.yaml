@@ -7,14 +7,14 @@ body:
     id: affected-versions
     attributes:
       label: WireConsole version(s) affected
-      placeholder: 2.0.0
+      placeholder: 2.1.0
     validations:
       required: true
   - type: input
     id: processwire-version
     attributes:
       label: ProcessWire version
-      placeholder: 3.0.275
+      placeholder: 3.0.276
     validations:
       required: true
   - type: input

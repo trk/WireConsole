@@ -8,10 +8,6 @@ parameters:
 		- ProcessWireConsole.module.php
 	treatPhpDocTypesAsCertain: false
 	ignoreErrors:
-		# Defensive runtime guards against mixed/unwired ProcessWire properties
+		# Defensive nullsafe guards when ProcessWire Config/Paths properties are uninitialized in isolated unit tests
 		-
 			identifier: nullsafe.neverNull
-		-
-			identifier: function.alreadyNarrowedType
-		-
-			identifier: notIdentical.alwaysTrue

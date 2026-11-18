@@ -1,7 +1,12 @@
 .DS_Store
+.DS_Store?
 Thumbs.db
 /vendor/
+/composer.lock
 /node_modules/
 /.turbo/
 /.phpstan.cache
+/.phpunit.cache
 /.phpunit.result.cache
+/test-results/
+/playwright-report/

@@ -19,7 +19,6 @@ jobs:
       VERSION_FILE: "ProcessWireConsole.module.php"
     permissions:
       contents: write
-      packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -50,7 +49,12 @@ jobs:
           ')
 
           if [ -z "$VERSION" ]; then
-            echo "::error::Could not find the version number in ${{ env.VERSION_FILE }}"
+            echo "::error::Could not find the version number in ${VERSION_FILE}"
+            exit 1
+          fi
+
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Invalid semantic version format: $VERSION"
             exit 1
           fi
 
@@ -58,9 +62,11 @@ jobs:
 
       - name: Check if tag exists
         id: check_tag
+        env:
+          MOD_VERSION: ${{ steps.get_version.outputs.version }}
         run: |
-          TAG="v${{ steps.get_version.outputs.version }}"
-          if git ls-remote --tags origin "refs/tags/$TAG" | grep -q "refs/tags/$TAG"; then
+          TAG="v${MOD_VERSION}"
+          if git ls-remote --exit-code --refs --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
             echo "Tag $TAG already exists on remote. Skipping release."
           else
@@ -69,17 +75,20 @@ jobs:
 
       - name: Configure Git User
         if: steps.check_tag.outputs.exists == 'false'
+        env:
+          GIT_ACTOR: ${{ github.actor }}
         run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git config user.name "${GIT_ACTOR}"
+          git config user.email "${GIT_ACTOR}@users.noreply.github.com"
 
       - name: Create Git Tag and GitHub Release
         if: steps.check_tag.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MOD_VERSION: ${{ steps.get_version.outputs.version }}
+          REPO: ${{ github.repository }}
         run: |
-          TAG="v${{ steps.get_version.outputs.version }}"
-          REPO="${{ github.repository }}"
+          TAG="v${MOD_VERSION}"
           echo "Generated Tag: $TAG"
 
           git tag "$TAG"
