@@ -23,7 +23,7 @@ const E2E_BACKUP_FIXTURE = 'wc_pw_e2e_snapshot.sql';
 const E2E_CACHE_KEY = 'wire-console:e2e:queue-marker';
 
 function runPhpJson<T = unknown>(code: string): T {
-	return runWirePhp<T>(`require_once 'site/modules/WireConsole/tests/bootstrap.php';\n${code}`);
+	return runWirePhp<T>(code);
 }
 
 function cleanupE2eConsoleArtifacts(): void {

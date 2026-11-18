@@ -67,21 +67,24 @@ test('executeAction validates CSRF tokens across _token field and HTTP_X_CSRF_TO
 	$pw->input->post->set('inspect_file', 'agents-md');
 	$pw->input->post->set('tab', 'boost');
 
-	// 1. Empty _token must be rejected
+	// 1. Empty _token must be rejected without leaking inspectedFile content
 	$pw->input->post->set('_token', '');
 	$emptyHtml = $module->executeAction();
-	expect($emptyHtml)->toContain('Invalid or missing CSRF token');
+	expect($emptyHtml)->toContain('Invalid or missing CSRF token')
+		->and($emptyHtml)->not->toContain('ProcessWire Boost Guidelines');
 	$pw->input->post->remove('_token');
 
-	// 2. Tampered HTTP_X_CSRF_TOKEN header must be rejected
+	// 2. Tampered HTTP_X_CSRF_TOKEN header must be rejected without leaking inspectedFile content
 	$_SERVER['HTTP_X_CSRF_TOKEN'] = 'tampered-header-token';
 	$tamperedHeaderHtml = $module->executeAction();
-	expect($tamperedHeaderHtml)->toContain('Invalid or missing CSRF token');
+	expect($tamperedHeaderHtml)->toContain('Invalid or missing CSRF token')
+		->and($tamperedHeaderHtml)->not->toContain('ProcessWire Boost Guidelines');
 
 	// 3. Valid HTTP_X_CSRF_TOKEN header must succeed
 	$_SERVER['HTTP_X_CSRF_TOKEN'] = $validToken;
 	$validHeaderHtml = $module->executeAction();
 	expect($validHeaderHtml)->toContain('AGENTS.md')
+		->and($validHeaderHtml)->toContain('ProcessWire Boost Guidelines')
 		->and($validHeaderHtml)->not->toContain('Invalid or missing CSRF token');
 });
 
@@ -130,8 +133,13 @@ test('granular non-superuser role sees only permitted tabs and payload slices wh
 
 		// Requesting a disallowed tab ('logs') must fall back to 'overview' and keep unauthorized slices null
 		$payload = $runtime->buildWorkspacePayload('logs');
+		$serializedPayload = (string) json_encode($payload, JSON_UNESCAPED_SLASHES);
+		$hostRootPrefix = rtrim($runtime->getProjectRootPath(), '/');
 		expect($payload['activeTab'])->toBe('overview')
 			->and($payload['isSuperuser'])->toBeFalse()
+			->and($payload['overview']['packages']['rootPath'])->toBe('/')
+			->and($payload['overview']['maintenance']['file'])->toBe('site/down.json')
+			->and($serializedPayload)->not->toContain($hostRootPrefix)
 			->and($payload['migrations'])->toBeArray()
 			->and($payload['queues'])->toBeNull()
 			->and($payload['seeding'])->toBeNull()

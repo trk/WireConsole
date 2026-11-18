@@ -335,38 +335,41 @@ test('a role with only wire-console gets a refusal when inspecting a backup, tes
 	}
 	$backupFile = 'wc_inspect_guard_' . uniqid() . '.sql';
 	$backupFullPath = $backupDir . $backupFile;
-	file_put_contents($backupFullPath, "-- SECRET SQL BACKUP CONTENT\nSELECT 1;\n");
-
 	$createdPermissions = [];
-	foreach ([
-		\Totoglu\WireConsole\ConsoleRuntime::PERMISSION_VIEW,
-		\Totoglu\WireConsole\ConsoleRuntime::PERMISSION_BACKUP,
-	] as $permName) {
-		$perm = $pw->permissions->get('name=' . $permName);
-		if (!$perm || !$perm->id) {
-			$perm = $pw->permissions->add($permName);
-			$createdPermissions[] = $perm;
-		}
-	}
-
-	$roleName = 'wc-only-role-' . uniqid();
-	$userName = 'wc-only-user-' . uniqid();
-	$role = $pw->roles->add($roleName);
-	$role->of(false);
-	$viewPerm = $pw->permissions->get('name=page-view');
-	if ($viewPerm && $viewPerm->id) {
-		$role->addPermission($viewPerm);
-	}
-	$role->addPermission(\Totoglu\WireConsole\ConsoleRuntime::PERMISSION_VIEW);
-	$pw->roles->save($role);
-
-	$user = $pw->users->add($userName);
-	$user->of(false);
-	$user->pass = 'TempPass123!@#';
-	$user->addRole($role);
-	$pw->users->save($user);
+	$role = null;
+	$user = null;
 
 	try {
+		file_put_contents($backupFullPath, "-- SECRET SQL BACKUP CONTENT\nSELECT 1;\n");
+
+		foreach ([
+			\Totoglu\WireConsole\ConsoleRuntime::PERMISSION_VIEW,
+			\Totoglu\WireConsole\ConsoleRuntime::PERMISSION_BACKUP,
+		] as $permName) {
+			$perm = $pw->permissions->get('name=' . $permName);
+			if (!$perm || !$perm->id) {
+				$perm = $pw->permissions->add($permName);
+				$createdPermissions[] = $perm;
+			}
+		}
+
+		$roleName = 'wc-only-role-' . uniqid();
+		$userName = 'wc-only-user-' . uniqid();
+		$role = $pw->roles->add($roleName);
+		$role->of(false);
+		$viewPerm = $pw->permissions->get('name=page-view');
+		if ($viewPerm && $viewPerm->id) {
+			$role->addPermission($viewPerm);
+		}
+		$role->addPermission(\Totoglu\WireConsole\ConsoleRuntime::PERMISSION_VIEW);
+		$pw->roles->save($role);
+
+		$user = $pw->users->add($userName);
+		$user->of(false);
+		$user->pass = 'TempPass123!@#';
+		$user->addRole($role);
+		$pw->users->save($user);
+
 		$pw->users->setCurrentUser($user);
 		expect($user->isSuperuser())->toBeFalse()
 			->and($user->hasPermission(\Totoglu\WireConsole\ConsoleRuntime::PERMISSION_VIEW))->toBeTrue()
@@ -479,25 +482,37 @@ test('queue work, seeding, scheduling, maintenance mode, and cache clearing dele
 	$root = $runtime->getProjectRootPath();
 
 	// 1. Source verification: no duplicated worker/seeder/scheduler loops or raw SQL on caches/queue tables
+	$runtimeSource = (string) file_get_contents($root . 'site/modules/WireConsole/src/ConsoleRuntime.php');
 	$queuesSource = (string) file_get_contents($root . 'site/modules/WireConsole/src/Concerns/InteractsWithQueues.php');
 	$seedSchedSource = (string) file_get_contents($root . 'site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php');
 	$sysLogsSource = (string) file_get_contents($root . 'site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php');
 
+	expect($runtimeSource)->toContain('discoverVerifiedClasses(')
+		->and($runtimeSource)->toContain('ReflectionClass');
+
 	expect($queuesSource)->toContain('QueueWorkCommand')
+		->and($queuesSource)->toContain('discoverVerifiedClasses(')
+		->and($queuesSource)->toContain('escapeTable(')
+		->and($queuesSource)->toContain('->prepare(')
+		->and($queuesSource)->toContain(':limit')
+		->and($queuesSource)->toContain(':id')
+		->and($queuesSource)->toContain(':queue')
+		->and($queuesSource)->not->toContain('ReflectionObject')
 		->and($queuesSource)->not->toContain('->handle(')
 		->and($queuesSource)->not->toContain('->markFailed(')
 		->and($queuesSource)->not->toContain('->releaseJob(')
-		->and($queuesSource)->not->toContain('DELETE FROM')
-		->and($queuesSource)->not->toContain('SELECT ')
 		->and($queuesSource)->not->toContain('SHOW TABLES');
 
 	expect($seedSchedSource)->toContain('DbSeedCommand')
 		->and($seedSchedSource)->toContain('ScheduleRunCommand')
+		->and($seedSchedSource)->toContain('discoverVerifiedClasses(')
 		->and($seedSchedSource)->not->toContain('->run()')
 		->and($seedSchedSource)->not->toContain('->handle()');
 
 	expect($sysLogsSource)->toContain('DownCommand')
 		->and($sysLogsSource)->toContain('UpCommand')
+		->and($sysLogsSource)->toContain('->getLogs(true)')
+		->and($sysLogsSource)->not->toContain('->getFiles(')
 		->and($sysLogsSource)->not->toContain('DELETE FROM')
 		->and($sysLogsSource)->not->toContain('`caches`');
 
@@ -749,8 +764,18 @@ test('Playwright E2E sanitizer, TestE2eCommand --init, Make*Command scaffolding 
 
 	expect($boostSource)->toContain('->applyConfiguration(')
 		->and($boostSource)->toContain('SkillWriter::sanitizeSkillName(')
+		->and($boostSource)->toContain('risk->weight() >= 3')
+		->and($boostSource)->toContain('.staging_')
 		->and($boostSource)->toContain("McpServer::isEnvEnabled('PW_MCP_ALLOW_EXECUTE')")
 		->and($boostSource)->toContain("McpServer::isEnvEnabled('PW_MCP_ALLOW_RESTORE')");
+
+	// Invalid explicit agent or module names in configureBoost must fail before touching any files
+	$invalidAgentRes = $runtime->configureBoost(['guidelines'], ['WireConsole'], ['non_existent_agent_xyz']);
+	$mixedInvalidAgentRes = $runtime->configureBoost(['guidelines'], ['WireConsole'], ['claude_code', 'non_existent_agent_xyz']);
+	$invalidModuleRes = $runtime->configureBoost(['guidelines'], ['WireConsole', 'NonExistentModuleXyz'], ['claude_code']);
+	expect($invalidAgentRes['ok'])->toBeFalse()
+		->and($mixedInvalidAgentRes['ok'])->toBeFalse()
+		->and($invalidModuleRes['ok'])->toBeFalse();
 
 	// 2. Testing environment & sanitizeE2eArgs validation
 	$testEnv = $runtime->getTestingEnvironment();
@@ -783,10 +808,29 @@ test('Playwright E2E sanitizer, TestE2eCommand --init, Make*Command scaffolding 
 		expect($runtime->sanitizeE2eArgs($rejectedE2eArg)['ok'])->toBeFalse("Expected E2E arg to be rejected: {$rejectedE2eArg}");
 	}
 
-	// 3. Non-destructive initPlaywrightE2e preserves existing configuration
-	$initRes = $runtime->initPlaywrightE2e();
-	expect($initRes['ok'])->toBeTrue()
-		->and($initRes['skipped'])->toContain('playwright.config.ts');
+	// 3. Isolated sandbox verification of initPlaywrightE2e (never touches shared project root)
+	$pw = ProcessWire::getCurrentInstance();
+	$originalSitePath = (string) $pw->config->paths->site;
+	$sandboxRoot = rtrim(sys_get_temp_dir(), '/\\') . '/wc_e2e_init_' . uniqid();
+	@mkdir($sandboxRoot . '/site', 0755, true);
+	@mkdir($sandboxRoot . '/node_modules/.bin', 0755, true);
+	$fakePlaywright = $sandboxRoot . '/node_modules/.bin/playwright';
+	file_put_contents($fakePlaywright, "#!/bin/sh\nexit 0\n");
+	@chmod($fakePlaywright, 0755);
+
+	try {
+		$pw->config->paths->set('site', $sandboxRoot . '/site/');
+		$firstInit = $runtime->initPlaywrightE2e();
+		expect($firstInit['ok'])->toBeTrue()
+			->and($firstInit['created'])->toContain('playwright.config.ts');
+
+		$secondInit = $runtime->initPlaywrightE2e();
+		expect($secondInit['ok'])->toBeTrue()
+			->and($secondInit['skipped'])->toContain('playwright.config.ts');
+	} finally {
+		$pw->config->paths->set('site', $originalSitePath);
+		\Totoglu\Console\Boost\Install\SkillWriter::deleteTree($sandboxRoot);
+	}
 
 	// 4. Scaffold typed migration, unit Pest test, and Playwright E2E spec via Make*Command delegation
 	$createdFiles = [];
@@ -840,4 +884,308 @@ test('Playwright E2E sanitizer, TestE2eCommand --init, Make*Command scaffolding 
 	}
 });
 
+test('symlinked files, abstract task/seeder classes, and canonical module Boost skill discovery are enforced', function (): void {
+	wcSetSuperuser();
+	$pw = ProcessWire::getCurrentInstance();
+	$runtime = \Totoglu\WireConsole\ConsoleRuntime::make($pw);
+	$root = $runtime->getProjectRootPath();
 
+	// 1. Canonical Boost discovery for WireConsole (.agents/skills/pw-wire-console/SKILL.md + AGENTS.md)
+	$boostStatus = $runtime->getBoostStatus();
+	expect($boostStatus['available'])->toBeTrue();
+	$wireConsoleBoost = null;
+	foreach ($boostStatus['discoverableModules'] as $modMeta) {
+		if ($modMeta['name'] === 'WireConsole') {
+			$wireConsoleBoost = $modMeta;
+			break;
+		}
+	}
+	expect($wireConsoleBoost)->toBeArray()
+		->and($wireConsoleBoost['hasGuidelines'])->toBeTrue()
+		->and($wireConsoleBoost['hasSkills'])->toBeTrue();
+
+	// 2. Abstract Task and symlinked Task/Backup/Migration rejection
+	$scheduleDir = $root . 'site/schedule/';
+	$migDir = $root . 'site/migrations/';
+	$backupDir = $runtime->getBackupDirectory();
+	if (!is_dir($scheduleDir)) {
+		mkdir($scheduleDir, 0755, true);
+	}
+	if (!is_dir($migDir)) {
+		mkdir($migDir, 0755, true);
+	}
+
+	$abstractTaskFile = $scheduleDir . 'WcAbstractSkipTask.php';
+	$symlinkMigPath = $migDir . '99999999999999_wc_symlink_mig.php';
+	$symlinkBackupPath = $backupDir . 'wc_symlink_escape.sql';
+	$outsideSecretFile = rtrim(sys_get_temp_dir(), '/\\') . '/wc_outside_secret_' . uniqid() . '.txt';
+
+	file_put_contents($outsideSecretFile, "TOP_SECRET_OUTSIDE_ROOT\n");
+	file_put_contents($abstractTaskFile, <<<'PHP'
+<?php
+declare(strict_types=1);
+namespace Site\Schedule;
+use Totoglu\Console\Scheduling\Event;
+use Totoglu\Console\Scheduling\Task;
+abstract class WcAbstractSkipTask extends Task
+{
+	public function schedule(Event $event): void
+	{
+		$event->everyMinute();
+	}
+}
+PHP);
+
+	@symlink($outsideSecretFile, $symlinkMigPath);
+	@symlink($outsideSecretFile, $symlinkBackupPath);
+
+	try {
+		$fresh = \Totoglu\WireConsole\ConsoleRuntime::make($pw);
+		$taskNames = array_column($fresh->getScheduledTasks(), 'name');
+		expect($taskNames)->not->toContain('WcAbstractSkipTask');
+
+		expect($fresh->resolveBackupFilePath('wc_symlink_escape.sql'))->toBeNull()
+			->and($fresh->inspectProjectFile('backup', 'wc_symlink_escape.sql'))->toBeNull()
+			->and($fresh->inspectProjectFile('migration', '99999999999999_wc_symlink_mig'))->toBeNull();
+
+		// Symlinked log file in site/assets/logs/ must be rejected by both readLogEntries() and clearLogChannel()
+		$logsDir = rtrim((string) $pw->config->paths->logs, '/') . '/';
+		$symlinkLogPath = $logsDir . 'wc-symlink-log.txt';
+		@symlink($outsideSecretFile, $symlinkLogPath);
+		try {
+			expect($fresh->readLogEntries('wc-symlink-log'))->toBe([]);
+			$clearSymRes = $fresh->clearLogChannel('wc-symlink-log');
+			expect($clearSymRes['ok'])->toBeFalse()
+				->and((string) file_get_contents($outsideSecretFile))->toContain('TOP_SECRET_OUTSIDE_ROOT');
+		} finally {
+			if (is_link($symlinkLogPath) || is_file($symlinkLogPath)) {
+				@unlink($symlinkLogPath);
+			}
+		}
+
+		// 3. Numeric-ID RBAC permission strings ("36", "1", "") must always be rejected by userCanView()
+		expect($fresh->userCanView('36'))->toBeFalse()
+			->and($fresh->userCanView('1'))->toBeFalse()
+			->and($fresh->userCanView(''))->toBeFalse();
+
+		// 4. Non-POST HTTP requests (e.g. GET) must never dispatch workspace actions via executeAction()
+		$module = wcTestModule();
+		$prevMethod = $_SERVER['REQUEST_METHOD'] ?? null;
+		try {
+			$_SERVER['REQUEST_METHOD'] = 'GET';
+			$pw->input->post->set('action', 'clearSystemCaches');
+			$pw->input->post->set('cache_clear_mode', 'wire');
+			$pw->input->post->set('confirm_system_cache_clear', 'CACHE');
+			$pw->input->post->set('_token', (string) $pw->session->CSRF->getTokenValue());
+
+			$pw->cache->save('wire-console:test:get-method-guard', 'untouched', 300);
+			$module->executeAction();
+			expect($pw->cache->get('wire-console:test:get-method-guard'))->toBe('untouched');
+		} finally {
+			if ($prevMethod === null) {
+				unset($_SERVER['REQUEST_METHOD']);
+			} else {
+				$_SERVER['REQUEST_METHOD'] = $prevMethod;
+			}
+			$pw->input->post->removeAll();
+			$pw->cache->delete('wire-console:test:get-method-guard');
+		}
+
+		// 5. Symlinked PHP files in site/queue, site/seeders, and site/schedule must NEVER be require_once'd
+		$queueDir = $root . 'site/queue/';
+		$seederDir = $root . 'site/seeders/';
+		if (!is_dir($queueDir)) {
+			mkdir($queueDir, 0755, true);
+		}
+		if (!is_dir($seederDir)) {
+			mkdir($seederDir, 0755, true);
+		}
+
+		$outsidePhpPayload = rtrim(sys_get_temp_dir(), '/\\') . '/wc_outside_payload_' . uniqid() . '.php';
+		file_put_contents($outsidePhpPayload, "<?php\n\$GLOBALS['__wc_symlink_included'] = true;\n");
+		$symlinkQueuePath = $queueDir . 'WcSymlinkEscapeQueue.php';
+		$symlinkSeederPath = $seederDir . 'WcSymlinkEscapeSeeder.php';
+		$symlinkTaskPath = $scheduleDir . 'WcSymlinkEscapeTask.php';
+		$abstractQueueFile = $queueDir . 'WcAbstractSkipQueue.php';
+
+		file_put_contents($abstractQueueFile, <<<'PHP'
+<?php
+declare(strict_types=1);
+namespace Site\Queue;
+use Totoglu\Console\Queue\Queue;
+abstract class WcAbstractSkipQueue extends Queue
+{
+}
+PHP);
+
+		@symlink($outsidePhpPayload, $symlinkQueuePath);
+		@symlink($outsidePhpPayload, $symlinkSeederPath);
+		@symlink($outsidePhpPayload, $symlinkTaskPath);
+		unset($GLOBALS['__wc_symlink_included']);
+
+		try {
+			$isolatedRt = \Totoglu\WireConsole\ConsoleRuntime::make($pw);
+			$queueNames = array_column($isolatedRt->getQueuesStatus()['discoveredQueues'], 'name');
+			$seederNames = array_column($isolatedRt->getDiscoveredSeeders(), 'name');
+			$schedNames = array_column($isolatedRt->getScheduledTasks(), 'name');
+
+			expect($queueNames)->not->toContain('WcSymlinkEscapeQueue')
+				->and($queueNames)->not->toContain('WcAbstractSkipQueue')
+				->and($seederNames)->not->toContain('WcSymlinkEscapeSeeder')
+				->and($schedNames)->not->toContain('WcSymlinkEscapeTask');
+
+			$isolatedRt->installQueueTables();
+			$dispatchSymRes = $isolatedRt->dispatchQueueJob('WcSymlinkEscapeQueue', '{}');
+			$workSymRes = $isolatedRt->workQueueBatch();
+			$seedSymRes = $isolatedRt->runSeeders('all');
+			$schedSymRes = $isolatedRt->runScheduledTasks('due');
+			expect($dispatchSymRes['ok'])->toBeFalse()
+				->and($workSymRes['ok'])->toBeFalse()
+				->and($seedSymRes['ok'])->toBeFalse()
+				->and($schedSymRes['ok'])->toBeFalse()
+				->and(isset($GLOBALS['__wc_symlink_included']))->toBeFalse();
+		} finally {
+			unset($GLOBALS['__wc_symlink_included']);
+			foreach ([$symlinkQueuePath, $symlinkSeederPath, $symlinkTaskPath, $abstractQueueFile, $outsidePhpPayload] as $symCleanup) {
+				if (is_link($symCleanup) || is_file($symCleanup)) {
+					@unlink($symCleanup);
+				}
+			}
+		}
+
+		// 6. ProcessWire demo mode ($config->demo = true) blocks mutations, SQL backup previews, and SQL downloads while permitting read-only MCP inspection
+		$demoSqlFixture = $backupDir . 'wc_demo_guard_fixture.sql';
+		file_put_contents($demoSqlFixture, "-- DEMO PROTECTED SQL\nSELECT 1;\n");
+		$prevDemo = (bool) ($pw->config->demo ?? false);
+		$pw->config->demo = true;
+		try {
+			$demoRt = \Totoglu\WireConsole\ConsoleRuntime::make($pw);
+			expect($demoRt->isDemoMode())->toBeTrue()
+				->and($demoRt->userCanInspectCategory('backup'))->toBeFalse()
+				->and($demoRt->inspectProjectFile('backup', 'wc_demo_guard_fixture.sql'))->toBeNull()
+				->and($demoRt->inspectProjectFile('boost-doc', 'agents-md'))->toBeArray();
+
+			$demoPayload = $demoRt->buildWorkspacePayload('overview');
+			expect($demoPayload['isDemoMode'])->toBeTrue();
+
+			$blockedMut = $demoRt->executeWorkspaceAction('clearSystemCaches', [
+				'cache_clear_mode' => 'wire',
+				'confirm_system_cache_clear' => 'CACHE',
+			]);
+			expect($blockedMut['ok'])->toBeFalse()
+				->and($blockedMut['message'])->toContain('demo mode');
+
+			$allowedMcp = $demoRt->executeWorkspaceAction('runMcpReadOnlyTool', [
+				'mcp_tool_name' => 'pw_module_list',
+				'mcp_tool_args' => '{}',
+				'confirm_boost_mcp_test' => 'QUERY',
+			]);
+			expect($allowedMcp['ok'])->toBeTrue();
+
+			$pw->input->get->set('file', 'wc_demo_guard_fixture.sql');
+			expect(static fn() => wcTestModule()->executeDownloadBackup())->toThrow(\ProcessWire\WirePermissionException::class);
+		} finally {
+			$pw->config->demo = $prevDemo;
+			$pw->input->get->removeAll();
+			if (is_file($demoSqlFixture)) {
+				@unlink($demoSqlFixture);
+			}
+		}
+
+		// 7. Missing applied migrations, symlinked site/down.json refusal, and throwing Task::schedule() isolation
+		$rtExtra = \Totoglu\WireConsole\ConsoleRuntime::make($pw);
+		$rtExtra->installMigrationsTable();
+		$ghostMigration = '2099_12_31_235959_wc_ghost_missing_migration';
+		$downPath = $rtExtra->getMaintenanceFilePath();
+		$goodTaskFile = $root . 'site/schedule/WcHealthyVerifyTask.php';
+		$throwingTaskFile = $root . 'site/schedule/WcThrowingScheduleTask.php';
+
+		try {
+			$migTable = $pw->database->escapeTable(\Totoglu\WireConsole\ConsoleRuntime::TABLE_MIGRATIONS);
+			$insStmt = $pw->database->prepare("INSERT INTO `{$migTable}` (`migration`, `batch`) VALUES (:mig, 99)");
+			$insStmt->execute([':mig' => $ghostMigration]);
+
+			$migStatus = $rtExtra->getMigrationsStatus();
+			$ghostRow = null;
+			foreach ($migStatus['items'] as $migItem) {
+				if ($migItem['name'] === $ghostMigration) {
+					$ghostRow = $migItem;
+					break;
+				}
+			}
+			expect($ghostRow)->not->toBeNull()
+				->and($ghostRow['status'] ?? null)->toBe('Missing')
+				->and($ghostRow['batch'] ?? null)->toBe(99)
+				->and($migStatus['lastBatch'])->toBeGreaterThanOrEqual(99)
+				->and($migStatus['pending'])->toBe(0)
+				->and(array_column($migStatus['items'], 'name'))->not->toContain('99999999999999_wc_symlink_mig');
+
+			expect($rtExtra->runMigrations()['ok'])->toBeFalse()
+				->and($rtExtra->rollbackMigrations()['ok'])->toBeFalse()
+				->and($rtExtra->resetMigrations('reset', false)['ok'])->toBeFalse();
+
+			if (!is_file($downPath) && !is_link($downPath)) {
+				@symlink($outsideSecretFile, $downPath);
+				$downRes = $rtExtra->enableMaintenanceMode('sym-secret', 600);
+				expect($downRes['ok'])->toBeFalse()
+					->and(is_link($downPath))->toBeTrue()
+					->and(is_file($outsideSecretFile))->toBeTrue();
+
+				$upRes = $rtExtra->disableMaintenanceMode();
+				expect($upRes['ok'])->toBeTrue()
+					->and(is_link($downPath))->toBeFalse()
+					->and(is_file($outsideSecretFile))->toBeTrue();
+			}
+
+			if (!is_dir(dirname($goodTaskFile))) {
+				@mkdir(dirname($goodTaskFile), 0755, true);
+			}
+			file_put_contents($goodTaskFile, <<<'PHP'
+<?php
+declare(strict_types=1);
+namespace Site\Schedule;
+use Totoglu\Console\Scheduling\Event;
+use Totoglu\Console\Scheduling\Task;
+class WcHealthyVerifyTask extends Task
+{
+	public function schedule(Event $event): void { $event->hourly(); }
+	public function handle(): void {}
+}
+PHP);
+			file_put_contents($throwingTaskFile, <<<'PHP'
+<?php
+declare(strict_types=1);
+namespace Site\Schedule;
+use Totoglu\Console\Scheduling\Event;
+use Totoglu\Console\Scheduling\Task;
+class WcThrowingScheduleTask extends Task
+{
+	public function schedule(Event $event): void { throw new \RuntimeException('Broken schedule definition'); }
+	public function handle(): void {}
+}
+PHP);
+
+			$isolatedTasks = array_column(\Totoglu\WireConsole\ConsoleRuntime::make($pw)->getScheduledTasks(), 'name');
+			expect($isolatedTasks)->toContain('WcHealthyVerifyTask')
+				->and($isolatedTasks)->not->toContain('WcThrowingScheduleTask');
+		} finally {
+			$migTable = $pw->database->escapeTable(\Totoglu\WireConsole\ConsoleRuntime::TABLE_MIGRATIONS);
+			$delStmt = $pw->database->prepare("DELETE FROM `{$migTable}` WHERE `migration` = :mig");
+			$delStmt->execute([':mig' => $ghostMigration]);
+			if (is_link($downPath)) {
+				@unlink($downPath);
+			}
+			foreach ([$goodTaskFile, $throwingTaskFile] as $taskClean) {
+				if (is_file($taskClean)) {
+					@unlink($taskClean);
+				}
+			}
+		}
+	} finally {
+		foreach ([$abstractTaskFile, $symlinkMigPath, $symlinkBackupPath, $outsideSecretFile] as $cleanupPath) {
+			if (is_link($cleanupPath) || is_file($cleanupPath)) {
+				@unlink($cleanupPath);
+			}
+		}
+	}
+});

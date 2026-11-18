@@ -28,11 +28,11 @@ test('ProcessWireConsole registers WireClassLoader namespace strictly once in __
 		}
 		$srcContent = (string) file_get_contents($file->getPathname());
 		$relPath = str_replace($moduleRoot . '/', '', $file->getPathname());
-		expect($srcContent)->not->toContain('addNamespace(', "Unexpected addNamespace in {$relPath}")
-			->and($srcContent)->not->toContain('require_once', "Unexpected require_once in {$relPath}")
-			->and($srcContent)->not->toContain('class_exists', "Unexpected class_exists in {$relPath}")
-			->and($srcContent)->not->toContain('trait_exists', "Unexpected trait_exists in {$relPath}")
-			->and($srcContent)->not->toContain('interface_exists', "Unexpected interface_exists in {$relPath}");
+		expect($srcContent)->not->toContain('addNamespace(')
+			->and($srcContent)->not->toContain('require_once')
+			->and($srcContent)->not->toContain('class_exists')
+			->and($srcContent)->not->toContain('trait_exists')
+			->and($srcContent)->not->toContain('interface_exists');
 	}
 
 	// Literal permission constants on ProcessWireConsole must match ConsoleRuntime constants 1-to-1
@@ -213,7 +213,7 @@ test('ProcessWireConsole exposes nested UI translations and matching LanguagePor
 	fclose($fp);
 
 	expect($exportHeader)->toBeArray()
-		->and($expectedRows)->toHaveCount(628);
+		->and($expectedRows)->toHaveCount(637);
 
 	$expectedLocales = ['en', 'tr', 'de', 'fr', 'es', 'ru'];
 	foreach ($expectedLocales as $locale) {
