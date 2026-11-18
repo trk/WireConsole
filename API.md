@@ -4,7 +4,7 @@
 
 ## 1. Process Module: `ProcessWire\ProcessWireConsole`
 
-Mounted at **Setup > Console** (`/processwire/setup/wire-console/`). Extends `Totoglu\ProcessReactWorkspace\Inertia\ProcessReact` (`Totoglu\Inertia\ProcessInertia` + `InteractWithReact`), requiring `Inertia` and `ProcessReactWorkspace`.
+Mounted at **Setup > Console** (`{admin}/setup/wire-console/`). Extends `Totoglu\ProcessReactWorkspace\Inertia\ProcessReact` (`Totoglu\Inertia\ProcessInertia` + `InteractWithReact`), requiring `Inertia` and `ProcessReactWorkspace`.
 
 ```php
 <?php
@@ -62,7 +62,7 @@ $runtime = $console->runtime();
 | `*executeLogs` | `public function ___executeLogs(): string` | Renders the `logs` section (`./logs/`). |
 | `*executeAction` | `public function ___executeAction(): string` | Validates CSRF and dispatches a posted workspace action (`./action/`) via `ConsoleRuntime::executeWorkspaceAction(...)`. |
 | `*executeNavJSON` | `public function ___executeNavJSON(array $options = []): string\|array` | Returns the `Setup > Console` admin flyout menu JSON filtered by accessible section permissions. |
-| `*executeDownloadBackup` | `public function ___executeDownloadBackup(): void` | Streams a verified `.sql` snapshot from `site/assets/backups/database/` (throws `WirePermissionException` for non-superusers and `Wire404Exception` for missing/invalid files). |
+| `*executeDownloadBackup` | `public function ___executeDownloadBackup(): void` | Streams a verified `.sql` snapshot from `site/assets/backups/database/` (throws `WirePermissionException` for non-superusers or when `$config->demo` is active, and `Wire404Exception` for missing/invalid files). |
 | `*translations` | `public function ___translations(): array` | Returns the nested UI translation catalog consumed by `ProcessReactWorkspace::resolveModuleTranslations(...)`. |
 | `*install` | `public function ___install(): void` | Creates the `Setup > Console` admin page and installs all `wire-console*` permissions idempotently. |
 | `*uninstall` | `public function ___uninstall(): void` | Deletes `wire-console-audit` logs, removes `wire-console*` `WireCache` entries, and removes all `wire-console*` permissions. |
@@ -73,6 +73,19 @@ $runtime = $console->runtime();
 
 Registered under `Totoglu\WireConsole` in `ProcessWireConsole::__construct()` and composed of focused subsystem traits (`HandlesWorkspaceActions`, `InteractsWithMigrations`, `InteractsWithQueues`, `InteractsWithBackups`, `InteractsWithBoost`, `InteractsWithScaffolding`, `InteractsWithSeedingAndScheduling`, `InteractsWithSystemAndLogs`, `InteractsWithTesting`).
 
+### Class Constants
+
+| Constant | Value | Purpose |
+|---|---|---|
+| `ConsoleRuntime::LOG_CHANNEL` | `'wire-console-audit'` | ProcessWire log channel receiving structured JSON audit entries |
+| `ConsoleRuntime::TABLE_MIGRATIONS` | `'wire_migrations'` | Database table tracking applied schema migrations |
+| `ConsoleRuntime::TABLE_QUEUE_JOBS` | `'queue_jobs'` | Database table storing pending and reserved queue jobs |
+| `ConsoleRuntime::TABLE_QUEUE_FAILED` | `'failed_jobs'` | Database table storing failed queue job records |
+| `ConsoleRuntime::MAX_JSON_BODY_BYTES` | `65536` | Maximum JSON argument string byte length (`64 KB`) |
+| `ConsoleRuntime::MAX_JSON_DEPTH` | `16` | Maximum JSON argument nesting depth |
+| `ConsoleRuntime::MAX_JSON_ELEMENTS` | `512` | Maximum total element count in decoded queue/MCP JSON payloads |
+| `ConsoleRuntime::PERMISSION_*` | `'wire-console*'` | 1-to-1 permission constants matching `ProcessWireConsole::PERMISSION_*` |
+
 ### Core Runtime & Security Methods
 
 | Method | Signature | Description |
@@ -81,8 +94,9 @@ Registered under `Totoglu\WireConsole` in `ProcessWireConsole::__construct()` an
 | `getTabDefinitions` | `public function getTabDefinitions(): array` | Returns metadata (`label`, `icon`, `permission`, `description`) for all 9 workspace sections. |
 | `getAccessibleTabs` | `public function getAccessibleTabs(): array` | Filters `getTabDefinitions()` to sections permitted for the current user. |
 | `userCanView` | `public function userCanView(string $permission): bool` | Checks whether the current user is logged in and holds `$permission`. |
-| `userCanInspectCategory` | `public function userCanInspectCategory(string $category): bool` | Enforces section-level RBAC (plus superuser check for `'backup'`) before file inspection. |
+| `userCanInspectCategory` | `public function userCanInspectCategory(string $category): bool` | Enforces section-level RBAC (plus superuser and non-demo checks for `'backup'`) before file inspection. |
 | `isSuperuser` | `public function isSuperuser(): bool` | Returns `true` only for an authenticated ProcessWire superuser. |
+| `isDemoMode` | `public function isDemoMode(): bool` | Returns `true` when ProcessWire demo mode (`$config->demo`) is active. |
 | `getProjectRootPath` | `public function getProjectRootPath(): string` | Resolves the normalized root path of the ProcessWire installation. |
 | `isConsolePackageAvailable` | `public function isConsolePackageAvailable(): bool` | Returns `true` when `trk/processwire-console` is installed in `vendor/`. |
 | `isBoostPackageAvailable` | `public function isBoostPackageAvailable(): bool` | Returns `true` when `trk/processwire-boost` is installed in `vendor/`. |

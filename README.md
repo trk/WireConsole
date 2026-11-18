@@ -1,6 +1,6 @@
 # ProcessWireConsole
 
-Full-page Inertia v3 + React 19 + Tailwind CSS v4 administrative workspace (`Setup > Console`, `/processwire/setup/wire-console/`) for operating **`trk/processwire-console`** and **`trk/processwire-boost`** from the ProcessWire backend.
+Full-page Inertia v3 + React 19 + Tailwind CSS v4 administrative workspace (`Setup > Console`, `{admin}/setup/wire-console/`) for operating **`trk/processwire-console`** and **`trk/processwire-boost`** from the ProcessWire backend.
 
 ![ProcessWire Console](https://raw.githubusercontent.com/trk/WireConsole/refs/heads/main/preview.jpg)
 
@@ -134,8 +134,8 @@ php vendor/bin/wire log:tail wire-console-audit
 - **Granular Section RBAC:** Non-superuser roles granted `wire-console` plus specific `wire-console-*` permissions receive **read-only** visibility restricted strictly to their permitted sections; unauthorized payload slices are omitted (`null`).
 - **Superuser & Confirmation Gate:** All mutating actions (`migrate`, `queue:work`, `db:seed`, `schedule:run`, `db:backup`, `db:restore`, `test`, `boost:*`, `make:*`, cache flushes, maintenance toggles, log clearing) enforce:
   1. Valid ProcessWire `$session->CSRF` token (`_token` or `X-CSRF-Token` header)
-  2. Authenticated ProcessWire **superuser** account
+  2. Authenticated ProcessWire **superuser** account (and `$config->demo` disabled)
   3. Action-specific confirmation token (`RUN`, `ROLLBACK`, `RESET`, `BACKUP`, `RESTORE`, `PURGE`, etc.)
   4. Per-action session cooldown rate-limiting
-- **File Inspection & Backup Isolation:** Read-only source inspection (`inspectFile`) validates strict identifier patterns, `basename()` / `realpath()` directory containment, and the owning section's permission. Inspecting or downloading `.sql` snapshots additionally requires **superuser** privileges plus `wire-console-backup`.
+- **File Inspection & Backup Isolation:** Read-only source inspection (`inspectFile`) validates strict identifier patterns, `!is_link()` + `basename()` / `realpath()` directory containment, and the owning section's permission. Inspecting or downloading `.sql` snapshots additionally requires **superuser** privileges, `wire-console-backup`, and `$config->demo` disabled.
 - **Bounded Inputs & Redacted Audit Trail:** JSON payloads are bounded to `64 KB` and `16` nesting levels, Pest CLI arguments are token-allowlisted without shell interpolation, and all actions write structured entries (with automatic secret/token/password redaction) to `wire-console-audit`.
