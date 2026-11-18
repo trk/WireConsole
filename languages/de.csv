@@ -21,10 +21,12 @@ Logs,Protokolle,,site/modules/WireConsole/ProcessWireConsole.module.php,b2d37ae1
 "System Logs",Systemprotokolle,,site/modules/WireConsole/ProcessWireConsole.module.php,aeecbbb69417fe48f1eadcd84373a2b3
 "Invalid or missing CSRF token. Please refresh and try again.","Ungültiges oder fehlendes CSRF-Token. Bitte aktualisieren Sie die Seite und versuchen Sie es erneut.",,site/modules/WireConsole/ProcessWireConsole.module.php,18adb91549b4b3324012ffd074ee2a78
 "Superuser permission is required to download SQL backups.","Zum Herunterladen von SQL-Backups ist eine Superuser-Berechtigung erforderlich.",,site/modules/WireConsole/ProcessWireConsole.module.php,e149805ce7475964001173989df7eade
+"SQL backup downloads are disabled in demo mode.","Das Herunterladen von SQL-Sicherungen ist im Demo-Modus deaktiviert.",,site/modules/WireConsole/ProcessWireConsole.module.php,283d903555fb15d943032d0115c60795
 "Requested SQL backup file was not found.","Die angeforderte SQL-Backup-Datei wurde nicht gefunden.",,site/modules/WireConsole/ProcessWireConsole.module.php,985f890d9fdecc9ee00afaf460a728fa
 "System health, database maintenance, background tasks, and diagnostics.","Systemzustand, Datenbankwartung, Hintergrundaufgaben und Diagnose.",,site/modules/WireConsole/ProcessWireConsole.module.php,b0e75e1af902cffbf913008d8c151593
 "Maintenance Mode (503)","Wartungsmodus (503)",,site/modules/WireConsole/ProcessWireConsole.module.php,19ff9a2110b71d4aa245a06994ba85d4
 "System Online","System online",,site/modules/WireConsole/ProcessWireConsole.module.php,b1c8c60af117f0cfd160071155746165
+"Demo Mode",Demo-Modus,,site/modules/WireConsole/ProcessWireConsole.module.php,943bfde19aa3b18b6cdb713ed55fcd2e
 "Refresh Telemetry","Telemetrie aktualisieren",,site/modules/WireConsole/ProcessWireConsole.module.php,3a673285fc6f69515571a7c155afe573
 Confirm,Bestätigen,,site/modules/WireConsole/ProcessWireConsole.module.php,70d9be9b139893aa6c69b5e77e614311
 "CLI Equivalent",CLI-Äquivalent,,site/modules/WireConsole/ProcessWireConsole.module.php,333931486c6c0624729207e94ff9c015
@@ -481,6 +483,7 @@ User,Benutzer,,site/modules/WireConsole/ProcessWireConsole.module.php,8f9bfe9d13
 "Unknown workspace action: %s","Unbekannte Arbeitsbereichsaktion: %s",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,c8173c1d7a28b3a96fe8488278753c7e
 "Access denied: missing required permission for this workspace section.","Zugriff verweigert: erforderliche Berechtigung für diesen Arbeitsbereich fehlt.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,5d4fa11df7c1af962f7d2820366224ea
 "Mutations and destructive operations require a ProcessWire superuser account.","Ändernde und destruktive Operationen erfordern ein ProcessWire-Superuser-Konto.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,a432dfc3adf29a42ffb1696eee74fef3
+"Mutations are disabled in demo mode.","Änderungen sind im Demo-Modus deaktiviert.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,de8f26d905adbc8d23127d43d71a3a91
 "Confirmation failed: please type ""%s"" to confirm this operation.","Bestätigung fehlgeschlagen: bitte geben Sie ""%s"" ein, um diesen Vorgang zu bestätigen.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,f329811fe4fb65e19e7e852032fd76fb
 "Rate limit active: please wait %d seconds before repeating this action.","Ratenbegrenzung aktiv: bitte warten Sie %d Sekunden, bevor Sie diese Aktion wiederholen.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,c07ab996f8014267baa19acd146a5eab
 "Access denied: missing permission to inspect files in this category.","Zugriff verweigert: fehlende Berechtigung zum Untersuchen von Dateien in dieser Kategorie.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,d6b990f1ae05d3e733c87f0442b3a62b
@@ -510,11 +513,13 @@ User,Benutzer,,site/modules/WireConsole/ProcessWireConsole.module.php,8f9bfe9d13
 "No valid SKILL.md definitions found in %s.","Keine gültigen SKILL.md-Definitionen in %s gefunden.",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,cfe0264cec824ac229311d8824e7a395
 "All %d skill(s) from %s are already installed.","Alle %d Skill(s) aus %s sind bereits installiert.",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,f5a6936a039562990db55dd8bfdc26f0
 "Download failed.","Download fehlgeschlagen.",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,85b511ea9d5d69a4cdd19bff8a598c32
+"Security audit result unavailable.","Ergebnis der Sicherheitsprüfung nicht verfügbar.",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,1da5fee52efe1b17f273f811caf61551
 "Remote skills from %s: %d installed, %d skipped, %d blocked by audit.","Remote-Skills aus %s: %d installiert, %d übersprungen, %d durch Audit blockiert.",,site/modules/WireConsole/src/Concerns/InteractsWithBoost.php,417c9791a8c80106b89b8ff87db7b4a6
 "Migration engine is unavailable because trk/processwire-console is not installed.","Migrations-Engine ist nicht verfügbar, da trk/processwire-console nicht installiert ist.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,37ac36fddb57845946de370caf411baa
 "Created the wire_migrations tracking table.","Tracking-Tabelle wire_migrations erstellt.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,01f7392be01acb41c14af50e5e1f12b6
 "The wire_migrations tracking table already exists.","Die Tracking-Tabelle wire_migrations existiert bereits.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,46ef94149fc1ab4fe781c7e189b782a5
 "Migration engine is unavailable.","Migrations-Engine ist nicht verfügbar.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,55972fbf4445712cd6ca7f556b89bdde
+"Refusing to execute migrations while symbolic link or out-of-root migration files exist.","Ausführung von Migrationen verweigert, solange symbolische Links oder Migrationsdateien außerhalb des Stammverzeichnisses vorhanden sind.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,e08183b18255230d4794539cee73dfa3
 "Successfully executed %d pending migration(s).","%d ausstehende Migration(en) erfolgreich ausgeführt.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,519c1cb449914ea6288911d0db14b05f
 "Nothing to migrate. All schema migrations are up to date.","Nichts zu migrieren. Alle Schema-Migrationen sind aktuell.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,f745431e5ddcc728f2f296adc1210ffb
 "Rolled back %d migration(s).","%d Migration(en) zurückgerollt.",,site/modules/WireConsole/src/Concerns/InteractsWithMigrations.php,3be01193473a9b3d69b95b42763be765
@@ -545,6 +550,7 @@ User,Benutzer,,site/modules/WireConsole/ProcessWireConsole.module.php,8f9bfe9d13
 "Failed jobs table is unavailable.","Tabelle für fehlgeschlagene Jobs ist nicht verfügbar.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,5adcd5a3ed215245e6762517c6d5c76d
 "Deleted failed job #%d.","Fehlgeschlagener Job #%d gelöscht.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,09eb0ca8cd3e9618d2a79c5b332b813f
 "Queue tables are not installed yet.","Warteschlangen-Tabellen sind noch nicht installiert.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,a77c55dd33c38214b8b87dbe829debf1
+"Refusing to process queue jobs while symbolic link or out-of-root queue files exist.","Verarbeitung von Warteschlangen-Jobs verweigert, solange symbolische Links oder Queue-Dateien außerhalb des Stammverzeichnisses vorhanden sind.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,e7c6c15fb1471b3f6c28c0f433454007
 "Queue worker execution failed.","Ausführung des Queue-Workers fehlgeschlagen.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,d801fe149e5ea4881203d4084ba09724
 "No available jobs waiting on queue ""%s"".","Keine verfügbaren Jobs in Warteschlange ""%s"".",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,f984aaed4d5dafaeb22e951648c83322
 "Processed %d job(s) and recorded %d failure(s) on queue ""%s"".","%d Job(s) verarbeitet und %d Fehler in Warteschlange ""%s"" protokolliert.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,255d1c5c6597607b3572a451e4cfc92a
@@ -567,17 +573,20 @@ User,Benutzer,,site/modules/WireConsole/ProcessWireConsole.module.php,8f9bfe9d13
 "Unsupported scaffold type.","Nicht unterstützter Scaffold-Typ.",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,f896257a734e91b2936e84375296700d
 "Failed to create component file.","Komponentendatei konnte nicht erstellt werden.",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,a47ec9e57a4a8c29308c162a19c0d25c
 "Seeder runtime is unavailable because trk/processwire-console is not installed.","Seeder-Laufzeit ist nicht verfügbar, da trk/processwire-console nicht installiert ist.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,df9916cc95e1da0e3591fd65922be916
+"Refusing to execute seeders while symbolic link or out-of-root seeder files exist.","Ausführung von Seedern verweigert, solange symbolische Links oder Seeder-Dateien außerhalb des Stammverzeichnisses vorhanden sind.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,f70dd4580450464af31bdf11fbedd03c
 "No seeder classes found in site/seeders/.","Keine Seeder-Klassen in site/seeders/ gefunden.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,dece0e565901325c8c54557e8bc2ac92
 "Seeder ""%s"" was not found.","Seeder ""%s"" wurde nicht gefunden.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,ff3defc05d19aea7c5622c56339e864f
 "Seeder execution failed.","Seeder-Ausführung fehlgeschlagen.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,1fa9ae662c6b3f2cdc98997be16c92be
 "Successfully executed %d seeder(s): %s","%d Seeder erfolgreich ausgeführt: %s",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,2dcb82f511f3024bcd41f5e4eaf8f0fa
 Unknown,Unbekannt,,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,88183b946cc5f0e8c96b2e66e1c74a7e
 "Scheduler runtime is unavailable because trk/processwire-console is not installed.","Scheduler-Laufzeit ist nicht verfügbar, da trk/processwire-console nicht installiert ist.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,7833784d0cf3b861eb7c95999a80ef9b
+"Refusing to execute scheduled tasks while symbolic link or out-of-root task files exist.","Ausführung geplanter Aufgaben verweigert, solange symbolische Links oder Task-Dateien außerhalb des Stammverzeichnisses vorhanden sind.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,e282af160d4862c93dcb08f79b2a7026
 "No scheduled tasks discovered in site/schedule/.","Keine geplanten Aufgaben in site/schedule/ gefunden.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,48aaa96baca445de18692fd1e30a8bb3
 "Scheduled task ""%s"" was not found.","Geplante Aufgabe ""%s"" wurde nicht gefunden.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,5515ca8a093716aa03c384d349dd197b
 "Executed %d task(s) with %d error(s).","%d Aufgabe(n) mit %d Fehler(n) ausgeführt.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,8c88f30b5f9c4495d2aa64e2d5edbf21
 "No scheduled tasks are due to run right now.","Derzeit sind keine geplanten Aufgaben zur Ausführung fällig.",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,4c6759483e3ab81339c26c74d243a32d
 "Successfully ran %d scheduled task(s): %s","%d geplante Aufgabe(n) erfolgreich ausgeführt: %s",,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndScheduling.php,e10d622e8af282ea93372917f141f80b
+"Refusing to write maintenance flag through a symbolic link.","Schreiben der Wartungsmarkierung über einen symbolischen Link verweigert.",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,df87d585d8fd22b60b2f1b7fb5f7e48e
 "Failed to write site/down.json maintenance file.","Wartungsdatei site/down.json konnte nicht geschrieben werden.",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,801030d5ea21f133472146618f61f719
 "Application is now in maintenance mode (site/down.json created).","Die Anwendung befindet sich jetzt im Wartungsmodus (site/down.json erstellt).",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,70c0c4b8365ee0911a2a89308eeab9ec
 "Application is already live.","Die Anwendung ist bereits online.",,site/modules/WireConsole/src/Concerns/InteractsWithSystemAndLogs.php,dd6f5d50b2f1597cf98186e110464a8b
