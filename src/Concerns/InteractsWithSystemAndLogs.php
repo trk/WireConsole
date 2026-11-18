@@ -39,8 +39,9 @@ trait InteractsWithSystemAndLogs
 		$pwVersion = (string) ($this->wire()->config?->version ?? '');
 		if ($pwVersion === '') {
 			$pwVersion = ProcessWire::versionMajor . '.' . ProcessWire::versionMinor . '.' . ProcessWire::versionRevision;
-			if (ProcessWire::versionSuffix !== '') {
-				$pwVersion .= '-' . ProcessWire::versionSuffix;
+			$suffix = trim(ProcessWire::versionSuffix);
+			if ($suffix !== '') {
+				$pwVersion .= '-' . $suffix;
 			}
 		}
 
@@ -69,7 +70,7 @@ trait InteractsWithSystemAndLogs
 
 		return $this->versionMatrixCache = [
 			'php' => PHP_VERSION,
-			'processwire' => $pwVersion !== '' ? $pwVersion : '—',
+			'processwire' => $pwVersion,
 			'database' => $dbVersion,
 			'inertia' => $inertiaVersion,
 			'workspace' => $workspaceVersion,
@@ -145,7 +146,7 @@ trait InteractsWithSystemAndLogs
 	public function getMaintenanceStatus(): array
 	{
 		$file = $this->getMaintenanceFilePath();
-		if (!is_file($file)) {
+		if (is_link($file) || !is_file($file)) {
 			return [
 				'isDown' => false,
 				'file' => $file,
@@ -169,7 +170,7 @@ trait InteractsWithSystemAndLogs
 			'isDown' => true,
 			'file' => $file,
 			'status' => isset($data['status']) ? (int) $data['status'] : 503,
-			'retry' => isset($data['retry']) && $data['retry'] !== null && $data['retry'] !== '' ? (int) $data['retry'] : null,
+			'retry' => isset($data['retry']) && $data['retry'] !== '' ? (int) $data['retry'] : null,
 			'redirect' => isset($data['redirect']) && is_string($data['redirect']) && $data['redirect'] !== '' ? $data['redirect'] : null,
 			'hasSecret' => isset($data['secret']) && is_string($data['secret']) && $data['secret'] !== '',
 			'sinceFormatted' => $time > 0 ? date('Y-m-d H:i:s', $time) : null,
@@ -184,6 +185,13 @@ trait InteractsWithSystemAndLogs
 	public function enableMaintenanceMode(?string $secret = null, ?int $retry = null, int $status = 503, ?string $redirect = null): array
 	{
 		$file = $this->getMaintenanceFilePath();
+		if (is_link($file)) {
+			return [
+				'ok' => false,
+				'message' => $this->_('Refusing to write maintenance flag through a symbolic link.'),
+			];
+		}
+
 		$cleanStatus = in_array($status, [503, 500, 404, 302, 307], true) ? $status : 503;
 
 		if (is_file($file) && $this->isConsolePackageAvailable()) {
@@ -211,7 +219,8 @@ trait InteractsWithSystemAndLogs
 			];
 		}
 
-		if (is_file($file)) {
+		clearstatcache(true, $file);
+		if (!is_link($file) && is_file($file)) {
 			@chmod($file, 0600);
 		}
 
@@ -233,7 +242,7 @@ trait InteractsWithSystemAndLogs
 	public function disableMaintenanceMode(): array
 	{
 		$file = $this->getMaintenanceFilePath();
-		if (!is_file($file)) {
+		if (!file_exists($file) && !is_link($file)) {
 			return [
 				'ok' => true,
 				'message' => $this->_('Application is already live.'),
@@ -242,7 +251,7 @@ trait InteractsWithSystemAndLogs
 
 		$res = $this->runConsoleCommandInProcess(UpCommand::class);
 		clearstatcache(true, $file);
-		if ($res['ok'] || !is_file($file)) {
+		if ($res['ok'] && !file_exists($file) && !is_link($file)) {
 			return [
 				'ok' => true,
 				'message' => $this->_('Application is now live (site/down.json removed).'),
@@ -334,30 +343,34 @@ trait InteractsWithSystemAndLogs
 			return [];
 		}
 
-		$files = $log->getFiles();
-		if (!is_array($files) || $files === []) {
+		$logs = $log->getLogs(true);
+		if (!is_array($logs) || $logs === []) {
 			return [];
 		}
 
 		$items = [];
-		foreach ($files as $name => $fileInfo) {
-			$filePath = is_object($fileInfo) && method_exists($fileInfo, 'getPathname')
-				? (string) $fileInfo->getPathname()
-				: (string) $fileInfo;
-			$sizeBytes = is_object($fileInfo) && method_exists($fileInfo, 'getSize')
-				? (int) $fileInfo->getSize()
-				: (int) (@filesize($filePath) ?: 0);
-			$mtime = is_object($fileInfo) && method_exists($fileInfo, 'getMTime')
-				? (int) $fileInfo->getMTime()
-				: (int) (@filemtime($filePath) ?: 0);
+		foreach ($logs as $key => $logInfo) {
+			if (!is_array($logInfo)) {
+				continue;
+			}
+			$channelName = isset($logInfo['name']) && is_string($logInfo['name']) && $logInfo['name'] !== ''
+				? $logInfo['name']
+				: (string) $key;
+			$filePath = isset($logInfo['file']) && is_string($logInfo['file']) ? $logInfo['file'] : '';
+			if ($filePath !== '' && is_link($filePath)) {
+				continue;
+			}
+
+			$sizeBytes = isset($logInfo['size']) ? (int) $logInfo['size'] : 0;
+			$mtime = isset($logInfo['modified']) ? (int) $logInfo['modified'] : 0;
 
 			$items[] = [
-				'name' => (string) $name,
+				'name' => $channelName,
 				'sizeBytes' => $sizeBytes,
 				'sizeFormatted' => $this->formatBytes($sizeBytes),
 				'modified' => $mtime,
 				'modifiedFormatted' => $mtime > 0 ? date('Y-m-d H:i:s', $mtime) : '—',
-				'isAudit' => ((string) $name) === self::LOG_CHANNEL,
+				'isAudit' => $channelName === self::LOG_CHANNEL,
 			];
 		}
 
@@ -391,12 +404,25 @@ trait InteractsWithSystemAndLogs
 	{
 		$log = $this->wire()->log;
 		$sanitizer = $this->wire()->sanitizer;
-		if (!$log || !$sanitizer) {
+		$logsDir = (string) ($this->wire()->config?->paths?->logs ?? '');
+		if (!$log || !$sanitizer || $logsDir === '') {
 			return [];
 		}
 
 		$cleanName = $sanitizer->name((string) preg_replace('/\.txt$/i', '', basename(trim($channelName))));
-		if ($cleanName === '') {
+		if ($cleanName === '' || str_starts_with($cleanName, '.') || str_ends_with($cleanName, '.')) {
+			return [];
+		}
+
+		$filePath = rtrim($logsDir, '/') . '/' . $cleanName . '.txt';
+		$realLogsDir = realpath($logsDir);
+		$realFilePath = is_link($filePath) ? false : realpath($filePath);
+		if (
+			$realLogsDir === false
+			|| $realFilePath === false
+			|| !is_file($realFilePath)
+			|| !str_starts_with(str_replace('\\', '/', $realFilePath), rtrim(str_replace('\\', '/', $realLogsDir), '/') . '/')
+		) {
 			return [];
 		}
 
@@ -481,7 +507,7 @@ trait InteractsWithSystemAndLogs
 		}
 
 		$cleanName = $sanitizer->name((string) preg_replace('/\.txt$/i', '', basename(trim($channelName))));
-		if ($cleanName === '') {
+		if ($cleanName === '' || str_starts_with($cleanName, '.') || str_ends_with($cleanName, '.')) {
 			return [
 				'ok' => false,
 				'message' => $this->_('Invalid log channel name.'),
@@ -489,7 +515,14 @@ trait InteractsWithSystemAndLogs
 		}
 
 		$filePath = rtrim($logsDir, '/') . '/' . $cleanName . '.txt';
-		if (is_link($filePath) || !is_file($filePath)) {
+		$realLogsDir = realpath($logsDir);
+		$realFilePath = is_link($filePath) ? false : realpath($filePath);
+		if (
+			$realLogsDir === false
+			|| $realFilePath === false
+			|| !is_file($realFilePath)
+			|| !str_starts_with(str_replace('\\', '/', $realFilePath), rtrim(str_replace('\\', '/', $realLogsDir), '/') . '/')
+		) {
 			return [
 				'ok' => false,
 				'message' => sprintf($this->_('Log file "%s" does not exist.'), $cleanName),

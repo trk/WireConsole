@@ -52,6 +52,53 @@ trait InteractsWithMigrations
 	}
 
 	/**
+	 * Partition discovered migration files into verified in-project regular files and unsafe/symlinked entries.
+	 *
+	 * @return array{verified: array<string, string>, unsafe: list<string>}
+	 */
+	protected function partitionMigrationFiles(): array
+	{
+		$discoverer = $this->createDiscoverer();
+		if ($discoverer === null) {
+			return ['verified' => [], 'unsafe' => []];
+		}
+
+		$realRoot = realpath($this->getProjectRootPath());
+		if ($realRoot === false) {
+			return ['verified' => [], 'unsafe' => []];
+		}
+		$normalizedRoot = rtrim(str_replace('\\', '/', $realRoot), '/') . '/';
+
+		$siteMigrationsDir = rtrim($this->getProjectRootPath(), '/') . '/site/migrations';
+		if (is_link($siteMigrationsDir)) {
+			return ['verified' => [], 'unsafe' => ['site/migrations']];
+		}
+
+		$verified = [];
+		$unsafe = [];
+		foreach ($discoverer->discoverFiles('migrations', '*.php', null) as $migKey => $filePath) {
+			$name = trim((string) $migKey);
+			if ($name === '' || $filePath === '' || is_link(dirname($filePath)) || is_link($filePath)) {
+				$unsafe[] = $name !== '' ? $name : basename($filePath);
+				continue;
+			}
+			$realFile = realpath($filePath);
+			if ($realFile === false || !is_file($realFile)) {
+				$unsafe[] = $name;
+				continue;
+			}
+			$normalizedFile = str_replace('\\', '/', $realFile);
+			if (!str_starts_with($normalizedFile, $normalizedRoot)) {
+				$unsafe[] = $name;
+				continue;
+			}
+			$verified[$name] = $realFile;
+		}
+
+		return ['verified' => $verified, 'unsafe' => $unsafe];
+	}
+
+	/**
 	 * Create the wire_migrations table if it does not exist.
 	 *
 	 * @return array{ok: bool, created: bool, message: string}
@@ -152,12 +199,19 @@ trait InteractsWithMigrations
 					}
 				}
 
+				['verified' => $verifiedMap] = $this->partitionMigrationFiles();
 				$rawItems = $migrator->getStatus();
 				foreach ($rawItems as $item) {
-					$isRan = ($item['status'] ?? '') === 'applied';
-					$batch = isset($item['batch']) && $item['batch'] !== null ? (int) $item['batch'] : null;
+					$rawStatus = (string) ($item['status'] ?? 'pending');
 					$migName = (string) ($item['name'] ?? '');
-					if ($isRan) {
+					$isVerifiedOnDisk = isset($verifiedMap[$migName]);
+					if ($rawStatus === 'pending' && !$isVerifiedOnDisk) {
+						continue;
+					}
+					$isApplied = $rawStatus === 'applied' && $isVerifiedOnDisk;
+					$isMissing = $rawStatus === 'missing' || ($rawStatus === 'applied' && !$isVerifiedOnDisk);
+					$batch = isset($item['batch']) ? (int) $item['batch'] : null;
+					if ($isApplied || $isMissing) {
 						$ran++;
 						if ($batch !== null && $batch > $lastBatch) {
 							$lastBatch = $batch;
@@ -167,16 +221,15 @@ trait InteractsWithMigrations
 					}
 					$items[] = [
 						'name' => $migName,
-						'status' => $isRan ? 'Ran' : 'Pending',
+						'status' => $isApplied ? 'Ran' : ($isMissing ? 'Missing' : 'Pending'),
 						'batch' => $batch,
 						'migrated_at' => $appliedAtMap[$migName] ?? null,
 					];
 				}
 			} else {
-				$files = $migrator->discoverFiles();
-				foreach ($files as $fileName) {
+				['verified' => $verifiedMap] = $this->partitionMigrationFiles();
+				foreach (array_keys($verifiedMap) as $migName) {
 					$pending++;
-					$migName = (string) $fileName;
 					$items[] = [
 						'name' => $migName,
 						'status' => 'Pending',
@@ -216,6 +269,19 @@ trait InteractsWithMigrations
 				'errors' => [],
 				'details' => '',
 				'message' => $this->_('Migration engine is unavailable.'),
+			];
+		}
+
+		['unsafe' => $unsafeMigrations] = $this->partitionMigrationFiles();
+		if ($unsafeMigrations !== []) {
+			$msg = $this->_('Refusing to execute migrations while symbolic link or out-of-root migration files exist.');
+
+			return [
+				'ok' => false,
+				'migrated' => [],
+				'errors' => [$msg],
+				'details' => '',
+				'message' => $msg,
 			];
 		}
 
@@ -275,6 +341,19 @@ trait InteractsWithMigrations
 				'errors' => [],
 				'details' => '',
 				'message' => $this->_('Migration engine is unavailable.'),
+			];
+		}
+
+		['unsafe' => $unsafeMigrations] = $this->partitionMigrationFiles();
+		if ($unsafeMigrations !== []) {
+			$msg = $this->_('Refusing to execute migrations while symbolic link or out-of-root migration files exist.');
+
+			return [
+				'ok' => false,
+				'rolledBack' => [],
+				'errors' => [$msg],
+				'details' => '',
+				'message' => $msg,
 			];
 		}
 
@@ -340,6 +419,21 @@ trait InteractsWithMigrations
 				'preBackupFile' => null,
 				'details' => '',
 				'message' => $this->_('Migration engine is unavailable.'),
+			];
+		}
+
+		['unsafe' => $unsafeMigrations] = $this->partitionMigrationFiles();
+		if ($unsafeMigrations !== []) {
+			$msg = $this->_('Refusing to execute migrations while symbolic link or out-of-root migration files exist.');
+
+			return [
+				'ok' => false,
+				'rolledBack' => [],
+				'migrated' => [],
+				'errors' => [$msg],
+				'preBackupFile' => null,
+				'details' => '',
+				'message' => $msg,
 			];
 		}
 

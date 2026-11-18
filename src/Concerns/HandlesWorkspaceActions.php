@@ -408,6 +408,7 @@ trait HandlesWorkspaceActions
 
 					return $this->executeReadOnlyMcpTool($toolName, $rawArgs);
 				},
+				allowInDemo: true,
 			),
 			'makeModuleClass' => $this->guardAndRun(
 				tab: 'boost',
@@ -508,7 +509,8 @@ trait HandlesWorkspaceActions
 		string $expectedConfirm,
 		int $cooldown,
 		array $payload,
-		callable $callback
+		callable $callback,
+		bool $allowInDemo = false
 	): array {
 		if (!$this->userCanView($permission)) {
 			$msg = $this->_('Access denied: missing required permission for this workspace section.');
@@ -522,6 +524,16 @@ trait HandlesWorkspaceActions
 
 		if (!$this->isSuperuser()) {
 			$msg = $this->_('Mutations and destructive operations require a ProcessWire superuser account.');
+			$this->audit($guardKey, 'DENIED: ' . $msg);
+			return [
+				'ok' => false,
+				'message' => $msg,
+				'tab' => $tab,
+			];
+		}
+
+		if (!$allowInDemo && $this->isDemoMode()) {
+			$msg = $this->_('Mutations are disabled in demo mode.');
 			$this->audit($guardKey, 'DENIED: ' . $msg);
 			return [
 				'ok' => false,

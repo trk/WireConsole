@@ -84,6 +84,9 @@ class ConsoleRuntime extends Wire
 	/** @var list<array{name: string, path: string}>|null */
 	protected ?array $discoveredQueuesCache = null;
 
+	/** @var array{tablesExist: bool, queuedCount: int, failedCount: int, discoveredCount: int}|null */
+	protected ?array $queuesSummaryCache = null;
+
 	/**
 	 * Instantiate a ConsoleRuntime wired to the given ProcessWire instance.
 	 */
@@ -186,6 +189,11 @@ class ConsoleRuntime extends Wire
 	 */
 	public function userCanView(string $permission): bool
 	{
+		$cleanPermission = trim($permission);
+		if ($cleanPermission === '' || ctype_digit($cleanPermission)) {
+			return false;
+		}
+
 		$user = $this->wire()->user;
 		if (!$user || !$user->id) {
 			return false;
@@ -197,7 +205,7 @@ class ConsoleRuntime extends Wire
 			return false;
 		}
 
-		return $user->hasPermission($permission);
+		return (bool) $user->hasPermission($cleanPermission);
 	}
 
 	/**
@@ -211,15 +219,23 @@ class ConsoleRuntime extends Wire
 	}
 
 	/**
+	 * Check whether ProcessWire demo mode (`$config->demo`) is active.
+	 */
+	public function isDemoMode(): bool
+	{
+		return (bool) ($this->wire()->config?->demo ?? false);
+	}
+
+	/**
 	 * Check whether the current user has permission to inspect files in the given category.
 	 *
-	 * Backups require both superuser status and the backup permission (matching backup download);
+	 * Backups require superuser status, non-demo mode, and the backup permission (matching backup download);
 	 * all other categories enforce the permission of the tab that owns them.
 	 */
 	public function userCanInspectCategory(string $category): bool
 	{
 		return match (strtolower(trim($category))) {
-			'backup' => $this->isSuperuser() && $this->userCanView(self::PERMISSION_BACKUP),
+			'backup' => !$this->isDemoMode() && $this->isSuperuser() && $this->userCanView(self::PERMISSION_BACKUP),
 			'migration' => $this->userCanView(self::PERMISSION_MIGRATIONS),
 			'queue' => $this->userCanView(self::PERMISSION_QUEUES),
 			'seeder' => $this->userCanView(self::PERMISSION_SEEDING),
@@ -276,6 +292,104 @@ class ConsoleRuntime extends Wire
 		}
 
 		return $this->discovererInstance = new FeatureDiscoverer($pw);
+	}
+
+	/**
+	 * Discover concrete subclasses of `$expectedParentClass` inside `$feature`, verifying `!is_link()` and
+	 * `realpath()` containment inside the project root strictly BEFORE loading any file.
+	 *
+	 * @template T of object
+	 * @param class-string<T> $expectedParentClass
+	 * @return array<string, array{class: class-string<T>, path: string}>
+	 */
+	protected function discoverVerifiedClasses(string $feature, string $pattern, string $expectedParentClass): array
+	{
+		$discoverer = $this->createDiscoverer();
+		if ($discoverer === null) {
+			return [];
+		}
+
+		$realRoot = realpath($this->getProjectRootPath());
+		if ($realRoot === false) {
+			return [];
+		}
+		$normalizedRoot = rtrim(str_replace('\\', '/', $realRoot), '/') . '/';
+
+		$verified = [];
+		foreach ($discoverer->discoverFiles($feature, $pattern, '.php') as $basename => $filePath) {
+			$cleanBase = trim((string) $basename);
+			if (preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $cleanBase) !== 1 || is_link(dirname($filePath)) || is_link($filePath)) {
+				continue;
+			}
+
+			$realFile = realpath($filePath);
+			if ($realFile === false || !is_file($realFile)) {
+				continue;
+			}
+
+			$normalizedFile = str_replace('\\', '/', $realFile);
+			if (!str_starts_with($normalizedFile, $normalizedRoot)) {
+				continue;
+			}
+
+			$fqcn = FeatureDiscoverer::resolveClassFromFile($realFile, $cleanBase, $expectedParentClass);
+			if ($fqcn === null || preg_match('/^[A-Za-z_][A-Za-z0-9_\\\\]*$/', $fqcn) !== 1) {
+				continue;
+			}
+
+			try {
+				$ref = new \ReflectionClass($fqcn);
+				if ($ref->isAbstract() || $ref->isInterface() || $ref->isTrait() || !$ref->isInstantiable() || !$ref->isSubclassOf($expectedParentClass)) {
+					continue;
+				}
+				$verified[$cleanBase] = [
+					'class' => $fqcn,
+					'path' => $normalizedFile,
+				];
+			} catch (\Throwable) {
+				continue;
+			}
+		}
+
+		return $verified;
+	}
+
+	/**
+	 * Check whether any discovered file or directory inside `$feature` is a symbolic link or resolves outside the project root.
+	 */
+	protected function hasUnsafeFeatureFiles(string $feature, string $pattern): bool
+	{
+		$discoverer = $this->createDiscoverer();
+		if ($discoverer === null) {
+			return false;
+		}
+
+		$realRoot = realpath($this->getProjectRootPath());
+		if ($realRoot === false) {
+			return true;
+		}
+		$normalizedRoot = rtrim(str_replace('\\', '/', $realRoot), '/') . '/';
+
+		$siteFeatureDir = rtrim($this->getProjectRootPath(), '/') . '/site/' . ltrim($feature, '/');
+		if (is_link($siteFeatureDir)) {
+			return true;
+		}
+
+		foreach ($discoverer->discoverFiles($feature, $pattern, null) as $filePath) {
+			if ($filePath === '' || is_link(dirname($filePath)) || is_link($filePath)) {
+				return true;
+			}
+			$realFile = realpath($filePath);
+			if ($realFile === false || !is_file($realFile)) {
+				return true;
+			}
+			$normalizedFile = str_replace('\\', '/', $realFile);
+			if (!str_starts_with($normalizedFile, $normalizedRoot)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -613,10 +727,12 @@ class ConsoleRuntime extends Wire
 			$inspectedFile = $this->inspectProjectFile($inspectCategory, $inspectId);
 		}
 
-		return [
+		$isSuperuser = $this->isSuperuser();
+		$payload = [
 			'activeTab' => $activeTab,
 			'tabs' => $accessibleTabs,
-			'isSuperuser' => $this->isSuperuser(),
+			'isSuperuser' => $isSuperuser,
+			'isDemoMode' => $this->isDemoMode(),
 			'actionUrl' => $this->payloadString($options, 'actionUrl'),
 			'downloadBackupUrl' => $this->payloadString($options, 'downloadBackupUrl'),
 			'feedback' => $options['feedback'] ?? null,
@@ -639,7 +755,7 @@ class ConsoleRuntime extends Wire
 					'tasks' => $scheduledTasks,
 				]
 				: null,
-			'backup' => $this->userCanView(self::PERMISSION_BACKUP)
+			'backup' => $canViewBackups
 				? [
 					'directory' => $this->getBackupDirectory(),
 					'writable' => $overview['backup']['writable'],
@@ -671,6 +787,65 @@ class ConsoleRuntime extends Wire
 				]
 				: null,
 		];
+
+		return $isSuperuser ? $payload : $this->redactWorkspacePathsForNonSuperuser($payload);
+	}
+
+	/**
+	 * Convert absolute host filesystem paths into project-relative paths before serializing Inertia props for non-superusers.
+	 *
+	 * @param array<string, mixed> $payload
+	 * @return array<string, mixed>
+	 */
+	protected function redactWorkspacePathsForNonSuperuser(array $payload): array
+	{
+		if (isset($payload['overview']) && is_array($payload['overview'])) {
+			if (isset($payload['overview']['packages']) && is_array($payload['overview']['packages'])) {
+				$payload['overview']['packages']['rootPath'] = '/';
+				$payload['overview']['packages']['wireBinaryPath'] = 'vendor/bin/wire';
+			}
+			if (isset($payload['overview']['maintenance']) && is_array($payload['overview']['maintenance'])) {
+				$payload['overview']['maintenance']['file'] = 'site/down.json';
+			}
+		}
+
+		if (isset($payload['backup']) && is_array($payload['backup'])) {
+			$payload['backup']['directory'] = 'site/assets/backups/database/';
+		}
+
+		if (isset($payload['queues']['discoveredQueues']) && is_array($payload['queues']['discoveredQueues'])) {
+			foreach ($payload['queues']['discoveredQueues'] as $idx => $item) {
+				if (is_array($item) && isset($item['path']) && is_string($item['path'])) {
+					$payload['queues']['discoveredQueues'][$idx]['path'] = $this->toProjectRelativePath($item['path']);
+				}
+			}
+		}
+
+		if (isset($payload['seeding']['seeders']) && is_array($payload['seeding']['seeders'])) {
+			foreach ($payload['seeding']['seeders'] as $idx => $item) {
+				if (is_array($item) && isset($item['path']) && is_string($item['path'])) {
+					$payload['seeding']['seeders'][$idx]['path'] = $this->toProjectRelativePath($item['path']);
+				}
+			}
+		}
+
+		if (isset($payload['scheduling']['tasks']) && is_array($payload['scheduling']['tasks'])) {
+			foreach ($payload['scheduling']['tasks'] as $idx => $item) {
+				if (is_array($item) && isset($item['path']) && is_string($item['path'])) {
+					$payload['scheduling']['tasks'][$idx]['path'] = $this->toProjectRelativePath($item['path']);
+				}
+			}
+		}
+
+		if (isset($payload['testing']['files']) && is_array($payload['testing']['files'])) {
+			foreach ($payload['testing']['files'] as $idx => $item) {
+				if (is_array($item) && isset($item['relativePath']) && is_string($item['relativePath'])) {
+					$payload['testing']['files'][$idx]['path'] = $item['relativePath'];
+				}
+			}
+		}
+
+		return $payload;
 	}
 
 	// =========================================================================

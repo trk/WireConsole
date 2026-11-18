@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Totoglu\WireConsole\Concerns;
 
 use Totoglu\Console\Commands\QueueWorkCommand;
+use Totoglu\Console\Queue\Queue;
 use Totoglu\Console\Queue\QueueManager;
 
 /**
@@ -59,6 +60,7 @@ trait InteractsWithQueues
 
 		try {
 			$manager->ensureTables();
+			$this->queuesSummaryCache = null;
 
 			return [
 				'ok' => true,
@@ -83,17 +85,16 @@ trait InteractsWithQueues
 			return $this->discoveredQueuesCache;
 		}
 
-		$manager = $this->createQueueManager();
-		if ($manager === null) {
+		if ($this->createQueueManager() === null) {
 			return $this->discoveredQueuesCache = [];
 		}
 
 		$discoveredQueues = [];
 		try {
-			foreach ($manager->discoverQueues() as $name => $path) {
+			foreach ($this->discoverVerifiedClasses('queue', '*Queue.php', Queue::class) as $name => $info) {
 				$discoveredQueues[] = [
-					'name' => (string) $name,
-					'path' => (string) $path,
+					'name' => $name,
+					'path' => $info['path'],
 				];
 			}
 		} catch (\Throwable) {
@@ -104,34 +105,27 @@ trait InteractsWithQueues
 	}
 
 	/**
-	 * Return queue summary counters.
+	 * Return queue summary counters using exact SQL COUNT(*) queries with per-instance memoization.
 	 *
 	 * @return array{tablesExist: bool, queuedCount: int, failedCount: int, discoveredCount: int}
 	 */
 	public function getQueuesSummary(): array
 	{
+		if ($this->queuesSummaryCache !== null) {
+			return $this->queuesSummaryCache;
+		}
+
 		$tablesExist = $this->queueTablesExist();
 		$queuedCount = 0;
 		$failedCount = 0;
 		$discoveredCount = count($this->getDiscoveredQueuesList());
 
-		if ($tablesExist) {
-			$manager = $this->createQueueManager();
-			if ($manager !== null) {
-				try {
-					$failedCount = count($manager->getFailedJobs(500));
-				} catch (\Throwable) {
-					$failedCount = 0;
-				}
-				try {
-					$queuedCount = count($this->fetchQueuedJobRows($manager, 500));
-				} catch (\Throwable) {
-					$queuedCount = 0;
-				}
-			}
+		if ($tablesExist && $this->isConsolePackageAvailable()) {
+			$queuedCount = $this->countQueueTableRows(self::TABLE_QUEUE_JOBS);
+			$failedCount = $this->countQueueTableRows(self::TABLE_QUEUE_FAILED);
 		}
 
-		return [
+		return $this->queuesSummaryCache = [
 			'tablesExist' => $tablesExist,
 			'queuedCount' => $queuedCount,
 			'failedCount' => $failedCount,
@@ -140,21 +134,38 @@ trait InteractsWithQueues
 	}
 
 	/**
-	 * Read pending/reserved job rows via QueueManager's bound database connection and table metadata.
+	 * Count rows in a verified queue table without hydrating LONGTEXT payloads.
+	 */
+	protected function countQueueTableRows(string $tableName): int
+	{
+		try {
+			$db = $this->wire()->database;
+			if (!$db) {
+				return 0;
+			}
+			$safeTable = $db->escapeTable($tableName);
+			$stmt = $db->query("SELECT COUNT(*) FROM `{$safeTable}`");
+
+			return $stmt !== false ? max(0, (int) $stmt->fetchColumn()) : 0;
+		} catch (\Throwable) {
+			return 0;
+		}
+	}
+
+	/**
+	 * Read pending and reserved job rows from `queue_jobs` using a prepared statement.
 	 *
 	 * @return list<array<string, mixed>>
 	 */
-	protected function fetchQueuedJobRows(QueueManager $manager, int $limit = 50): array
+	protected function fetchQueuedJobRows(int $limit = 50): array
 	{
-		$ref = new \ReflectionObject($manager);
-		if (!$ref->hasProperty('db') || !$ref->hasProperty('jobsTable')) {
+		$db = $this->wire()->database;
+		if (!$db) {
 			return [];
 		}
-		/** @var \ProcessWire\WireDatabasePDO $db */
-		$db = $ref->getProperty('db')->getValue($manager);
-		$jobsTable = $db->escapeTable((string) $ref->getProperty('jobsTable')->getValue($manager));
-		$sql = implode(' ', ['SEL' . 'ECT', '*', 'FROM', "`{$jobsTable}`", 'ORDER BY `id` ASC LIMIT :limit']);
-		$stmt = $db->prepare($sql);
+
+		$jobsTable = $db->escapeTable(self::TABLE_QUEUE_JOBS);
+		$stmt = $db->prepare("SELECT * FROM `{$jobsTable}` ORDER BY `id` ASC LIMIT :limit");
 		$stmt->bindValue(':limit', max(1, $limit), \PDO::PARAM_INT);
 		$stmt->execute();
 		/** @var list<array<string, mixed>>|false $rows */
@@ -227,9 +238,9 @@ trait InteractsWithQueues
 		if ($summary['tablesExist']) {
 			try {
 				$now = time();
-				foreach ($this->fetchQueuedJobRows($manager, max(1, $limit)) as $qRow) {
+				foreach ($this->fetchQueuedJobRows(max(1, $limit)) as $qRow) {
 					$parsed = $this->parseQueueJobPayload((string) ($qRow['payload'] ?? ''));
-					$reservedAt = isset($qRow['reserved_at']) && $qRow['reserved_at'] !== null ? (int) $qRow['reserved_at'] : null;
+					$reservedAt = isset($qRow['reserved_at']) ? (int) $qRow['reserved_at'] : null;
 					$availableAtTs = (int) ($qRow['available_at'] ?? $now);
 					$status = $reservedAt !== null ? 'reserved' : ($availableAtTs > $now ? 'delayed' : 'ready');
 
@@ -254,7 +265,7 @@ trait InteractsWithQueues
 
 					$exception = trim((string) ($row['exception'] ?? ''));
 					$firstLine = strtok($exception, "\r\n");
-					$preview = is_string($firstLine) && $firstLine !== '' ? $firstLine : $exception;
+					$preview = is_string($firstLine) ? $firstLine : $exception;
 					if (mb_strlen($preview) > 160) {
 						$preview = mb_substr($preview, 0, 157) . '...';
 					}
@@ -289,14 +300,15 @@ trait InteractsWithQueues
 	}
 
 	/**
-	 * Purge pending jobs from `queue_jobs` (either for a specific queue or `'all'`) via QueueManager APIs.
+	 * Purge pending jobs from `queue_jobs` (either for a specific queue or `'all'`) atomically via prepared SQL.
 	 *
 	 * @return array{ok: bool, purgedCount: int, message: string}
 	 */
 	public function purgePendingJobs(string $queueName = 'all'): array
 	{
 		$manager = $this->createQueueManager();
-		if ($manager === null || !$this->queueTablesExist()) {
+		$db = $this->wire()->database;
+		if ($manager === null || !$db || !$this->queueTablesExist()) {
 			return [
 				'ok' => false,
 				'purgedCount' => 0,
@@ -305,16 +317,13 @@ trait InteractsWithQueues
 		}
 
 		try {
+			$jobsTable = $db->escapeTable(self::TABLE_QUEUE_JOBS);
 			$cleanQueue = strtolower(trim($queueName));
 			if ($cleanQueue === '' || $cleanQueue === 'all') {
-				$purged = 0;
-				foreach ($this->fetchQueuedJobRows($manager, 5000) as $row) {
-					$jobId = (int) ($row['id'] ?? 0);
-					if ($jobId > 0) {
-						$manager->deleteJob($jobId);
-						$purged++;
-					}
-				}
+				$stmt = $db->prepare("DELETE FROM `{$jobsTable}`");
+				$stmt->execute();
+				$purged = $stmt->rowCount();
+				$this->queuesSummaryCache = null;
 
 				return [
 					'ok' => true,
@@ -334,17 +343,11 @@ trait InteractsWithQueues
 				];
 			}
 
-			$purged = 0;
-			foreach ($this->fetchQueuedJobRows($manager, 5000) as $row) {
-				if ((string) ($row['queue'] ?? '') !== $safeQueue) {
-					continue;
-				}
-				$jobId = (int) ($row['id'] ?? 0);
-				if ($jobId > 0) {
-					$manager->deleteJob($jobId);
-					$purged++;
-				}
-			}
+			$stmt = $db->prepare("DELETE FROM `{$jobsTable}` WHERE `queue` = :queue");
+			$stmt->bindValue(':queue', $safeQueue, \PDO::PARAM_STR);
+			$stmt->execute();
+			$purged = $stmt->rowCount();
+			$this->queuesSummaryCache = null;
 
 			return [
 				'ok' => true,
@@ -381,6 +384,7 @@ trait InteractsWithQueues
 		try {
 			if (strtolower(trim($idOrAll)) === 'all') {
 				$count = $manager->retryAllFailed();
+				$this->queuesSummaryCache = null;
 
 				return [
 					'ok' => true,
@@ -401,6 +405,7 @@ trait InteractsWithQueues
 			}
 
 			$ok = $manager->retryJob($jobId);
+			$this->queuesSummaryCache = null;
 
 			return [
 				'ok' => $ok,
@@ -436,6 +441,7 @@ trait InteractsWithQueues
 
 		try {
 			$count = $manager->clearFailedJobs();
+			$this->queuesSummaryCache = null;
 
 			return [
 				'ok' => true,
@@ -454,7 +460,7 @@ trait InteractsWithQueues
 	}
 
 	/**
-	 * Delete a single failed job record by ID from `failed_jobs` via QueueManager APIs.
+	 * Delete a single failed job record by ID from `failed_jobs` atomically.
 	 *
 	 * @return array{ok: bool, deleted: bool, message: string}
 	 */
@@ -479,20 +485,12 @@ trait InteractsWithQueues
 		}
 
 		try {
-			$beforeIds = array_map(
-				static fn(array $r): int => (int) ($r['id'] ?? 0),
-				$this->fetchQueuedJobRows($manager, 5000)
-			);
-			$deleted = $manager->retryJob($jobId);
-			if ($deleted) {
-				foreach ($this->fetchQueuedJobRows($manager, 5000) as $afterRow) {
-					$candidateId = (int) ($afterRow['id'] ?? 0);
-					if ($candidateId > 0 && !in_array($candidateId, $beforeIds, true)) {
-						$manager->deleteJob($candidateId);
-						break;
-					}
-				}
-			}
+			$failedTable = $db->escapeTable(self::TABLE_QUEUE_FAILED);
+			$stmt = $db->prepare("DELETE FROM `{$failedTable}` WHERE `id` = :id");
+			$stmt->bindValue(':id', $jobId, \PDO::PARAM_INT);
+			$stmt->execute();
+			$deleted = $stmt->rowCount() > 0;
+			$this->queuesSummaryCache = null;
 
 			return [
 				'ok' => $deleted,
@@ -541,6 +539,20 @@ trait InteractsWithQueues
 			];
 		}
 
+		if ($this->hasUnsafeFeatureFiles('queue', '*Queue.php')) {
+			$msg = $this->_('Refusing to process queue jobs while symbolic link or out-of-root queue files exist.');
+
+			return [
+				'ok' => false,
+				'processed' => 0,
+				'failed' => 0,
+				'jobs' => [],
+				'errors' => [$msg],
+				'details' => '',
+				'message' => $msg,
+			];
+		}
+
 		$cleanQueue = (string) ($this->wire()->sanitizer?->name(trim($queueName)) ?? '');
 		if ($cleanQueue === '') {
 			$cleanQueue = 'default';
@@ -573,6 +585,7 @@ trait InteractsWithQueues
 			$failed++;
 			$errors[] = (string) ($res['error']['message'] ?? $this->_('Queue worker execution failed.'));
 		}
+		$this->queuesSummaryCache = null;
 
 		if ($processed === 0 && $failed === 0 && $errors === []) {
 			return [
@@ -655,7 +668,23 @@ trait InteractsWithQueues
 		}
 
 		try {
-			// Verify the target class is a valid Queue subclass before pushing
+			$basename = basename(str_replace('\\', '/', ltrim($cleanClass, '\\')));
+			$rawFiles = $manager->discoverQueues();
+			if (isset($rawFiles[$basename])) {
+				$candidateFile = $rawFiles[$basename];
+				$realFile = (is_link(dirname($candidateFile)) || is_link($candidateFile)) ? false : realpath($candidateFile);
+				$realRoot = realpath($this->getProjectRootPath());
+				if (
+					$realFile === false
+					|| $realRoot === false
+					|| !is_file($realFile)
+					|| !str_starts_with(str_replace('\\', '/', $realFile), rtrim(str_replace('\\', '/', $realRoot), '/') . '/')
+				) {
+					throw new \RuntimeException(sprintf('Queue handler file for [%s] is outside the project root or a symbolic link.', $cleanClass));
+				}
+			}
+
+			// Verify the target class is a valid concrete Queue subclass before pushing
 			$manager->resolveClass($cleanClass);
 			$manager->ensureTables();
 
@@ -666,6 +695,7 @@ trait InteractsWithQueues
 
 			$delay = max(0, min(86400 * 30, $delaySeconds));
 			$jobId = $manager->push($cleanClass, $decoded, $cleanQueue, $delay);
+			$this->queuesSummaryCache = null;
 
 			return [
 				'ok' => $jobId > 0,

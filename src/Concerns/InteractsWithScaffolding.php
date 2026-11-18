@@ -262,6 +262,7 @@ trait InteractsWithScaffolding
 		$result = $this->runConsoleCommandInProcess($commandClass, $params);
 		if ($kind === 'queue') {
 			$this->discoveredQueuesCache = null;
+			$this->queuesSummaryCache = null;
 		}
 
 		if (!$result['ok']) {
@@ -366,9 +367,16 @@ trait InteractsWithScaffolding
 		} elseif ($cleanCategory === 'backup') {
 			$targetPath = $this->resolveBackupFilePath($cleanId);
 		} elseif ($cleanCategory === 'skill') {
-			if (preg_match('/^[A-Za-z0-9._-]+$/', $cleanId)) {
-				$candidate = $root . '.agents/skills/' . $cleanId . '/SKILL.md';
-				if (is_file($candidate)) {
+			if ($cleanId !== '.' && $cleanId !== '..' && preg_match('/^[A-Za-z0-9._-]+$/', $cleanId)) {
+				$skillDir = $root . '.agents/skills/' . $cleanId;
+				$candidate = $skillDir . '/SKILL.md';
+				if (
+					!is_link($root . '.agents')
+					&& !is_link($root . '.agents/skills')
+					&& !is_link($skillDir)
+					&& !is_link($candidate)
+					&& is_file($candidate)
+				) {
 					$targetPath = $candidate;
 				}
 			}
@@ -379,12 +387,17 @@ trait InteractsWithScaffolding
 				'boost-json' => $root . '.agents/boost.json',
 				'map-json' => $root . '.agents/map.json',
 			];
-			if (isset($allowlistedDocs[$cleanId]) && is_file($allowlistedDocs[$cleanId])) {
+			if (
+				isset($allowlistedDocs[$cleanId])
+				&& !is_link(dirname($allowlistedDocs[$cleanId]))
+				&& !is_link($allowlistedDocs[$cleanId])
+				&& is_file($allowlistedDocs[$cleanId])
+			) {
 				$targetPath = $allowlistedDocs[$cleanId];
 			}
 		}
 
-		if (!is_string($targetPath) || $targetPath === '') {
+		if (!is_string($targetPath) || $targetPath === '' || is_link(dirname($targetPath)) || is_link($targetPath)) {
 			return null;
 		}
 

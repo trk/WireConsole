@@ -10,7 +10,6 @@ use Totoglu\Console\Boost\Install\SkillWriter;
 use Totoglu\Console\Boost\Mcp\McpServer;
 use Totoglu\Console\Boost\Skills\Remote\GitHubRepository;
 use Totoglu\Console\Boost\Skills\Remote\GitHubSkillProvider;
-use Totoglu\Console\Boost\Skills\Remote\Risk;
 use Totoglu\Console\Boost\Skills\Remote\SkillAuditor;
 
 /**
@@ -304,11 +303,12 @@ trait InteractsWithBoost
 		$skillsDir = $root . '.agents/skills';
 		$installedSkills = [];
 
-		if (is_dir($skillsDir)) {
+		if (!is_link($root . '.agents') && is_dir($skillsDir) && !is_link($skillsDir)) {
 			$dirs = glob($skillsDir . '/*', GLOB_ONLYDIR);
 			if (is_array($dirs)) {
 				foreach ($dirs as $dir) {
-					if (is_file($dir . '/SKILL.md')) {
+					$skillFile = $dir . '/SKILL.md';
+					if (!is_link($dir) && !is_link($skillFile) && is_file($skillFile)) {
 						$installedSkills[] = basename($dir);
 					}
 				}
@@ -316,12 +316,16 @@ trait InteractsWithBoost
 			}
 		}
 
+		$hasMapJson = !is_link($root . '.agents')
+			&& !is_link($root . '.agents/map.json')
+			&& is_file($root . '.agents/map.json');
+
 		if ($manager === null) {
 			return [
 				'available' => false,
 				'version' => '0.0.0',
 				'hasConfig' => false,
-				'hasMapJson' => is_file($root . '.agents/map.json'),
+				'hasMapJson' => $hasMapJson,
 				'config' => [
 					'version' => '0.0.0',
 					'guidelines' => false,
@@ -388,7 +392,7 @@ trait InteractsWithBoost
 			'available' => true,
 			'version' => BoostManager::VERSION,
 			'hasConfig' => $hasConfig,
-			'hasMapJson' => is_file($root . '.agents/map.json'),
+			'hasMapJson' => $hasMapJson,
 			'config' => $config,
 			'detectedProjectAgents' => $detectedProject,
 			'detectedSystemAgents' => $detectedSystem,
@@ -509,10 +513,25 @@ trait InteractsWithBoost
 				$selectedFeatures = ['guidelines', 'skills'];
 			}
 
-			$discoverableNames = array_keys($manager->getDiscoverableModules());
-			$selectedModules = array_values(array_intersect($discoverableNames, array_map('strval', $modules)));
+			$discoverableNames = array_map('strval', array_keys($manager->getDiscoverableModules()));
+			$rawModules = array_values(array_unique(array_filter(array_map(static fn(mixed $m): string => trim((string) $m), $modules), static fn(string $m): bool => $m !== '')));
+			$unknownModules = array_values(array_diff($rawModules, $discoverableNames));
+			if ($unknownModules !== []) {
+				throw new \InvalidArgumentException('Unknown or non-discoverable module(s): ' . implode(', ', $unknownModules));
+			}
+			$selectedModules = array_values(array_intersect($discoverableNames, $rawModules));
 
-			$normalizedAgents = $manager->normalizeAgentNames(array_values(array_filter(array_map('strval', $agentNames))));
+			$rawAgents = array_values(array_unique(array_filter(array_map(static fn(mixed $a): string => trim((string) $a), $agentNames), static fn(string $a): bool => $a !== '')));
+			$unknownAgents = [];
+			foreach ($rawAgents as $rawAgentName) {
+				if ($manager->normalizeAgentNames([$rawAgentName]) === []) {
+					$unknownAgents[] = $rawAgentName;
+				}
+			}
+			if ($unknownAgents !== []) {
+				throw new \InvalidArgumentException('Invalid AI agent name(s): ' . implode(', ', $unknownAgents));
+			}
+			$normalizedAgents = $manager->normalizeAgentNames($rawAgents);
 			if ($normalizedAgents === []) {
 				$normalizedAgents = $manager->detectAvailableAgents();
 			}
@@ -544,7 +563,7 @@ trait InteractsWithBoost
 
 	/**
 	 * Fetch, security-audit, and install remote AI skills from a GitHub repository (`boost:add-skill` equivalent).
-	 * Blocks any skill flagged with High or Critical risk by `SkillAuditor`.
+	 * Blocks any skill flagged with Medium, High, or Critical risk (`weight >= 3`) by `SkillAuditor` and stages downloads atomically.
 	 *
 	 * @return array{
 	 *   ok: bool,
@@ -601,6 +620,9 @@ trait InteractsWithBoost
 
 			$root = rtrim($this->getProjectRootPath(), '/');
 			$skillsPath = $root . '/.agents/skills';
+			if (is_link($root . '/.agents') || is_link($skillsPath)) {
+				throw new \RuntimeException('Skills directory is a symbolic link.');
+			}
 			if (!is_dir($skillsPath)) {
 				@mkdir($skillsPath, 0755, true);
 			}
@@ -640,29 +662,55 @@ trait InteractsWithBoost
 			$auditResults = $auditor->audit($provider, $candidates);
 			$blocked = [];
 			$installed = [];
+			$downloadFailedMsg = $this->_('Download failed.');
 
 			foreach ($candidates as $skillName => $skill) {
 				$audit = $auditResults[$skillName] ?? null;
-				if ($audit !== null && in_array($audit->risk, [Risk::Critical, Risk::High], true)) {
-					$blocked[$skillName] = $audit->risk->label() . ($audit->signals !== [] ? ': ' . implode(', ', $audit->signals) : '');
+				if ($audit === null || $audit->risk->weight() >= 3) {
+					$blocked[$skillName] = $audit !== null
+						? $audit->risk->label() . ($audit->signals !== [] ? ': ' . implode(', ', $audit->signals) : '')
+						: $this->_('Security audit result unavailable.');
 					continue;
 				}
 
 				$safeName = trim(SkillWriter::sanitizeSkillName(basename(str_replace('\\', '/', $skill->name))), '.-');
-				$targetPath = $skillsPath . '/' . $safeName;
-				if (is_dir($targetPath)) {
-					SkillWriter::deleteTree($targetPath);
+				if ($safeName === '') {
+					$blocked[$skillName] = $downloadFailedMsg;
+					continue;
 				}
+				$targetPath = $skillsPath . '/' . $safeName;
+				if (is_link($targetPath)) {
+					$blocked[$skillName] = 'Target skill path is a symbolic link.';
+					continue;
+				}
+				$stagingPath = $targetPath . '.staging_' . bin2hex(random_bytes(4));
 
-				if ($provider->downloadSkill($skill, $targetPath)) {
-					$installed[] = $skillName;
-				} else {
-					$blocked[$skillName] = $this->_('Download failed.');
+				try {
+					if ($provider->downloadSkill($skill, $stagingPath)) {
+						if (is_dir($targetPath)) {
+							SkillWriter::deleteTree($targetPath);
+						}
+						if (@rename($stagingPath, $targetPath)) {
+							$installed[] = $skillName;
+						} else {
+							SkillWriter::deleteTree($stagingPath);
+							$blocked[$skillName] = $downloadFailedMsg;
+						}
+					} else {
+						SkillWriter::deleteTree($stagingPath);
+						$blocked[$skillName] = $downloadFailedMsg;
+					}
+				} catch (\Throwable $dlErr) {
+					SkillWriter::deleteTree($stagingPath);
+					$blocked[$skillName] = $dlErr->getMessage();
 				}
 			}
 
 			if ($installed !== []) {
-				$this->syncBoost(false);
+				try {
+					$this->syncBoost(false);
+				} catch (\Throwable) {
+				}
 			}
 
 			$detailsLines = [];

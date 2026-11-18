@@ -60,7 +60,7 @@ trait InteractsWithBackups
 	public function listBackups(int $limit = 50): array
 	{
 		$dir = $this->getBackupDirectory();
-		if (!is_dir($dir)) {
+		if (is_link(rtrim($dir, '/')) || !is_dir($dir)) {
 			return [];
 		}
 
@@ -92,7 +92,7 @@ trait InteractsWithBackups
 
 	/**
 	 * Safely resolve and validate a `.sql` backup filename inside the backup directory.
-	 * Prevents path traversal (`../`), null bytes, and non-SQL file access.
+	 * Prevents path traversal (`../`), symbolic links, null bytes, and non-SQL file access.
 	 */
 	public function resolveBackupFilePath(string $fileName): ?string
 	{
@@ -105,21 +105,26 @@ trait InteractsWithBackups
 		}
 
 		$dir = $this->getBackupDirectory();
+		if (is_link(rtrim($dir, '/'))) {
+			return null;
+		}
 		$dirReal = realpath($dir);
+		$rootReal = realpath($this->getProjectRootPath());
 		$candidate = $dir . $clean;
 		if (is_link($candidate)) {
 			return null;
 		}
 		$candidateReal = realpath($candidate);
 
-		if ($dirReal === false || $candidateReal === false || !is_file($candidateReal)) {
+		if ($dirReal === false || $rootReal === false || $candidateReal === false || !is_file($candidateReal)) {
 			return null;
 		}
 
-		$normalizedDir = rtrim(str_replace('\\', '/', $dirReal), '/') . '/';
+		$normalizedDir = rtrim(str_replace('\\', '/', $dirReal), '/');
+		$normalizedRoot = rtrim(str_replace('\\', '/', $rootReal), '/') . '/';
 		$normalizedCandidate = str_replace('\\', '/', $candidateReal);
 
-		if (!str_starts_with($normalizedCandidate, $normalizedDir)) {
+		if (dirname($normalizedCandidate) !== $normalizedDir || !str_starts_with($normalizedCandidate, $normalizedRoot)) {
 			return null;
 		}
 

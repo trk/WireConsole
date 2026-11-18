@@ -82,7 +82,7 @@ trait InteractsWithTesting
 		$seenPaths = [];
 
 		foreach ($pestDirs as $dir) {
-			if (!is_dir($dir)) {
+			if (!is_dir($dir) || is_link(rtrim($dir, '/'))) {
 				continue;
 			}
 			try {
@@ -90,7 +90,7 @@ trait InteractsWithTesting
 					new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS)
 				);
 				foreach ($iterator as $file) {
-					if (!$file instanceof \SplFileInfo || !$file->isFile() || !str_ends_with($file->getFilename(), 'Test.php')) {
+					if (!$file instanceof \SplFileInfo || $file->isLink() || !$file->isFile() || !str_ends_with($file->getFilename(), 'Test.php')) {
 						continue;
 					}
 
@@ -132,7 +132,7 @@ trait InteractsWithTesting
 		}
 
 		foreach ($e2eDirs as $dir) {
-			if (!is_dir($dir)) {
+			if (!is_dir($dir) || is_link(rtrim($dir, '/'))) {
 				continue;
 			}
 			try {
@@ -140,7 +140,7 @@ trait InteractsWithTesting
 					new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS)
 				);
 				foreach ($iterator as $file) {
-					if (!$file instanceof \SplFileInfo || !$file->isFile() || !str_ends_with($file->getFilename(), '.spec.ts')) {
+					if (!$file instanceof \SplFileInfo || $file->isLink() || !$file->isFile() || !str_ends_with($file->getFilename(), '.spec.ts')) {
 						continue;
 					}
 
@@ -414,8 +414,9 @@ trait InteractsWithTesting
 		}
 
 		$candidates = [];
-		if (defined('PHP_BINDIR') && PHP_BINDIR !== '') {
-			$candidates[] = rtrim(PHP_BINDIR, '/\\') . DIRECTORY_SEPARATOR . $exeName;
+		$phpBinDir = defined('PHP_BINDIR') ? rtrim(trim(PHP_BINDIR), '/\\') : '';
+		if ($phpBinDir !== '') {
+			$candidates[] = $phpBinDir . DIRECTORY_SEPARATOR . $exeName;
 		}
 		if ($binary !== '') {
 			$candidates[] = dirname(dirname($binary)) . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $exeName;
@@ -445,9 +446,7 @@ trait InteractsWithTesting
 		$rawEnv = getenv();
 		if (is_array($rawEnv)) {
 			foreach ($rawEnv as $key => $val) {
-				if (is_string($key) && is_scalar($val)) {
-					$env[$key] = (string) $val;
-				}
+				$env[(string) $key] = (string) $val;
 			}
 		}
 
@@ -458,8 +457,9 @@ trait InteractsWithTesting
 				$pathDirs[] = $binDir;
 			}
 		}
-		if (defined('PHP_BINDIR') && PHP_BINDIR !== '' && is_dir(PHP_BINDIR)) {
-			$pathDirs[] = rtrim(PHP_BINDIR, '/\\');
+		$phpBinDir = defined('PHP_BINDIR') ? rtrim(trim(PHP_BINDIR), '/\\') : '';
+		if ($phpBinDir !== '' && is_dir($phpBinDir)) {
+			$pathDirs[] = $phpBinDir;
 		}
 		foreach (['/opt/homebrew/bin', '/usr/local/bin', '/usr/bin', '/bin'] as $extraDir) {
 			if (is_dir($extraDir)) {
@@ -702,14 +702,27 @@ trait InteractsWithTesting
 
 		$stdout = '';
 		$stderr = '';
+		$maxOutputBytes = 524288;
+		$appendBounded = static function (string &$buffer, mixed $pipe) use ($maxOutputBytes): void {
+			if (!is_resource($pipe)) {
+				return;
+			}
+			while (($chunk = fread($pipe, 65536)) !== false && $chunk !== '') {
+				$remaining = $maxOutputBytes - strlen($buffer);
+				if ($remaining > 0) {
+					$buffer .= substr($chunk, 0, $remaining);
+				}
+			}
+		};
+
 		$start = microtime(true);
 		$timeout = max(5, min(180, $timeoutSeconds));
 		$timedOut = false;
 
 		while (true) {
 			$status = proc_get_status($process);
-			$stdout .= (string) stream_get_contents($pipes[1]);
-			$stderr .= (string) stream_get_contents($pipes[2]);
+			$appendBounded($stdout, $pipes[1]);
+			$appendBounded($stderr, $pipes[2]);
 
 			if (!$status['running']) {
 				break;
@@ -724,8 +737,8 @@ trait InteractsWithTesting
 			usleep(50000);
 		}
 
-		$stdout .= (string) stream_get_contents($pipes[1]);
-		$stderr .= (string) stream_get_contents($pipes[2]);
+		$appendBounded($stdout, $pipes[1]);
+		$appendBounded($stderr, $pipes[2]);
 		fclose($pipes[1]);
 		fclose($pipes[2]);
 		$exitCode = proc_close($process);

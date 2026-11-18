@@ -35,21 +35,17 @@ trait InteractsWithSeedingAndScheduling
 	 */
 	public function getDiscoveredSeeders(): array
 	{
-		$discoverer = $this->createDiscoverer();
-		if ($discoverer === null) {
+		if ($this->createDiscoverer() === null) {
 			return [];
 		}
 
 		try {
-			$classes = $discoverer->discoverClasses('seeders', '*Seeder.php', Seeder::class);
-			$files = $discoverer->discoverFiles('seeders', '*Seeder.php');
 			$seeders = [];
-
-			foreach ($classes as $name => $fqcn) {
+			foreach ($this->discoverVerifiedClasses('seeders', '*Seeder.php', Seeder::class) as $name => $info) {
 				$seeders[] = [
-					'name' => (string) $name,
-					'class' => (string) $fqcn,
-					'path' => (string) ($files[$name] ?? ''),
+					'name' => $name,
+					'class' => $info['class'],
+					'path' => $info['path'],
 				];
 			}
 
@@ -66,8 +62,7 @@ trait InteractsWithSeedingAndScheduling
 	 */
 	public function runSeeders(string $seederNameOrAll): array
 	{
-		$discoverer = $this->createDiscoverer();
-		if ($discoverer === null) {
+		if ($this->createDiscoverer() === null) {
 			return [
 				'ok' => false,
 				'executed' => [],
@@ -76,8 +71,20 @@ trait InteractsWithSeedingAndScheduling
 			];
 		}
 
+		if ($this->hasUnsafeFeatureFiles('seeders', '*Seeder.php')) {
+			return [
+				'ok' => false,
+				'executed' => [],
+				'details' => '',
+				'message' => $this->_('Refusing to execute seeders while symbolic link or out-of-root seeder files exist.'),
+			];
+		}
+
 		try {
-			$classes = $discoverer->discoverClasses('seeders', '*Seeder.php', Seeder::class);
+			$classes = [];
+			foreach ($this->discoverVerifiedClasses('seeders', '*Seeder.php', Seeder::class) as $name => $info) {
+				$classes[$name] = $info['class'];
+			}
 			if ($classes === []) {
 				return [
 					'ok' => false,
@@ -174,23 +181,27 @@ trait InteractsWithSeedingAndScheduling
 	 */
 	public function getScheduledTasks(): array
 	{
-		$discoverer = $this->createDiscoverer();
-		if ($discoverer === null) {
+		if ($this->createDiscoverer() === null) {
 			return [];
 		}
 
 		try {
-			$classes = $discoverer->discoverClasses('schedule', '*Task.php', Task::class);
-			$files = $discoverer->discoverFiles('schedule', '*Task.php');
 			$cache = $this->wire()->cache;
 			$now = new \DateTime('now');
 			$tasks = [];
 
-			foreach ($classes as $name => $fqcn) {
-				/** @var Task $task */
-				$task = new $fqcn($this->wire());
-				$event = new Event();
-				$task->schedule($event);
+			foreach ($this->discoverVerifiedClasses('schedule', '*Task.php', Task::class) as $name => $info) {
+				$fqcn = $info['class'];
+				$path = $info['path'];
+
+				try {
+					/** @var Task $task */
+					$task = new $fqcn($this->wire());
+					$event = new Event();
+					$task->schedule($event);
+				} catch (\Throwable) {
+					continue;
+				}
 
 				$expression = $event->getExpression();
 				$isDue = false;
@@ -208,11 +219,11 @@ trait InteractsWithSeedingAndScheduling
 				$lastTriggered = is_string($lastRaw) && $lastRaw !== '' ? $lastRaw : '—';
 
 				$tasks[] = [
-					'name' => (string) $name,
-					'class' => (string) $fqcn,
-					'path' => (string) ($files[$name] ?? ''),
+					'name' => $name,
+					'class' => $fqcn,
+					'path' => $path,
 					'expression' => $expression,
-					'description' => (string) $fqcn,
+					'description' => $fqcn,
 					'isDue' => $isDue,
 					'nextRun' => $nextRun,
 					'lastTriggered' => $lastTriggered,
@@ -232,8 +243,7 @@ trait InteractsWithSeedingAndScheduling
 	 */
 	public function runScheduledTasks(string $taskNameOrDue = 'due'): array
 	{
-		$discoverer = $this->createDiscoverer();
-		if ($discoverer === null) {
+		if ($this->createDiscoverer() === null) {
 			return [
 				'ok' => false,
 				'executed' => [],
@@ -243,8 +253,23 @@ trait InteractsWithSeedingAndScheduling
 			];
 		}
 
+		if ($this->hasUnsafeFeatureFiles('schedule', '*Task.php')) {
+			$msg = $this->_('Refusing to execute scheduled tasks while symbolic link or out-of-root task files exist.');
+
+			return [
+				'ok' => false,
+				'executed' => [],
+				'errors' => ['schedule' => $msg],
+				'details' => '',
+				'message' => $msg,
+			];
+		}
+
 		try {
-			$classes = $discoverer->discoverClasses('schedule', '*Task.php', Task::class);
+			$classes = [];
+			foreach ($this->discoverVerifiedClasses('schedule', '*Task.php', Task::class) as $name => $info) {
+				$classes[$name] = $info['class'];
+			}
 			if ($classes === []) {
 				return [
 					'ok' => true,

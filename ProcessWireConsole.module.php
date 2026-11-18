@@ -13,7 +13,7 @@ use Totoglu\WireConsole\ConsoleRuntime;
  *
  * Inertia + React + Tailwind CSS v4 Process module providing a full-page
  * administrative control plane for ProcessWire Console & Boost (`Setup > Console`,
- * `/processwire/setup/wire-console/`), powered by `ProcessReactWorkspace` and `Inertia`.
+ * `{admin}/setup/wire-console/`), powered by `ProcessReactWorkspace` and `Inertia`.
  *
  * @method string execute()
  * @method string executeMigrations()
@@ -417,8 +417,8 @@ class ProcessWireConsole extends ProcessReact
 			}
 		}
 
-		$inspectCategory = trim(self::scalarString($requestPayload['inspect_category'] ?? $input?->get('inspect_category')));
-		$inspectId = trim(self::scalarString($requestPayload['inspect_file'] ?? $input?->get('inspect_file')));
+		$inspectCategory = $action === '' ? trim(self::scalarString($input?->get('inspect_category'))) : '';
+		$inspectId = $action === '' ? trim(self::scalarString($input?->get('inspect_file'))) : '';
 
 		$options = [
 			'actionUrl' => $rootUrl . 'action/',
@@ -490,6 +490,11 @@ class ProcessWireConsole extends ProcessReact
 	 */
 	protected function extractRequestPayload(): array
 	{
+		$method = strtoupper(trim(self::scalarString($_SERVER['REQUEST_METHOD'] ?? 'POST', 'POST')));
+		if ($method !== 'POST') {
+			return [];
+		}
+
 		$payload = [];
 		$input = $this->wire()->input;
 		if ($input && $input->post->count() > 0) {
@@ -614,6 +619,10 @@ class ProcessWireConsole extends ProcessReact
 			$runtime->audit('backup.download', 'denied_rbac');
 			throw new WirePermissionException($this->_('Superuser permission is required to download SQL backups.'));
 		}
+		if ($runtime->isDemoMode()) {
+			$runtime->audit('backup.download', 'denied_demo');
+			throw new WirePermissionException($this->_('SQL backup downloads are disabled in demo mode.'));
+		}
 
 		$fileName = self::scalarString($this->wire()->input?->get('file'));
 		$resolvedPath = $runtime->resolveBackupFilePath($fileName);
@@ -623,10 +632,11 @@ class ProcessWireConsole extends ProcessReact
 		}
 
 		$runtime->audit('backup.download', 'ok', ['file' => basename($resolvedPath)]);
-		wireSendFile($resolvedPath, [
+		$this->wire()->files?->send($resolvedPath, [
 			'exit' => true,
 			'forceDownload' => true,
 			'downloadFilename' => basename($resolvedPath),
+			'limitPath' => $runtime->getBackupDirectory(),
 		]);
 	}
 
@@ -673,6 +683,7 @@ class ProcessWireConsole extends ProcessReact
 				'subtitle' => $this->_('System health, database maintenance, background tasks, and diagnostics.'),
 				'maintenancePill' => $this->_('Maintenance Mode (503)'),
 				'onlinePill' => $this->_('System Online'),
+				'demoPill' => $this->_('Demo Mode'),
 				'refreshTelemetry' => $this->_('Refresh Telemetry'),
 				'confirmLabel' => $this->_('Confirm'),
 				'cliEquivalent' => $this->_('CLI Equivalent'),
@@ -825,6 +836,7 @@ class ProcessWireConsole extends ProcessReact
 				'appliedAtHead' => $this->_('Applied At'),
 				'ranBadge' => $this->_('Ran'),
 				'pendingBadge' => $this->_('Pending'),
+				'missingBadge' => $this->_('Missing'),
 				'emptyTitle' => $this->_('No Schema Migrations Found'),
 				'emptyDescription' => $this->_('Scaffold your first migration above or run php vendor/bin/wire make:migration.'),
 			],
@@ -1168,17 +1180,25 @@ class ProcessWireConsole extends ProcessReact
 		parent::___install();
 
 		$permissions = $this->wire()?->permissions;
+		$sanitizer = $this->wire()?->sanitizer;
 		if ($permissions !== null) {
 			$info = self::getModuleInfo();
 			$declared = is_array($info['permissions'] ?? null) ? $info['permissions'] : [];
 			foreach ($declared as $permName => $permTitle) {
-				$existing = $permissions->get((string) $permName);
-				if (!$existing || !$existing->id) {
+				$rawName = trim((string) $permName);
+				$cleanName = $sanitizer ? $sanitizer->pageNameUTF8($rawName) : $rawName;
+				if ($cleanName === '' || ctype_digit($cleanName)) {
+					continue;
+				}
+
+				$existing = $permissions->get($cleanName);
+				if (!$existing || !$existing->id || (string) $existing->name !== $cleanName) {
 					try {
-						$perm = $permissions->add((string) $permName);
+						$perm = $permissions->add($cleanName);
 						$perm->title = (string) $permTitle;
 						$permissions->save($perm);
-					} catch (\Throwable) {
+					} catch (\Throwable $e) {
+						$this->wire()?->log?->error(sprintf('ProcessWireConsole install permission "%s" failed: %s', $cleanName, $e->getMessage()));
 					}
 				}
 			}
@@ -1194,17 +1214,24 @@ class ProcessWireConsole extends ProcessReact
 		$this->wire()?->cache?->delete('wire-console*');
 
 		$permissions = $this->wire()?->permissions;
-		$sanitizer = $this->wire()->sanitizer;
+		$sanitizer = $this->wire()?->sanitizer;
 		if ($permissions !== null) {
 			$info = self::getModuleInfo();
 			$declared = is_array($info['permissions'] ?? null) ? $info['permissions'] : [];
 			foreach (array_keys($declared) as $permName) {
-				$safePermName = $sanitizer ? $sanitizer->selectorValue((string) $permName) : (string) $permName;
+				$rawName = trim((string) $permName);
+				$cleanName = $sanitizer ? $sanitizer->pageNameUTF8($rawName) : $rawName;
+				if ($cleanName === '' || ctype_digit($cleanName)) {
+					continue;
+				}
+
+				$safePermName = $sanitizer ? $sanitizer->selectorValue($cleanName) : $cleanName;
 				foreach ($permissions->find("name={$safePermName}, include=all") as $perm) {
-					if ($perm && $perm->id) {
+					if ($perm && $perm->id && (string) $perm->name === $cleanName) {
 						try {
 							$permissions->delete($perm);
-						} catch (\Throwable) {
+						} catch (\Throwable $e) {
+							$this->wire()?->log?->error(sprintf('ProcessWireConsole uninstall permission "%s" failed: %s', $cleanName, $e->getMessage()));
 						}
 					}
 				}
