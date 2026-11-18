@@ -7,7 +7,7 @@ body:
     id: affected-versions
     attributes:
       label: WireConsole version(s) affected
-      placeholder: 2.1.0
+      placeholder: 2.1.1
     validations:
       required: true
   - type: input

@@ -4,7 +4,7 @@ description: "Use when working with ProcessWire WireConsole (ProcessWireConsole 
 risk: safe
 source: processwire-boost
 metadata:
-  version: 210
+  version: 211
   processwire-version: ">=3.0.271"
   php-version: ">=8.4"
   triggers:
