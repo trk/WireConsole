@@ -155,7 +155,13 @@ if (!function_exists('wcTestModule')) {
 			$admin = $users->get('roles=superuser');
 		}
 		if ($admin && $admin->id) {
+			$defaultLang = $pw?->languages?->getDefault();
+			if ($defaultLang && $defaultLang->id) {
+				$admin->setQuietly('language', $defaultLang);
+			}
 			$users->setCurrentUser($admin);
 		}
 	}
+
+	wcSetSuperuser();
 }
