@@ -206,6 +206,7 @@ export function BackupPanel({
 													variant="ghost"
 													size="sm"
 													icon="eye"
+													disabled={!isSuperuser || busyAction !== null}
 													onClick={() => inspectFile('backup', item.name)}
 												>
 													{t('workspace.preview', 'Preview')}

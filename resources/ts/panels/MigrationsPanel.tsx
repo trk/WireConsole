@@ -360,12 +360,17 @@ export function MigrationsPanel({
 							<TableBody>
 								{items.map((item) => {
 									const isRan = item.status === 'Ran';
+									const isMissing = item.status === 'Missing';
 									return (
 										<TableRow key={item.name}>
 											<TableCell className="font-mono text-xs font-medium">{item.name}</TableCell>
 											<TableCell>
-												<Badge variant={isRan ? 'success' : 'warning'}>
-													{isRan ? t('migrations.ranBadge', 'Ran') : t('migrations.pendingBadge', 'Pending')}
+												<Badge variant={isRan ? 'success' : isMissing ? 'danger' : 'warning'}>
+													{isRan
+														? t('migrations.ranBadge', 'Ran')
+														: isMissing
+															? t('migrations.missingBadge', 'Missing')
+															: t('migrations.pendingBadge', 'Pending')}
 												</Badge>
 											</TableCell>
 											<TableCell className="font-mono text-xs text-muted-foreground">
@@ -379,6 +384,7 @@ export function MigrationsPanel({
 													variant="ghost"
 													size="sm"
 													icon="eye"
+													disabled={isMissing}
 													onClick={() => inspectFile('migration', item.name)}
 												>
 													{t('workspace.source', 'Source')}

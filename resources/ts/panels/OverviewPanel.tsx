@@ -205,7 +205,7 @@ export function OverviewPanel({
 										/>
 									</div>
 								</div>
-								<CliBox command="php vendor/bin/wire down --retry=3600" label={t('workspace.cliEquivalent', 'CLI Equivalent')} />
+								<CliBox command={`php vendor/bin/wire down --retry=${maintenanceRetry || 3600}`} label={t('workspace.cliEquivalent', 'CLI Equivalent')} />
 								<div className="flex justify-end">
 									<Button
 										variant="destructive"
@@ -260,7 +260,7 @@ export function OverviewPanel({
 						<CliBox
 							command={
 								cacheMode === 'wire'
-									? 'php vendor/bin/wire cache:wire:clear'
+									? "php vendor/bin/wire cache:wire:clear --pattern='%'"
 									: cacheMode === 'modules'
 										? 'php vendor/bin/wire module:refresh'
 										: 'php vendor/bin/wire cache:clear'

@@ -8,11 +8,6 @@ interface ReactWorkspaceGlobal {
 	DynamicIcon: typeof import('../../../ProcessReactWorkspace/resources/ts/lib/utils').DynamicIcon;
 	registerPages: <TProps>(pages: Record<string, React.ComponentType<TProps>>) => void;
 	useTranslations: typeof import('../../../ProcessReactWorkspace/resources/ts/lib/i18n').useTranslations;
-	t: typeof import('../../../ProcessReactWorkspace/resources/ts/lib/i18n').t;
-	translate: typeof import('../../../ProcessReactWorkspace/resources/ts/lib/i18n').translate;
-	registerTranslations: typeof import('../../../ProcessReactWorkspace/resources/ts/lib/i18n').registerTranslations;
-	hasTranslation: typeof import('../../../ProcessReactWorkspace/resources/ts/lib/i18n').hasTranslation;
-	getLocale: typeof import('../../../ProcessReactWorkspace/resources/ts/lib/i18n').getLocale;
 }
 
 const runtime = (window as unknown as { ReactWorkspaceRuntime: ReactWorkspaceGlobal }).ReactWorkspaceRuntime;
@@ -54,11 +49,6 @@ export const { AppShell } = runtime.Layout;
 export const DynamicIcon = runtime.DynamicIcon;
 export const registerPages = runtime.registerPages;
 export const useTranslations = runtime.useTranslations;
-export const t = runtime.t;
-export const translate = runtime.translate;
-export const registerTranslations = runtime.registerTranslations;
-export const hasTranslation = runtime.hasTranslation;
-export const getLocale = runtime.getLocale;
 
 export type ConfirmDialogVariant = 'primary' | 'warning' | 'danger';
 

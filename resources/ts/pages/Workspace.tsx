@@ -62,7 +62,8 @@ export function Workspace(props: WorkspaceProps) {
 
 	const actionUrl: string = props.actionUrl || window.location.pathname;
 	const downloadBackupUrl: string = props.downloadBackupUrl || '';
-	const isSuperuser: boolean = Boolean(props.isSuperuser);
+	const isDemoMode: boolean = Boolean(props.isDemoMode);
+	const isSuperuser: boolean = Boolean(props.isSuperuser) && !isDemoMode;
 
 	const runAction = (action: string, payload: Record<string, unknown> = {}) => {
 		setBusyAction(action);
@@ -101,6 +102,22 @@ export function Workspace(props: WorkspaceProps) {
 	};
 
 	const inspectFile = (category: string, file: string) => {
+		if (isDemoMode) {
+			const baseUrl = actionUrl.replace(/\/action\/?$/, '/');
+			const targetUrl = currentTab === 'overview' ? baseUrl : `${baseUrl}${encodeURIComponent(currentTab)}/`;
+			router.get(
+				targetUrl,
+				{
+					inspect_category: category,
+					inspect_file: file,
+				},
+				{
+					preserveState: true,
+					preserveScroll: true,
+				}
+			);
+			return;
+		}
 		runAction('inspectFile', {
 			inspect_category: category,
 			inspect_file: file,
@@ -207,6 +224,14 @@ export function Workspace(props: WorkspaceProps) {
 						: t('workspace.onlinePill', 'System Online'),
 					variant: isDown ? 'warning' : 'success',
 				},
+				...(isDemoMode
+					? [
+							{
+								label: t('workspace.demoPill', 'Demo Mode'),
+								variant: 'warning' as const,
+							},
+						]
+					: []),
 				{
 					label: `PHP ${props.overview?.versions?.php ?? '8.4+'}`,
 					variant: 'outline',

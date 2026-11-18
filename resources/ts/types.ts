@@ -112,7 +112,7 @@ export interface OverviewPayload {
 
 export interface MigrationItem {
 	name: string;
-	status: string;
+	status: 'Ran' | 'Pending' | 'Missing' | string;
 	batch: number | null;
 	migrated_at: string | null;
 }
@@ -344,6 +344,7 @@ export interface WorkspaceProps {
 	activeTab: string;
 	tabs: Record<string, TabDefinition>;
 	isSuperuser: boolean;
+	isDemoMode?: boolean;
 	actionUrl: string;
 	downloadBackupUrl: string;
 	csrf?: {
