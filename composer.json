@@ -1,6 +1,6 @@
 {
 	"name": "trk/processwire-wireconsole",
-	"version": "2.1.1",
+	"version": "2.1.2",
 	"description": "Inertia + React ProcessWire Console & Boost administrative workspace (Setup > Console).",
 	"type": "pw-module",
 	"license": "MIT",
