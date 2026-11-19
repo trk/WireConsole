@@ -14,7 +14,7 @@ test('ProcessWireConsole registers WireClassLoader namespace strictly once in __
 	$moduleSource = (string) file_get_contents($moduleFile);
 
 	expect(substr_count($moduleSource, '->addNamespace('))->toBe(1)
-		->and($moduleSource)->toContain("\$this->wire()?->classLoader?->addNamespace('Totoglu\\\\WireConsole', __DIR__ . '/src/');")
+		->and($moduleSource)->toContain("\$this->wire()->classLoader->addNamespace('Totoglu\\\\WireConsole', __DIR__ . '/src/');")
 		->and($moduleSource)->not->toContain('registerNamespace')
 		->and($moduleSource)->not->toContain('require_once')
 		->and($moduleSource)->not->toContain('class_exists')
@@ -47,7 +47,7 @@ test('ProcessWireConsole registers WireClassLoader namespace strictly once in __
 		->and(ProcessWireConsole::PERMISSION_LOGS)->toBe(ConsoleRuntime::PERMISSION_LOGS);
 });
 
-test('ProcessWireConsole defines the Inertia + ProcessReactWorkspace Console process module metadata and permissions', function (): void {
+test('ProcessWireConsole defines the Inertia + React Console process module metadata and permissions', function (): void {
 	$info = ProcessWireConsole::getModuleInfo();
 
 	expect($info['title'])->toBe('Console')
@@ -65,7 +65,7 @@ test('ProcessWireConsole defines the Inertia + ProcessReactWorkspace Console pro
 			'PHP>=8.4',
 			'ProcessWire>=3.0.271',
 			'Inertia',
-			'ProcessReactWorkspace',
+			'React',
 		])
 		->and(array_keys($info['permissions']))->toBe([
 			'wire-console',
@@ -130,7 +130,7 @@ test('ProcessWireConsole uninstall removes the wire-console-audit log channel, c
 	$composer = json_decode((string) file_get_contents(dirname(__DIR__, 2) . '/composer.json'), true);
 	expect($composer['version'] ?? null)->toBe('2.1.1')
 		->and($composer['require']['trk/processwire-inertia'] ?? null)->toBe('^1.0')
-		->and($composer['require']['trk/processwire-react-workspace'] ?? null)->toBe('^1.0 || ^2.0');
+		->and($composer['require']['trk/processwire-react'] ?? null)->toBe('^1.0 || ^2.0');
 
 	$module->___install();
 	expect($pw->permissions->get(ProcessWireConsole::PERMISSION_VIEW)?->id)->toBeGreaterThan(0);
@@ -182,7 +182,7 @@ test('ProcessWireConsole exposes nested UI translations and matching LanguagePor
 		expect($enTranslations[$section])->toBeArray()->not->toBeEmpty();
 	}
 
-	$workspace = \ProcessWire\ProcessReactWorkspace::instance($module);
+	$workspace = \ProcessWire\React::instance($module);
 	$resolved = $workspace->resolveModuleTranslations($module);
 
 	expect($resolved)->toBeArray()

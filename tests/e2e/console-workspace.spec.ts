@@ -371,7 +371,7 @@ test.describe('WireConsole Admin Workspace, Operations & RBAC (ProcessWireConsol
 		await confirmAndExecuteModal(page);
 
 		await expect(page.getByText('MCP JSON-RPC Response (pw_module_list)')).toBeVisible();
-		await expect(page.locator('pre code').filter({ hasText: 'ProcessWireConsole' }).first()).toBeVisible();
+		await expect(page.locator('pre code').filter({ hasText: 'ProcessModule' }).first()).toBeVisible();
 
 		// 3. Switch to Logs & Audit and filter via GET (ensuring URL routes to /logs/ and NOT /action/)
 		await page.getByRole('button', { name: 'Logs & Audit', exact: true }).first().click();
@@ -534,5 +534,84 @@ test.describe('WireConsole Admin Workspace, Operations & RBAC (ProcessWireConsol
 		} finally {
 			await ctx.close();
 		}
+	});
+
+	test('6. verifies AppShell header parity, RecordHeader controls, responsive overflow, ?ws=1 embed mode, and full WCAG 2.1 AA', async ({
+		page,
+	}) => {
+		const tracker = attachRuntimeErrorTracker(page);
+		await page.setViewportSize({ width: 1440, height: 900 });
+
+		await page.goto(getAdminUrl('setup/wire-console/'), { waitUntil: 'networkidle' });
+		const moduleHeader = page.locator('[data-rw-module-header]').first();
+		await expect(moduleHeader).toBeVisible();
+		await expect(moduleHeader.getByRole('button', { name: 'Refresh Status' })).toHaveCount(0);
+
+		const recordHeader = page.locator('[data-rw-record-header]').first();
+		await expect(recordHeader).toBeVisible();
+		await expect(recordHeader).toContainText('Overview');
+		await expect(recordHeader.getByRole('button', { name: 'Refresh Status' }).first()).toBeVisible();
+
+		const baseHeaderBox = await moduleHeader.boundingBox();
+		expect(baseHeaderBox).not.toBeNull();
+
+		// Navigate to Migrations and verify module header parity and RecordHeader title
+		await page.locator('[data-rw-module-nav] button').filter({ hasText: /^Migrations$/ }).first().click();
+		await expect(page).toHaveURL(/\/wire-console\/migrations\//);
+		await expect(recordHeader).toContainText('Migrations');
+		await expect(moduleHeader.getByRole('button', { name: 'Refresh Status' })).toHaveCount(0);
+		const migrationsHeaderBox = await moduleHeader.boundingBox();
+		expect(migrationsHeaderBox).not.toBeNull();
+		expect(Math.abs((migrationsHeaderBox?.height ?? 0) - (baseHeaderBox?.height ?? 0))).toBeLessThanOrEqual(2);
+
+		// Navigate to Logs & Audit (either direct nav button or More overflow menu) and verify header parity
+		const directLogsBtn = page.locator('[data-rw-module-nav] button').filter({ hasText: /^Logs & Audit$/ }).first();
+		if (await directLogsBtn.isVisible()) {
+			await directLogsBtn.click();
+		} else {
+			await page.locator('[data-rw-module-nav-more]').first().click();
+			await page.locator('[data-rw-module-nav-menu]').getByRole('menuitem', { name: /Logs & Audit/i }).first().click();
+		}
+		await expect(page).toHaveURL(/\/wire-console\/logs\//);
+		await expect(recordHeader).toContainText('Logs & Audit');
+		const logsHeaderBox = await moduleHeader.boundingBox();
+		expect(logsHeaderBox).not.toBeNull();
+		expect(Math.abs((logsHeaderBox?.height ?? 0) - (baseHeaderBox?.height ?? 0))).toBeLessThanOrEqual(2);
+
+		// Return to Overview and verify responsive layout (820px, 680px, 390px) with zero horizontal #app or nav overflow + full WCAG 2.1 AA
+		await page.goto(getAdminUrl('setup/wire-console/'), { waitUntil: 'networkidle' });
+		for (const vp of [
+			{ width: 820, height: 900 },
+			{ width: 680, height: 900 },
+			{ width: 390, height: 844 },
+		]) {
+			await page.setViewportSize(vp);
+			await page.evaluate(
+				() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+			);
+			const appNoOverflow = await page
+				.locator('#app')
+				.evaluate((el) => el.scrollWidth <= el.clientWidth + 1);
+			expect(appNoOverflow, `#app horizontal overflow at ${vp.width}x${vp.height}`).toBe(true);
+			const navNoOverflow = await page
+				.locator('#app [data-rw-module-nav]')
+				.evaluate((el) => el.scrollWidth <= el.clientWidth + 1);
+			expect(navNoOverflow, `Module nav horizontal overflow at ${vp.width}x${vp.height}`).toBe(true);
+		}
+
+		const responsiveAxe = await new AxeBuilder({ page })
+			.include('[data-console-panel]')
+			.withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+			.analyze();
+		expect(responsiveAxe.violations, 'WCAG 2.1 AA violations on WireConsole Responsive Overview').toEqual([]);
+
+		// Restore desktop viewport, open ?ws=1 embedded mode, and verify tab navigation preserves ?ws=1
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await page.goto(getAdminUrl('setup/wire-console/?ws=1'), { waitUntil: 'networkidle' });
+		await expect(page.locator('[data-console-panel]').first()).toBeVisible();
+		await page.locator('[data-rw-module-nav] button').filter({ hasText: /^Migrations$/ }).first().click();
+		await expect(page).toHaveURL(/\/wire-console\/migrations\/\?ws=1$/);
+
+		tracker.assertNoErrors();
 	});
 });

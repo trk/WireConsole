@@ -18,10 +18,10 @@ final class LayeringScanner
 	public const string MAIN_MODULE = 'ProcessWireConsole';
 
 	/** @var list<string> Only this module and its allowed lower-layer dependencies. */
-	public const array ALLOWED_MODULES = ['WireConsole', 'ProcessReactWorkspace', 'Inertia'];
+	public const array ALLOWED_MODULES = ['WireConsole', 'React', 'Inertia'];
 
 	/** @var list<string> Direct module dependencies that MAIN_MODULE must declare in getModuleInfo()['requires']. */
-	public const array REQUIRED_DIRECT = ['Inertia', 'ProcessReactWorkspace'];
+	public const array REQUIRED_DIRECT = ['Inertia', 'React'];
 
 	/** @var list<string> Allowed short CSS/data-* prefixes for this module and its lower layers. */
 	public const array ALLOWED_PREFIXES = ['rw-'];

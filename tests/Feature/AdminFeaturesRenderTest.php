@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use ProcessWire\ProcessReactWorkspace;
+use ProcessWire\React;
 use ProcessWire\ProcessWire;
 use ProcessWire\WirePermissionException;
-use Totoglu\ProcessReactWorkspace\Icon\IconManager;
+use Totoglu\React\Icon\IconManager;
 
 require_once __DIR__ . '/../bootstrap.php';
 
@@ -25,7 +25,7 @@ afterEach(function (): void {
 	}
 });
 
-test('ProcessWireConsole executes and renders the Inertia WireConsole/Workspace application with ProcessReactWorkspace runtime assets', function (): void {
+test('ProcessWireConsole executes and renders the Inertia WireConsole/Workspace application with React runtime assets', function (): void {
 	$module = wcTestModule();
 	$assets = $module->getModuleScriptAssets();
 	$html = $module->execute();
@@ -97,9 +97,9 @@ test('ProcessWireConsole executeAction processes posted actions and file inspect
 	$pw->input->post->remove('_token');
 });
 
-test('ProcessWireConsole registers the console workspace in ProcessReactWorkspace WorkspaceRegistry', function (): void {
+test('ProcessWireConsole registers the console workspace in React WorkspaceRegistry', function (): void {
 	$module = wcTestModule();
-	$workspace = ProcessReactWorkspace::instance($module);
+	$workspace = React::instance($module);
 	$registry = $workspace->workspaces();
 	$def = $registry->get('console');
 

@@ -10,7 +10,7 @@ const tsRoot = path.join(moduleRoot, 'resources/ts');
 const panelsRoot = path.join(tsRoot, 'panels');
 const reactWorkspaceCatalogPath = path.resolve(
 	moduleRoot,
-	'../ProcessReactWorkspace/dist/vector-icons.json',
+	'../React/dist/vector-icons.json',
 );
 
 const DISALLOWED_ICON_ALIASES = new Set([

@@ -21,7 +21,7 @@ spl_autoload_register(static function (string $class) use ($projectRoot, $module
 	$psr4Prefixes = [
 		'Totoglu\\WireConsole\\' => $moduleRoot . '/src/',
 		'Totoglu\\Inertia\\' => $projectRoot . '/site/modules/Inertia/src/',
-		'Totoglu\\ProcessReactWorkspace\\' => $projectRoot . '/site/modules/ProcessReactWorkspace/src/',
+		'Totoglu\\React\\' => $projectRoot . '/site/modules/React/src/',
 	];
 
 	foreach ($psr4Prefixes as $prefix => $baseDir) {
@@ -48,7 +48,7 @@ spl_autoload_register(static function (string $class) use ($projectRoot, $module
 	$directCandidates = [
 		$projectRoot . '/wire/core/' . $short . '.php',
 		$projectRoot . '/site/modules/Inertia/' . $short . '.module.php',
-		$projectRoot . '/site/modules/ProcessReactWorkspace/' . $short . '.module.php',
+		$projectRoot . '/site/modules/React/' . $short . '.module.php',
 		$moduleRoot . '/' . $short . '.module.php',
 	];
 
@@ -77,7 +77,7 @@ foreach ([
 	$coreDir . 'WireDatabasePDOStatement.php',
 	$coreDir . 'WireDatabaseBackup.php',
 	$projectRoot . '/site/modules/Inertia/Inertia.module.php',
-	$projectRoot . '/site/modules/ProcessReactWorkspace/ProcessReactWorkspace.module.php',
+	$projectRoot . '/site/modules/React/React.module.php',
 ] as $preloadFile) {
 	if (is_file($preloadFile)) {
 		require_once $preloadFile;

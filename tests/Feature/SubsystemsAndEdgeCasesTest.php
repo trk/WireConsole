@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use ProcessWire\ProcessReactWorkspace;
+use ProcessWire\React;
 use ProcessWire\ProcessWire;
 use ProcessWire\Wire404Exception;
-use Totoglu\ProcessReactWorkspace\Icon\IconManager;
+use Totoglu\React\Icon\IconManager;
 use Totoglu\WireConsole\ConsoleRuntime;
 
 require_once __DIR__ . '/../bootstrap.php';
@@ -32,7 +32,7 @@ afterEach(function (): void {
 
 test('IconManager registers Console canonical vector icons and compiles admin CSS mask rules', function (): void {
 	$module = wcTestModule();
-	$icons = ProcessReactWorkspace::instance($module)->icons();
+	$icons = React::instance($module)->icons();
 	$catalog = IconManager::loadCatalog()['outline'] ?? [];
 	$expectedIcons = [
 		'terminal',

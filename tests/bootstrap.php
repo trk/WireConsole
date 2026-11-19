@@ -30,7 +30,7 @@ if ($pw?->hooks && $pw?->pages) {
 	$allowedDirs = [
 		str_replace('\\', '/', $moduleRoot) . '/',
 		str_replace('\\', '/', $projectRoot . '/site/modules/Inertia') . '/',
-		str_replace('\\', '/', $projectRoot . '/site/modules/ProcessReactWorkspace') . '/',
+		str_replace('\\', '/', $projectRoot . '/site/modules/React') . '/',
 	];
 	$siteModulesDir = str_replace('\\', '/', $projectRoot . '/site/modules') . '/';
 
@@ -64,58 +64,58 @@ if (is_file($inertiaRoot . '/Inertia.module.php')) {
 	require_once $inertiaRoot . '/Inertia.module.php';
 }
 
-$reactWorkspaceRoot = $projectRoot . '/site/modules/ProcessReactWorkspace';
-if (is_file($reactWorkspaceRoot . '/ProcessReactWorkspace.module.php')) {
-	require_once $reactWorkspaceRoot . '/ProcessReactWorkspace.module.php';
+$reactRoot = $projectRoot . '/site/modules/React';
+if (is_file($reactRoot . '/React.module.php')) {
+	require_once $reactRoot . '/React.module.php';
 }
 
 if ($classLoader) {
 	if (is_dir($inertiaRoot)) {
 		$classLoader->addNamespace('Totoglu\\Inertia', $inertiaRoot . '/src/');
 	}
-	if (is_dir($reactWorkspaceRoot)) {
-		$classLoader->addNamespace('Totoglu\\ProcessReactWorkspace', $reactWorkspaceRoot . '/src/');
+	if (is_dir($reactRoot)) {
+		$classLoader->addNamespace('Totoglu\\React', $reactRoot . '/src/');
 	}
 }
 
 require_once $moduleRoot . '/ProcessWireConsole.module.php';
 (new ProcessWireConsole());
 
-if (!function_exists('bootProcessReactWorkspaceForTesting')) {
-	function bootProcessReactWorkspaceForTesting(): \ProcessWire\ProcessReactWorkspace
+if (!function_exists('bootReactForTesting')) {
+	function bootReactForTesting(): \ProcessWire\React
 	{
 		$pw = ProcessWire::getCurrentInstance();
 		$modules = $pw?->modules;
-		$workspace = $pw?->workspace;
-		if (!$workspace instanceof \ProcessWire\ProcessReactWorkspace) {
-			if ($modules && $modules->isInstalled('ProcessReactWorkspace')) {
+		$react = $pw?->react;
+		if (!$react instanceof \ProcessWire\React) {
+			if ($modules && $modules->isInstalled('React')) {
 				try {
-					$installed = $modules->getModule('ProcessReactWorkspace', ['noPermissionCheck' => true]);
-					if ($installed instanceof \ProcessWire\ProcessReactWorkspace) {
-						$workspace = $installed;
+					$installed = $modules->getModule('React', ['noPermissionCheck' => true]);
+					if ($installed instanceof \ProcessWire\React) {
+						$react = $installed;
 					}
 				} catch (\Throwable) {
 				}
 			}
-			if (!$workspace instanceof \ProcessWire\ProcessReactWorkspace) {
-				$workspace = new \ProcessWire\ProcessReactWorkspace();
+			if (!$react instanceof \ProcessWire\React) {
+				$react = new \ProcessWire\React();
 				if ($pw) {
-					$pw->wire($workspace);
+					$pw->wire($react);
 				}
-				$workspace->wired();
-				$workspace->init();
+				$react->wired();
+				$react->init();
 			}
 		}
 		if ($modules) {
-			$modules->set('ProcessReactWorkspace', $workspace);
+			$modules->set('React', $react);
 		}
-		$pw?->fuel?->set('workspace', $workspace);
+		$pw?->fuel?->set('react', $react);
 
-		return $workspace;
+		return $react;
 	}
 }
 
-bootProcessReactWorkspaceForTesting();
+bootReactForTesting();
 
 if (!function_exists('wcTestModule')) {
 	/**
@@ -124,7 +124,7 @@ if (!function_exists('wcTestModule')) {
 	function wcTestModule(): ProcessWireConsole
 	{
 		$pw = ProcessWire::getCurrentInstance();
-		bootProcessReactWorkspaceForTesting();
+		bootReactForTesting();
 
 		$adminPage = $pw?->pages?->get(2);
 		if ($adminPage && $adminPage->id) {
