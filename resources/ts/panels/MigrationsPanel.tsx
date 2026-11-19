@@ -171,7 +171,11 @@ export function MigrationsPanel({
 							</div>
 						</div>
 
-						<CliBox command="php vendor/bin/wire migrate" label={t('workspace.cliEquivalent', 'CLI Equivalent')} />
+						<CliBox
+							command="php vendor/bin/wire migrate"
+							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
+							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
+						/>
 
 						<div className="flex flex-wrap items-center justify-end gap-2">
 							<Button
@@ -237,7 +241,11 @@ export function MigrationsPanel({
 							onCheckedChange={setResetPreBackup}
 							label={t('migrations.safetyBackupSwitch', 'Create SQL safety backup before running')}
 						/>
-						<CliBox command={`php vendor/bin/wire migrate:${resetMode}`} label={t('workspace.cliEquivalent', 'CLI Equivalent')} />
+						<CliBox
+							command={`php vendor/bin/wire migrate:${resetMode}`}
+							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
+							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
+						/>
 						<div className="flex justify-end">
 							<Button
 								variant="destructive"
@@ -296,6 +304,7 @@ export function MigrationsPanel({
 						<CliBox
 							command={`php vendor/bin/wire make:migration ${newMigrationName || 'create_product_fields'}${migrationType !== 'blank' ? ` --type=${migrationType}` : ''}`}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
+							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 						<div className="flex justify-end">
 							<Button

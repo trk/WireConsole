@@ -242,7 +242,11 @@ export function BoostPanel({
 								onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setMcpToolArgs(e.target.value)}
 							/>
 						</div>
-						<CliBox command="php vendor/bin/wire boost:mcp" label={t('boost.mcpServerEntryLabel', 'MCP Server Entry')} />
+						<CliBox
+							command="php vendor/bin/wire boost:mcp"
+							label={t('boost.mcpServerEntryLabel', 'MCP Server Entry')}
+							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
+						/>
 						<div className="flex justify-end">
 							<Button
 								icon="player-play"

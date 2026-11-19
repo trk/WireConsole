@@ -180,7 +180,11 @@ export function QueuesPanel({
 								/>
 							</div>
 						</div>
-						<CliBox command={`php vendor/bin/wire queue:work --queue=${workQueueName || 'default'} --once`} label={t('workspace.cliEquivalent', 'CLI Equivalent')} />
+						<CliBox
+							command={`php vendor/bin/wire queue:work --queue=${workQueueName || 'default'} --once`}
+							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
+							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
+						/>
 						<div className="flex justify-end">
 							<Button
 								icon="player-play"
@@ -251,7 +255,7 @@ export function QueuesPanel({
 							</div>
 						</div>
 						<div className="space-y-1.5">
-							<Label htmlFor="dispatch-job-payload">{t('queues.jsonPayloadLabel', 'JSON Payload')}</Label>
+							<Label htmlFor="dispatch-job-payload">{t('queues.jsonPayloadLabel', 'JSON Data')}</Label>
 							<Textarea
 								id="dispatch-job-payload"
 								rows={2}

@@ -194,6 +194,7 @@ export function TestingPanel({
 						<CliBox
 							command={`php vendor/bin/wire test${testPath ? ` ${testPath}` : ''}${testFilter ? ` --filter=${testFilter}` : ''}${testGroup ? ` --group=${testGroup}` : ''}${stopOnFailure ? ' --stop-on-failure' : ''}`}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
+							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 
 						<div className="flex justify-end">
@@ -266,7 +267,11 @@ export function TestingPanel({
 							</div>
 						</div>
 
-						<CliBox command={e2eCliCommand} label={t('workspace.cliEquivalent', 'CLI Equivalent')} />
+						<CliBox
+							command={e2eCliCommand}
+							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
+							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
+						/>
 
 						<div className="flex flex-wrap items-center justify-end gap-2">
 							<Button
@@ -359,7 +364,11 @@ export function TestingPanel({
 								onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTestModule(e.target.value)}
 							/>
 						</div>
-						<CliBox command={scaffoldCliCommand} label={t('workspace.cliEquivalent', 'CLI Equivalent')} />
+						<CliBox
+							command={scaffoldCliCommand}
+							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
+							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
+						/>
 						<div className="flex justify-end">
 							<Button
 								variant="secondary"

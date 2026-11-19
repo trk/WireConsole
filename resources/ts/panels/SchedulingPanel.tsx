@@ -101,7 +101,11 @@ export function SchedulingPanel({
 								options={taskOptions}
 							/>
 						</div>
-						<CliBox command="php vendor/bin/wire schedule:run" label={t('scheduling.cliCronEntryLabel', 'CLI Cron Entry')} />
+						<CliBox
+							command="php vendor/bin/wire schedule:run"
+							label={t('scheduling.cliCronEntryLabel', 'CLI Cron Entry')}
+							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
+						/>
 						<div className="flex justify-end">
 							<Button
 								icon="player-play"
@@ -145,6 +149,7 @@ export function SchedulingPanel({
 						<CliBox
 							command={`php vendor/bin/wire make:task ${newTaskName || 'PruneExpiredSessionsTask'}`}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
+							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 						<div className="flex justify-end">
 							<Button

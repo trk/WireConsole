@@ -9,6 +9,7 @@ import {
 	CodePreview,
 	ConfirmDialog,
 	useTranslations,
+	type AppShellRecordHeaderProps,
 	type ConfirmDialogConfig,
 } from '../runtime';
 import type { TabDefinition, WorkspaceProps } from '../types';
@@ -131,7 +132,8 @@ export function Workspace(props: WorkspaceProps) {
 		setCurrentTab(nextTab);
 		try {
 			const baseUrl = actionUrl.replace(/\/action\/?$/, '/');
-			const targetUrl = nextTab === 'overview' ? baseUrl : `${baseUrl}${encodeURIComponent(nextTab)}/`;
+			const search = window.location.search || '';
+			const targetUrl = (nextTab === 'overview' ? baseUrl : `${baseUrl}${encodeURIComponent(nextTab)}/`) + search;
 			window.history.replaceState({}, '', targetUrl);
 		} catch {
 			// Ignore history state errors
@@ -212,10 +214,34 @@ export function Workspace(props: WorkspaceProps) {
 
 	const isDown = Boolean(props.overview?.maintenance?.isDown);
 
+	const recordHeader: AppShellRecordHeaderProps = {
+		title: activeTabMeta.label,
+		subtitle: activeTabMeta.description,
+		showHeadButtonsPortal: false,
+		actions: (
+			<Button
+				variant="outline"
+				size="sm"
+				icon="refresh"
+				disabled={busyAction !== null}
+				onClick={() => {
+					const baseUrl = actionUrl.replace(/\/action\/?$/, '/');
+					const search = window.location.search || '';
+					const targetUrl =
+						(currentTab === 'overview' ? baseUrl : `${baseUrl}${encodeURIComponent(currentTab)}/`) + search;
+					router.get(targetUrl, {}, { preserveState: true, preserveScroll: true });
+				}}
+			>
+				{t('workspace.refreshTelemetry', 'Refresh Status')}
+			</Button>
+		),
+	};
+
 	return (
 		<AppShell
+			workspace={props.workspace}
 			title={t('workspace.title', 'Console')}
-			subtitle={activeTabMeta.description}
+			subtitle={t('workspace.subtitle', 'System health, database maintenance, background tasks, and diagnostics.')}
 			icon="terminal"
 			pills={[
 				{
@@ -245,22 +271,7 @@ export function Workspace(props: WorkspaceProps) {
 			activeNav={currentTab}
 			feedback={mappedFeedback}
 			onDismissFeedback={() => setDismissedFeedback(true)}
-			headerActions={
-				<Button
-					variant="outline"
-					size="sm"
-					icon="refresh"
-					disabled={busyAction !== null}
-					onClick={() => {
-						const baseUrl = actionUrl.replace(/\/action\/?$/, '/');
-						const targetUrl =
-							currentTab === 'overview' ? baseUrl : `${baseUrl}${encodeURIComponent(currentTab)}/`;
-						router.get(targetUrl, {}, { preserveState: true, preserveScroll: true });
-					}}
-				>
-					{t('workspace.refreshTelemetry', 'Refresh Telemetry')}
-				</Button>
-			}
+			recordHeader={recordHeader}
 		>
 			<div data-console-panel>
 				{currentTab === 'overview' && (

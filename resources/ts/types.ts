@@ -1,3 +1,5 @@
+import type { WorkspaceSharedContext } from './runtime';
+
 export interface TabDefinition {
 	label: string;
 	icon: string;
@@ -341,6 +343,7 @@ export interface LogsPayload {
 }
 
 export interface WorkspaceProps {
+	workspace?: WorkspaceSharedContext;
 	activeTab: string;
 	tabs: Record<string, TabDefinition>;
 	isSuperuser: boolean;

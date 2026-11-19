@@ -106,6 +106,7 @@ export function SeedingPanel({
 									: `php vendor/bin/wire db:seed --class=${selectedSeeder} --force`
 							}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
+							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 						<div className="flex justify-end">
 							<Button
@@ -154,6 +155,7 @@ export function SeedingPanel({
 						<CliBox
 							command={`php vendor/bin/wire make:seeder ${newSeederName || 'ProductCatalogSeeder'}`}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
+							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 						<div className="flex justify-end">
 							<Button

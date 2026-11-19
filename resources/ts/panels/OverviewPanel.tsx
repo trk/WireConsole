@@ -125,7 +125,7 @@ export function OverviewPanel({
 
 			{/* Operations Control Row: Maintenance Mode & System Caches */}
 			<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-				<Card>
+				<Card className="min-w-0">
 					<CardHeader className="pb-3">
 						<div className="flex items-center justify-between gap-2">
 							<div className="flex items-center gap-2">
@@ -161,7 +161,11 @@ export function OverviewPanel({
 											: ''}
 									</AlertDescription>
 								</Alert>
-								<CliBox command="php vendor/bin/wire up" label={t('workspace.cliEquivalent', 'CLI Equivalent')} />
+								<CliBox
+									command="php vendor/bin/wire up"
+									label={t('workspace.cliEquivalent', 'CLI Equivalent')}
+									className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
+								/>
 								<div className="flex justify-end">
 									<Button
 										variant="default"
@@ -205,7 +209,11 @@ export function OverviewPanel({
 										/>
 									</div>
 								</div>
-								<CliBox command={`php vendor/bin/wire down --retry=${maintenanceRetry || 3600}`} label={t('workspace.cliEquivalent', 'CLI Equivalent')} />
+								<CliBox
+									command={`php vendor/bin/wire down --retry=${maintenanceRetry || 3600}`}
+									label={t('workspace.cliEquivalent', 'CLI Equivalent')}
+									className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
+								/>
 								<div className="flex justify-end">
 									<Button
 										variant="destructive"
@@ -234,7 +242,7 @@ export function OverviewPanel({
 					</CardContent>
 				</Card>
 
-				<Card>
+				<Card className="min-w-0">
 					<CardHeader className="pb-3">
 						<div className="flex items-center justify-between gap-2">
 							<div className="flex items-center gap-2">
@@ -266,6 +274,7 @@ export function OverviewPanel({
 										: 'php vendor/bin/wire cache:clear'
 							}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
+							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 						<div className="flex justify-end">
 							<Button
@@ -299,7 +308,7 @@ export function OverviewPanel({
 
 			{/* Subsystem Quick Summary & Runtime Version Matrix */}
 			<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-				<Card className="lg:col-span-2">
+				<Card className="min-w-0 lg:col-span-2">
 					<CardHeader className="pb-3">
 						<div className="flex items-center gap-2">
 							<DynamicIcon name="package" className="h-4 w-4 text-primary" />
@@ -430,7 +439,7 @@ export function OverviewPanel({
 					</CardContent>
 				</Card>
 
-				<Card>
+				<Card className="min-w-0">
 					<CardHeader className="pb-3">
 						<div className="flex items-center gap-2">
 							<DynamicIcon name="cpu" className="h-4 w-4 text-primary" />

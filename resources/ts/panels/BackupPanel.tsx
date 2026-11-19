@@ -98,7 +98,11 @@ export function BackupPanel({
 								onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDescription(e.target.value)}
 							/>
 						</div>
-						<CliBox command="php vendor/bin/wire db:backup" label={t('workspace.cliEquivalent', 'CLI Equivalent')} />
+						<CliBox
+							command="php vendor/bin/wire db:backup"
+							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
+							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
+						/>
 						<div className="flex justify-end">
 							<Button
 								icon="server"
@@ -167,7 +171,11 @@ export function BackupPanel({
 							onCheckedChange={setRestorePreBackup}
 							label={t('backup.safetyRestoreSwitch', 'Automatically create a safety backup before restoring any SQL file')}
 						/>
-						<CliBox command={`php vendor/bin/wire backup:purge --days=${purgeDays || 30}`} label={t('workspace.cliEquivalent', 'CLI Equivalent')} />
+						<CliBox
+							command={`php vendor/bin/wire backup:purge --days=${purgeDays || 30}`}
+							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
+							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
+						/>
 					</CardContent>
 				</Card>
 			</div>

@@ -1,13 +1,20 @@
+import type {
+	AppShellRecordHeaderProps,
+	WorkspaceSharedContext,
+} from '../../../React/resources/ts/layout/AppShell';
+
+export type { AppShellRecordHeaderProps, WorkspaceSharedContext };
+
 interface ReactWorkspaceGlobal {
 	React: typeof import('react');
 	Inertia: typeof import('@inertiajs/react');
-	UI: typeof import('../../../ProcessReactWorkspace/resources/ts/ui');
+	UI: typeof import('../../../React/resources/ts/ui');
 	Layout: {
-		AppShell: typeof import('../../../ProcessReactWorkspace/resources/ts/layout/AppShell').AppShell;
+		AppShell: typeof import('../../../React/resources/ts/layout/AppShell').AppShell;
 	};
-	DynamicIcon: typeof import('../../../ProcessReactWorkspace/resources/ts/lib/utils').DynamicIcon;
+	DynamicIcon: typeof import('../../../React/resources/ts/lib/utils').DynamicIcon;
 	registerPages: <TProps>(pages: Record<string, React.ComponentType<TProps>>) => void;
-	useTranslations: typeof import('../../../ProcessReactWorkspace/resources/ts/lib/i18n').useTranslations;
+	useTranslations: typeof import('../../../React/resources/ts/lib/i18n').useTranslations;
 }
 
 const runtime = (window as unknown as { ReactWorkspaceRuntime: ReactWorkspaceGlobal }).ReactWorkspaceRuntime;
