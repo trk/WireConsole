@@ -8,7 +8,7 @@ Full-page Inertia v3 + React 19 + Tailwind CSS v4 administrative workspace (`Set
 
 - PHP `>= 8.4`
 - ProcessWire `>= 3.0.271`
-- ProcessWire modules: `Inertia`, `ProcessReactWorkspace`
+- ProcessWire modules: `Inertia`, `React`
 - Composer packages:
   - `trk/processwire-console` (`^0.2` — schema migrations, background queues, database seeders, scheduled cron tasks, SQL backups, Pest PHP runner, and Playwright E2E runner)
   - `trk/processwire-boost` (`^0.3`, optional — AI guidelines, skills, and the 28-tool JSON-RPC MCP server)
@@ -60,7 +60,7 @@ if ($telemetry['migrations']['pending'] > 0) {
 
 ## Configuration & Workspace Sections
 
-`ProcessWireConsole` is zero-configuration out of the box and automatically discovers project features from ProcessWire's native directories (`site/migrations/`, `site/queue/`, `site/seeders/`, `site/schedule/`, `site/assets/backups/database/`, `tests/`, `.agents/`) and installed modules via `ProcessReactWorkspace::deferModuleRegistration(...)`.
+`ProcessWireConsole` is zero-configuration out of the box and automatically discovers project features from ProcessWire's native directories (`site/migrations/`, `site/queue/`, `site/seeders/`, `site/schedule/`, `site/assets/backups/database/`, `tests/`, `.agents/`) and installed modules via `React::deferModuleRegistration(...)`.
 
 | Section | Route | Required Permission | Managed Subsystem |
 |---|---|---|---|

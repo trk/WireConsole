@@ -37,9 +37,9 @@ Full-page Inertia v3 + React 19 + Tailwind CSS v4 administrative control plane (
 
 ## Core Architecture
 
-- **`ProcessWire\ProcessWireConsole`** (`extends Totoglu\ProcessReactWorkspace\Inertia\ProcessReact`):
+- **`ProcessWire\ProcessWireConsole`** (`extends Totoglu\React\Inertia\ProcessReact`):
   - Autoload Process module registering `Totoglu\WireConsole` -> `__DIR__ . '/src/'` strictly once in `__construct()`.
-  - Defers `'console'` workspace and `'console-overview'` dashboard widget registration via `ProcessReactWorkspace::deferModuleRegistration(...)` so frontend requests incur zero boot overhead.
+  - Defers `'console'` workspace and `'console-overview'` dashboard widget registration via `React::deferModuleRegistration(...)` so frontend requests incur zero boot overhead.
   - Preloads `ReactIcons.js` (`window.ProcessWireIcons`) and versioned `dist/ProcessWireConsole.js` via `getModuleScriptAssets()`.
 - **`Totoglu\WireConsole\ConsoleRuntime`** (`extends ProcessWire\Wire`):
   - Domain service returned by `$console->runtime()`, composed of 9 focused traits in `src/Concerns/`:
@@ -153,5 +153,5 @@ $recentAudits = $console->runtime()->readLogEntries('wire-console-audit', 25, 'D
 - **Hardcoding `/processwire/` URLs:** Never hardcode `/processwire/setup/wire-console/` in PHP, JS, or Playwright tests. Resolve admin URLs dynamically from `$this->wire()->config->urls->admin` (or `getAdminUrl('setup/wire-console/')` in E2E specs).
 - **Using `#pw-internal` Log Methods:** Use `$this->wire()->log->getLogs(true)` rather than `#pw-internal` `$log->getFiles()` when enumerating log channels.
 - **Bypassing Symlink & Concrete-Class Checks:** Never read or instantiate discovered files/classes without checking `!is_link()`, `realpath()` project-root containment, and `ReflectionClass` (`!$ref->isAbstract() && $ref->isSubclassOf(...)`).
-- **Breaking Zero-Business-Coupling:** `ProcessWireConsole` is a foundational infrastructure module (`Inertia` + `ProcessReactWorkspace` only). Never import domain modules (`WireEntries`, `WireBlocks`, `WireForms`, `WireSeo`, `WireNavigation`, `WireHeadless`) into `WireConsole`.
+- **Breaking Zero-Business-Coupling:** `ProcessWireConsole` is a foundational infrastructure module (`Inertia` + `React` only). Never import domain modules (`WireEntries`, `WireBlocks`, `WireForms`, `WireSeo`, `WireNavigation`, `WireHeadless`) into `WireConsole`.
 - **Desynchronizing Localization Packs:** Whenever a `$this->_('...')` string changes in `ProcessWireConsole.module.php` or `src/`, rebuild `dist/ProcessWireConsole.js` and re-synchronize all 6 `languages/{en,tr,de,fr,es,ru}.csv` files; ensure every PHP file under `tests/` starts with `<?php // __(file-not-translatable)`.

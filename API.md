@@ -4,7 +4,7 @@
 
 ## 1. Process Module: `ProcessWire\ProcessWireConsole`
 
-Mounted at **Setup > Console** (`{admin}/setup/wire-console/`). Extends `Totoglu\ProcessReactWorkspace\Inertia\ProcessReact` (`Totoglu\Inertia\ProcessInertia` + `InteractWithReact`), requiring `Inertia` and `ProcessReactWorkspace`.
+Mounted at **Setup > Console** (`{admin}/setup/wire-console/`). Extends `Totoglu\React\Inertia\ProcessReact` (`Totoglu\Inertia\ProcessInertia` + `InteractWithReact`), requiring `Inertia` and `React`.
 
 ```php
 <?php
@@ -21,7 +21,7 @@ $runtime = $console->runtime();
 ### Inheritance Hierarchy
 
 - `ProcessWire\ProcessWireConsole`
-  - `extends Totoglu\ProcessReactWorkspace\Inertia\ProcessReact` (`uses InteractWithReact`)
+  - `extends Totoglu\React\Inertia\ProcessReact` (`uses InteractWithReact`)
     - `extends Totoglu\Inertia\ProcessInertia` (`uses InteractWithInertia`)
       - `extends ProcessWire\Process`
 
@@ -48,8 +48,8 @@ $runtime = $console->runtime();
 |---|---|---|
 | `getModuleInfo` | `public static function getModuleInfo(): array` | Module metadata, permissions, and `requires` declaration. |
 | `isAutoload` | `public function isAutoload(): bool` | Returns `true` so deferred workspace (`'console'`) and widget (`'console-overview'`) registrations attach on boot. |
-| `init` | `public function init(): void` | Registers admin vector icons via `IconManager::registerAdminIcons(...)` and defers workspace/widget registration via `ProcessReactWorkspace::deferModuleRegistration(...)`. |
-| `getModuleScriptAssets` | `public function getModuleScriptAssets(): array` | Returns `list<string>` containing `ProcessReactWorkspace`'s `ReactIcons.js` asset URL and the versioned `dist/ProcessWireConsole.js` bundle URL. |
+| `init` | `public function init(): void` | Registers admin vector icons via `IconManager::registerAdminIcons(...)` and defers workspace/widget registration via `React::deferModuleRegistration(...)`. |
+| `getModuleScriptAssets` | `public function getModuleScriptAssets(): array` | Returns `list<string>` containing `React`'s `ReactIcons.js` asset URL and the versioned `dist/ProcessWireConsole.js` bundle URL. |
 | `runtime` | `public function runtime(): ConsoleRuntime` | Returns the wired `Totoglu\WireConsole\ConsoleRuntime` instance. |
 | `*execute` | `public function ___execute(): string` | Renders `WireConsole/Workspace` for the `overview` section (`Setup > Console`). |
 | `*executeMigrations` | `public function ___executeMigrations(): string` | Renders the `migrations` section (`./migrations/`). |
@@ -63,7 +63,7 @@ $runtime = $console->runtime();
 | `*executeAction` | `public function ___executeAction(): string` | Validates CSRF and dispatches a posted workspace action (`./action/`) via `ConsoleRuntime::executeWorkspaceAction(...)`. |
 | `*executeNavJSON` | `public function ___executeNavJSON(array $options = []): string\|array` | Returns the `Setup > Console` admin flyout menu JSON filtered by accessible section permissions. |
 | `*executeDownloadBackup` | `public function ___executeDownloadBackup(): void` | Streams a verified `.sql` snapshot from `site/assets/backups/database/` (throws `WirePermissionException` for non-superusers or when `$config->demo` is active, and `Wire404Exception` for missing/invalid files). |
-| `*translations` | `public function ___translations(): array` | Returns the nested UI translation catalog consumed by `ProcessReactWorkspace::resolveModuleTranslations(...)`. |
+| `*translations` | `public function ___translations(): array` | Returns the nested UI translation catalog consumed by `React::resolveModuleTranslations(...)`. |
 | `*install` | `public function ___install(): void` | Creates the `Setup > Console` admin page and installs all `wire-console*` permissions idempotently. |
 | `*uninstall` | `public function ___uninstall(): void` | Deletes `wire-console-audit` logs, removes `wire-console*` `WireCache` entries, and removes all `wire-console*` permissions. |
 
