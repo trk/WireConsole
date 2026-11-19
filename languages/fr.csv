@@ -27,7 +27,7 @@ Logs,Journaux,,site/modules/WireConsole/ProcessWireConsole.module.php,b2d37ae1ce
 "Maintenance Mode (503)","Mode maintenance (503)",,site/modules/WireConsole/ProcessWireConsole.module.php,19ff9a2110b71d4aa245a06994ba85d4
 "System Online","Système en ligne",,site/modules/WireConsole/ProcessWireConsole.module.php,b1c8c60af117f0cfd160071155746165
 "Demo Mode","Mode démo",,site/modules/WireConsole/ProcessWireConsole.module.php,943bfde19aa3b18b6cdb713ed55fcd2e
-"Refresh Telemetry","Actualiser la télémétrie",,site/modules/WireConsole/ProcessWireConsole.module.php,3a673285fc6f69515571a7c155afe573
+"Refresh Status","Actualiser le statut",,site/modules/WireConsole/ProcessWireConsole.module.php,e8e7d3e3afe601c4a8901d03de2579be
 Confirm,Confirmer,,site/modules/WireConsole/ProcessWireConsole.module.php,70d9be9b139893aa6c69b5e77e614311
 "CLI Equivalent","Équivalent CLI",,site/modules/WireConsole/ProcessWireConsole.module.php,333931486c6c0624729207e94ff9c015
 Source,Source,,site/modules/WireConsole/ProcessWireConsole.module.php,f31bbdd1b3e85bccd652680e16935819
@@ -199,7 +199,7 @@ Ready,Prêt,,site/modules/WireConsole/ProcessWireConsole.module.php,e7d31fc0602f
 "Select queue handler...","Sélectionner un gestionnaire...",,site/modules/WireConsole/ProcessWireConsole.module.php,9fe87b9c273235844d352cafbe78cea4
 Queue,File,,site/modules/WireConsole/ProcessWireConsole.module.php,722ad2d05ecf4868b00c5484b82fd808
 "Delay (sec)","Délai (s)",,site/modules/WireConsole/ProcessWireConsole.module.php,eeb9b201ceb2e0cf5e7a2212484a8930
-"JSON Payload","Charge utile JSON",,site/modules/WireConsole/ProcessWireConsole.module.php,4cf672c182469b2156c496a14a9fbe65
+"JSON Data","Données JSON",,site/modules/WireConsole/ProcessWireConsole.module.php,51f2e871061bbf7ffddb11c12d4eb66f
 "Dispatch Job","Envoyer la tâche",,site/modules/WireConsole/ProcessWireConsole.module.php,835fd06d9b74e992ae7d449e0618ab70
 "Scaffold & Queue Cleanup","Génération et nettoyage des files",,site/modules/WireConsole/ProcessWireConsole.module.php,d403e6a72bd09f8805508204050c8901
 "Create queue handlers in site/queue/ or purge queues.","Créer des gestionnaires dans site/queue/ ou purger les files.",,site/modules/WireConsole/ProcessWireConsole.module.php,2d15746ce07973b2186d861231931741
@@ -555,7 +555,7 @@ User,Utilisateur,,site/modules/WireConsole/ProcessWireConsole.module.php,8f9bfe9
 "No available jobs waiting on queue ""%s"".","Aucune tâche disponible en attente dans la file ""%s"".",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,f984aaed4d5dafaeb22e951648c83322
 "Processed %d job(s) and recorded %d failure(s) on queue ""%s"".","%d tâche(s) traitée(s) et %d échec(s) enregistré(s) sur la file ""%s"".",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,255d1c5c6597607b3572a451e4cfc92a
 "Select or provide a valid Queue handler class to dispatch.","Sélectionnez ou indiquez une classe de gestionnaire de file valide à envoyer.",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,77f1392b6f605bf4a6c82d96bae39cb2
-"Payload must be a valid JSON object or array (e.g. {""userId"": 42}).","La charge utile doit être un objet ou un tableau JSON valide (ex. {""userId"": 42}).",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,20927649d7238aac79fbb44290cdeef7
+"Job data must be a valid JSON object or array (e.g. {""userId"": 42}).","Les données de tâche doivent être un objet ou un tableau JSON valide (ex. : {""userId"": 42}).",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,8fc08f7b8105fa4b689873dc6e49bdc2
 "Dispatched %s onto queue ""%s"" (Job #%d).","%s envoyé dans la file ""%s"" (Tâche #%d).",,site/modules/WireConsole/src/Concerns/InteractsWithQueues.php,c9cff64ff7c8b4ca86444bed2d7cfec8
 "Invalid migration name. Use letters, numbers, and underscores starting with a letter (e.g. create_blog_fields).","Nom de migration invalide. Utilisez des lettres, chiffres et tirets bas en commençant par une lettre (ex. create_blog_fields).",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,c80b6ba17f79032be8a9a37f358b58f5
 "Unsupported migration stub type ""%s"".","Type de modèle de migration non pris en charge « %s ».",,site/modules/WireConsole/src/Concerns/InteractsWithScaffolding.php,127216a3a52d3b041a41aa55f711e8df
@@ -617,7 +617,7 @@ Unknown,Inconnu,,site/modules/WireConsole/src/Concerns/InteractsWithSeedingAndSc
 "Test suite completed with zero failures.","La suite de tests s’est terminée sans aucun échec.",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,304ece3ad23bbc7fc508149e9d744b06
 "Test suite exited with code %d.","La suite de tests s’est terminée avec le code %d.",,site/modules/WireConsole/src/Concerns/InteractsWithTesting.php,e784c1540e8989dbef71cfab516dcf08
 Overview,"Vue d’ensemble",,site/modules/WireConsole/src/ConsoleRuntime.php,3b878279a04dc47d60932cb294d96259
-"System readiness, maintenance mode, cache controls, and operational telemetry.","Disponibilité du système, mode maintenance, contrôles du cache et télémétrie opérationnelle.",,site/modules/WireConsole/src/ConsoleRuntime.php,ff50f650379405f3a16f2f3b2a3f8424
+"System readiness, maintenance mode, cache controls, and live system status.","État du système, mode maintenance, gestion du cache et statut en direct.",,site/modules/WireConsole/src/ConsoleRuntime.php,ec5932b0807aa73a0fe40a6be3b65386
 Migrations,Migrations,,site/modules/WireConsole/src/ConsoleRuntime.php,93735cd742fbfd0bc4709b8eab7b7a9c
 "Track, scaffold, and execute timestamped database schema migrations.","Suivez, générez et exécutez des migrations de schéma de base de données horodatées.",,site/modules/WireConsole/src/ConsoleRuntime.php,ec0a1b5daa729b849ebc54a855704fe9
 Queues,"Files d’attente",,site/modules/WireConsole/src/ConsoleRuntime.php,af78cb64324f55ab355daad0c1934bab
