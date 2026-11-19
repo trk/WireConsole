@@ -27,7 +27,7 @@
 	"require": {
 		"php": ">=8.4",
 		"trk/processwire-inertia": "^1.0",
-		"trk/processwire-react-workspace": "^1.0 || ^2.0"
+		"trk/processwire-react": "^1.0 || ^2.0"
 	},
 	"suggest": {
 		"trk/processwire-console": "Required (^0.2) to operate migrations, queues, seeders, scheduling, backups, and Pest/Playwright tests via the Console workspace.",

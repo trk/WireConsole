@@ -663,7 +663,7 @@ trait InteractsWithQueues
 			return [
 				'ok' => false,
 				'jobId' => 0,
-				'message' => $this->_('Payload must be a valid JSON object or array (e.g. {"userId": 42}).'),
+				'message' => $this->_('Job data must be a valid JSON object or array (e.g. {"userId": 42}).'),
 			];
 		}
 

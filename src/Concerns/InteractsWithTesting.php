@@ -54,7 +54,7 @@ trait InteractsWithTesting
 			}
 		}
 
-		$templatesPath = rtrim(str_replace('\\', '/', (string) ($this->wire()->config?->paths?->templates ?? ($root . 'site/templates'))), '/');
+		$templatesPath = rtrim(str_replace('\\', '/', (string) ($this->wire()->config->paths->templates ?: ($root . 'site/templates'))), '/');
 		$e2eDirs = [];
 		foreach ([
 			$root . 'tests/e2e',

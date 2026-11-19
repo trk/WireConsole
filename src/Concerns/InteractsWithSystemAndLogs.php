@@ -18,7 +18,7 @@ use Totoglu\Console\Commands\UpCommand;
 trait InteractsWithSystemAndLogs
 {
 	/**
-	 * Build the runtime version matrix (`wire version` equivalent) for PHP, ProcessWire, Database, Inertia, ProcessReactWorkspace, Console, and Boost.
+	 * Build the runtime version matrix (`wire version` equivalent) for PHP, ProcessWire, Database, Inertia, React, Console, and Boost.
 	 *
 	 * @return array{
 	 *   php: string,
@@ -62,7 +62,7 @@ trait InteractsWithSystemAndLogs
 		}
 
 		$inertiaVersion = $this->resolveReadableModuleVersion('Inertia');
-		$workspaceVersion = $this->resolveReadableModuleVersion('ProcessReactWorkspace');
+		$workspaceVersion = $this->resolveReadableModuleVersion('React');
 
 		$packages = $this->getPackagesStatus();
 		$consoleVer = is_string($packages['console']['version'] ?? null) ? $packages['console']['version'] : '—';

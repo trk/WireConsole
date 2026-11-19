@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace ProcessWire;
 
-use Totoglu\ProcessReactWorkspace\Icon\IconManager;
-use Totoglu\ProcessReactWorkspace\Inertia\ProcessReact;
+use Totoglu\React\Icon\IconManager;
+use Totoglu\React\Inertia\ProcessReact;
 use Totoglu\WireConsole\ConsoleRuntime;
 
 /**
@@ -13,7 +13,7 @@ use Totoglu\WireConsole\ConsoleRuntime;
  *
  * Inertia + React + Tailwind CSS v4 Process module providing a full-page
  * administrative control plane for ProcessWire Console & Boost (`Setup > Console`,
- * `{admin}/setup/wire-console/`), powered by `ProcessReactWorkspace` and `Inertia`.
+ * `{admin}/setup/wire-console/`), powered by `React` and `Inertia`.
  *
  * @method string execute()
  * @method string executeMigrations()
@@ -52,7 +52,7 @@ class ProcessWireConsole extends ProcessReact
 	public function __construct()
 	{
 		parent::__construct();
-		$this->wire()?->classLoader?->addNamespace('Totoglu\\WireConsole', __DIR__ . '/src/');
+		$this->wire()->classLoader->addNamespace('Totoglu\\WireConsole', __DIR__ . '/src/');
 	}
 
 	/**
@@ -91,14 +91,14 @@ class ProcessWireConsole extends ProcessReact
 				'PHP>=8.4',
 				'ProcessWire>=3.0.271',
 				'Inertia',
-				'ProcessReactWorkspace',
+				'React',
 			],
 		];
 	}
 
 	/**
 	 * Ensure ProcessWire treats ProcessWireConsole as an autoload module so its
-	 * workspace definition is registered with ProcessReactWorkspace on boot.
+	 * workspace definition is registered with React on boot.
 	 */
 	public function isAutoload(): bool
 	{
@@ -127,9 +127,9 @@ class ProcessWireConsole extends ProcessReact
 	 */
 	private function registerWorkspace(): void
 	{
-		ProcessReactWorkspace::deferModuleRegistration(
+		React::deferModuleRegistration(
 			$this,
-			function (ProcessReactWorkspace $workspace): void {
+			function (React $workspace): void {
 				$workspace->registerWorkspace([
 					'id' => 'console',
 					'title' => $this->_('Console'),
@@ -161,7 +161,7 @@ class ProcessWireConsole extends ProcessReact
 					},
 				]);
 			},
-			function (ProcessReactWorkspace $workspace): void {
+			function (React $workspace): void {
 				$workspace->registerWidget([
 					'id' => 'console-overview',
 					'workspaceId' => 'console',
@@ -239,9 +239,6 @@ class ProcessWireConsole extends ProcessReact
 	public function getModuleScriptAssets(): array
 	{
 		$config = $this->wire()->config;
-		if (!$config) {
-			return [];
-		}
 
 		$scriptPath = __DIR__ . '/dist/ProcessWireConsole.js';
 		if (!is_file($scriptPath)) {
@@ -251,7 +248,7 @@ class ProcessWireConsole extends ProcessReact
 		$ver = (string) (@filemtime($scriptPath) ?: '2.1.1');
 		$moduleUrl = rtrim((string) $config->urls->siteModules, '/') . '/' . basename(__DIR__) . '/';
 		try {
-			$iconAssets = ProcessReactWorkspace::instance($this)->resolveModuleAssetUrl('ReactIcons.js');
+			$iconAssets = React::instance($this)->resolveModuleAssetUrl('ReactIcons.js');
 		} catch (\Throwable) {
 			$iconAssets = [];
 		}
@@ -348,7 +345,7 @@ class ProcessWireConsole extends ProcessReact
 	public function ___executeAction(): string
 	{
 		$input = $this->wire()->input;
-		$tab = trim(self::scalarString($input?->post('tab') ?? $input?->get('tab'), 'overview'));
+		$tab = trim(self::scalarString($input->post('tab') ?? $input->get('tab'), 'overview'));
 		if ($tab === '') {
 			$tab = 'overview';
 		}
@@ -373,7 +370,7 @@ class ProcessWireConsole extends ProcessReact
 		$rootUrl = $this->rootUrl();
 
 		$requestPayload = $this->extractRequestPayload();
-		$requestedTab = trim(self::scalarString($requestPayload['tab'] ?? $input?->get('tab'), $section));
+		$requestedTab = trim(self::scalarString($requestPayload['tab'] ?? $input->get('tab'), $section));
 		if ($requestedTab !== '') {
 			$section = $requestedTab;
 		}
@@ -417,8 +414,8 @@ class ProcessWireConsole extends ProcessReact
 			}
 		}
 
-		$inspectCategory = $action === '' ? trim(self::scalarString($input?->get('inspect_category'))) : '';
-		$inspectId = $action === '' ? trim(self::scalarString($input?->get('inspect_file'))) : '';
+		$inspectCategory = $action === '' ? trim(self::scalarString($input->get('inspect_category'))) : '';
+		$inspectId = $action === '' ? trim(self::scalarString($input->get('inspect_file'))) : '';
 
 		$options = [
 			'actionUrl' => $rootUrl . 'action/',
@@ -428,19 +425,17 @@ class ProcessWireConsole extends ProcessReact
 			'mcpResult' => $mcpResult,
 			'inspectCategory' => $inspectCategory,
 			'inspectId' => $inspectId,
-			'logChannel' => trim(self::scalarString($input?->get('channel'))),
-			'logSearch' => trim(self::scalarString($input?->get('search'))),
-			'logLimit' => self::scalarInt($input?->get('limit'), 50),
+			'logChannel' => trim(self::scalarString($input->get('channel'))),
+			'logSearch' => trim(self::scalarString($input->get('search'))),
+			'logLimit' => self::scalarInt($input->get('limit'), 50),
 		];
 
 		$props = $runtime->buildWorkspacePayload($section, $options);
-		$csrf = $this->wire()->session?->CSRF;
-		if ($csrf) {
-			$props['csrf'] = [
-				'name' => (string) $csrf->getTokenName(),
-				'value' => (string) $csrf->getTokenValue(),
-			];
-		}
+		$csrf = $this->wire()->session->CSRF;
+		$props['csrf'] = [
+			'name' => (string) $csrf->getTokenName(),
+			'value' => (string) $csrf->getTokenValue(),
+		];
 		if ($inspectedFile !== null) {
 			$props['inspectedFile'] = $inspectedFile;
 		}
@@ -456,11 +451,7 @@ class ProcessWireConsole extends ProcessReact
 	protected function verifyActionCsrf(array $requestPayload): bool
 	{
 		try {
-			$csrf = $this->wire()->session?->CSRF;
-			if ($csrf === null) {
-				return false;
-			}
-
+			$csrf = $this->wire()->session->CSRF;
 			$expectedName = (string) $csrf->getTokenName();
 			$expectedValue = (string) $csrf->getTokenValue();
 			if ($expectedValue === '') {
@@ -624,7 +615,7 @@ class ProcessWireConsole extends ProcessReact
 			throw new WirePermissionException($this->_('SQL backup downloads are disabled in demo mode.'));
 		}
 
-		$fileName = self::scalarString($this->wire()->input?->get('file'));
+		$fileName = self::scalarString($this->wire()->input->get('file'));
 		$resolvedPath = $runtime->resolveBackupFilePath($fileName);
 		if ($resolvedPath === null) {
 			$runtime->audit('backup.download', 'invalid_file', ['file' => $fileName]);
@@ -632,7 +623,7 @@ class ProcessWireConsole extends ProcessReact
 		}
 
 		$runtime->audit('backup.download', 'ok', ['file' => basename($resolvedPath)]);
-		$this->wire()->files?->send($resolvedPath, [
+		$this->wire()->files->send($resolvedPath, [
 			'exit' => true,
 			'forceDownload' => true,
 			'downloadFilename' => basename($resolvedPath),
@@ -650,7 +641,7 @@ class ProcessWireConsole extends ProcessReact
 			return rtrim((string) $page->url, '/') . '/';
 		}
 
-		$adminUrl = (string) ($this->wire()->config?->urls?->admin ?? '/processwire/');
+		$adminUrl = (string) $this->wire()->config->urls->admin;
 
 		return rtrim($adminUrl, '/') . '/setup/wire-console/';
 	}
@@ -684,7 +675,7 @@ class ProcessWireConsole extends ProcessReact
 				'maintenancePill' => $this->_('Maintenance Mode (503)'),
 				'onlinePill' => $this->_('System Online'),
 				'demoPill' => $this->_('Demo Mode'),
-				'refreshTelemetry' => $this->_('Refresh Telemetry'),
+				'refreshTelemetry' => $this->_('Refresh Status'),
 				'confirmLabel' => $this->_('Confirm'),
 				'cliEquivalent' => $this->_('CLI Equivalent'),
 				'source' => $this->_('Source'),
@@ -871,7 +862,7 @@ class ProcessWireConsole extends ProcessReact
 				'selectHandlerPlaceholder' => $this->_('Select queue handler...'),
 				'queueShortLabel' => $this->_('Queue'),
 				'delayLabel' => $this->_('Delay (sec)'),
-				'jsonPayloadLabel' => $this->_('JSON Payload'),
+				'jsonPayloadLabel' => $this->_('JSON Data'),
 				'dispatchJob' => $this->_('Dispatch Job'),
 				'scaffoldCleanupTitle' => $this->_('Scaffold & Queue Cleanup'),
 				'scaffoldCleanupDesc' => $this->_('Create queue handlers in site/queue/ or purge queues.'),
@@ -1179,27 +1170,25 @@ class ProcessWireConsole extends ProcessReact
 	{
 		parent::___install();
 
-		$permissions = $this->wire()?->permissions;
-		$sanitizer = $this->wire()?->sanitizer;
-		if ($permissions !== null) {
-			$info = self::getModuleInfo();
-			$declared = is_array($info['permissions'] ?? null) ? $info['permissions'] : [];
-			foreach ($declared as $permName => $permTitle) {
-				$rawName = trim((string) $permName);
-				$cleanName = $sanitizer ? $sanitizer->pageNameUTF8($rawName) : $rawName;
-				if ($cleanName === '' || ctype_digit($cleanName)) {
-					continue;
-				}
+		$permissions = $this->wire()->permissions;
+		$sanitizer = $this->wire()->sanitizer;
+		$info = self::getModuleInfo();
+		$declared = is_array($info['permissions'] ?? null) ? $info['permissions'] : [];
+		foreach ($declared as $permName => $permTitle) {
+			$rawName = trim((string) $permName);
+			$cleanName = $sanitizer->pageNameUTF8($rawName);
+			if ($cleanName === '' || ctype_digit($cleanName)) {
+				continue;
+			}
 
-				$existing = $permissions->get($cleanName);
-				if (!$existing || !$existing->id || (string) $existing->name !== $cleanName) {
-					try {
-						$perm = $permissions->add($cleanName);
-						$perm->title = (string) $permTitle;
-						$permissions->save($perm);
-					} catch (\Throwable $e) {
-						$this->wire()?->log?->error(sprintf('ProcessWireConsole install permission "%s" failed: %s', $cleanName, $e->getMessage()));
-					}
+			$existing = $permissions->get($cleanName);
+			if (!$existing || !$existing->id || (string) $existing->name !== $cleanName) {
+				try {
+					$perm = $permissions->add($cleanName);
+					$perm->title = (string) $permTitle;
+					$permissions->save($perm);
+				} catch (\Throwable $e) {
+					$this->wire()->log->error(sprintf('ProcessWireConsole install permission "%s" failed: %s', $cleanName, $e->getMessage()));
 				}
 			}
 		}
@@ -1210,34 +1199,32 @@ class ProcessWireConsole extends ProcessReact
 	 */
 	public function ___uninstall(): void
 	{
-		$this->wire()?->log?->delete(ConsoleRuntime::LOG_CHANNEL);
-		$this->wire()?->cache?->delete('wire-console*');
+		$this->wire()->log->delete(ConsoleRuntime::LOG_CHANNEL);
+		$this->wire()->cache->delete('wire-console*');
 
-		$permissions = $this->wire()?->permissions;
-		$sanitizer = $this->wire()?->sanitizer;
-		if ($permissions !== null) {
-			$info = self::getModuleInfo();
-			$declared = is_array($info['permissions'] ?? null) ? $info['permissions'] : [];
-			foreach (array_keys($declared) as $permName) {
-				$rawName = trim((string) $permName);
-				$cleanName = $sanitizer ? $sanitizer->pageNameUTF8($rawName) : $rawName;
-				if ($cleanName === '' || ctype_digit($cleanName)) {
-					continue;
-				}
+		$permissions = $this->wire()->permissions;
+		$sanitizer = $this->wire()->sanitizer;
+		$info = self::getModuleInfo();
+		$declared = is_array($info['permissions'] ?? null) ? $info['permissions'] : [];
+		foreach (array_keys($declared) as $permName) {
+			$rawName = trim((string) $permName);
+			$cleanName = $sanitizer->pageNameUTF8($rawName);
+			if ($cleanName === '' || ctype_digit($cleanName)) {
+				continue;
+			}
 
-				$safePermName = $sanitizer ? $sanitizer->selectorValue($cleanName) : $cleanName;
-				foreach ($permissions->find("name={$safePermName}, include=all") as $perm) {
-					if ($perm && $perm->id && (string) $perm->name === $cleanName) {
-						try {
-							$permissions->delete($perm);
-						} catch (\Throwable $e) {
-							$this->wire()?->log?->error(sprintf('ProcessWireConsole uninstall permission "%s" failed: %s', $cleanName, $e->getMessage()));
-						}
+			$safePermName = $sanitizer->selectorValue($cleanName);
+			foreach ($permissions->find("name={$safePermName}, include=all") as $perm) {
+				if ($perm && $perm->id && (string) $perm->name === $cleanName) {
+					try {
+						$permissions->delete($perm);
+					} catch (\Throwable $e) {
+						$this->wire()->log->error(sprintf('ProcessWireConsole uninstall permission "%s" failed: %s', $cleanName, $e->getMessage()));
 					}
 				}
 			}
-			$this->wire()?->pages?->uncacheAll();
 		}
+		$this->wire()->pages->uncacheAll();
 
 		parent::___uninstall();
 	}

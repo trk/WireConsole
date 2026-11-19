@@ -114,7 +114,7 @@ class ConsoleRuntime extends Wire
 				'label' => $decode($this->_('Overview')),
 				'icon' => 'layout-dashboard',
 				'permission' => self::PERMISSION_VIEW,
-				'description' => $decode($this->_('System readiness, maintenance mode, cache controls, and operational telemetry.')),
+				'description' => $decode($this->_('System readiness, maintenance mode, cache controls, and live system status.')),
 			],
 			'migrations' => [
 				'label' => $decode($this->_('Migrations')),
