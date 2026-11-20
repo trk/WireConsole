@@ -533,7 +533,7 @@ class WcDelegationVerifyQueue extends Queue
 {
 	public function handle(array $data = []): void
 	{
-		\ProcessWire\wire('cache')?->save('wire-console:test:queue-marker', (string) ($data['marker'] ?? 'missing'), 300);
+		\ProcessWire\wire('cache')->save('wire-console:test:queue-marker', (string) ($data['marker'] ?? 'missing'), 300);
 	}
 }
 PHP);
@@ -567,7 +567,7 @@ class WcDelegationVerifySeeder extends Seeder
 {
 	public function run(): void
 	{
-		$this->wire->cache?->save('wire-console:test:seeder-marker', 'seeded-via-db-seed-command', 300);
+		$this->wire->cache->save('wire-console:test:seeder-marker', 'seeded-via-db-seed-command', 300);
 	}
 }
 PHP);
@@ -592,7 +592,7 @@ class WcDelegationVerifyTask extends Task
 
 	public function handle(): void
 	{
-		$this->wire->cache?->save('wire-console:test:task-marker', 'ran-via-schedule-run-command', 300);
+		$this->wire->cache->save('wire-console:test:task-marker', 'ran-via-schedule-run-command', 300);
 	}
 }
 PHP);
@@ -601,9 +601,9 @@ PHP);
 		$freshRuntime = \Totoglu\WireConsole\ConsoleRuntime::make($pw);
 		$freshRuntime->installQueueTables();
 		$freshRuntime->purgePendingJobs('wc_delegated');
-		$pw->cache?->delete('wire-console:test:queue-marker');
-		$pw->cache?->delete('wire-console:test:seeder-marker');
-		$pw->cache?->delete('wire-console:test:task-marker');
+		$pw->cache->delete('wire-console:test:queue-marker');
+		$pw->cache->delete('wire-console:test:seeder-marker');
+		$pw->cache->delete('wire-console:test:task-marker');
 
 		// Dispatch and process queue job via delegated QueueWorkCommand
 		$dispatchRes = $freshRuntime->dispatchQueueJob('WcDelegationVerifyQueue', '{"marker":"delegated-queue-ok"}', 'wc_delegated');
@@ -614,7 +614,7 @@ PHP);
 		expect($workRes['ok'])->toBeTrue()
 			->and($workRes['processed'])->toBe(1)
 			->and($workRes['failed'])->toBe(0)
-			->and($pw->cache?->get('wire-console:test:queue-marker'))->toBe('delegated-queue-ok');
+			->and($pw->cache->get('wire-console:test:queue-marker'))->toBe('delegated-queue-ok');
 
 		// Purge pending queue jobs via QueueManager API
 		$freshRuntime->dispatchQueueJob('WcDelegationVerifyQueue', '{"marker":"to-be-purged"}', 'wc_delegated');
@@ -646,21 +646,21 @@ PHP);
 		$seedRes = $freshRuntime->runSeeders('WcDelegationVerifySeeder');
 		expect($seedRes['ok'])->toBeTrue()
 			->and($seedRes['executed'])->toContain('WcDelegationVerifySeeder')
-			->and($pw->cache?->get('wire-console:test:seeder-marker'))->toBe('seeded-via-db-seed-command');
+			->and($pw->cache->get('wire-console:test:seeder-marker'))->toBe('seeded-via-db-seed-command');
 
 		// Run scheduled task via delegated ScheduleRunCommand
 		$taskRes = $freshRuntime->runScheduledTasks('due');
 		expect($taskRes['ok'])->toBeTrue()
 			->and($taskRes['executed'])->toContain('WcDelegationVerifyTask')
-			->and($pw->cache?->get('wire-console:test:task-marker'))->toBe('ran-via-schedule-run-command');
+			->and($pw->cache->get('wire-console:test:task-marker'))->toBe('ran-via-schedule-run-command');
 
 		// Clear WireCache via $cache API (no raw SQL)
-		$pw->cache?->save('wire-console:test:cache-canary', 'alive', 300);
-		expect($pw->cache?->get('wire-console:test:cache-canary'))->toBe('alive');
+		$pw->cache->save('wire-console:test:cache-canary', 'alive', 300);
+		expect($pw->cache->get('wire-console:test:cache-canary'))->toBe('alive');
 		$cacheClearRes = $freshRuntime->clearSystemCaches('wire');
 		expect($cacheClearRes['ok'])->toBeTrue()
 			->and($cacheClearRes['cleared'])->toBe(['WireCache'])
-			->and($pw->cache?->get('wire-console:test:cache-canary'))->toBeNull();
+			->and($pw->cache->get('wire-console:test:cache-canary'))->toBeNull();
 	} finally {
 		\Totoglu\WireConsole\ConsoleRuntime::make($pw)->purgePendingJobs('wc_delegated');
 		foreach ([$queueFile, $failQueueFile, $seederFile, $taskFile] as $tempFile) {
@@ -668,10 +668,10 @@ PHP);
 				@unlink($tempFile);
 			}
 		}
-		$pw->cache?->delete('wire-console:test:queue-marker');
-		$pw->cache?->delete('wire-console:test:seeder-marker');
-		$pw->cache?->delete('wire-console:test:task-marker');
-		$pw->cache?->delete('wire-console:test:cache-canary');
+		$pw->cache->delete('wire-console:test:queue-marker');
+		$pw->cache->delete('wire-console:test:seeder-marker');
+		$pw->cache->delete('wire-console:test:task-marker');
+		$pw->cache->delete('wire-console:test:cache-canary');
 	}
 });
 

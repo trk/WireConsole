@@ -9,7 +9,9 @@ require_once __DIR__ . '/../bootstrap.php';
 beforeEach(function (): void {
 	wcSetSuperuser();
 	$pw = ProcessWire::getCurrentInstance();
-	$pw?->input?->post->removeAll();
+	if ($pw !== null) {
+		$pw->input->post->removeAll();
+	}
 });
 
 afterEach(function (): void {

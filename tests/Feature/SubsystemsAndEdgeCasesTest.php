@@ -13,20 +13,26 @@ require_once __DIR__ . '/../bootstrap.php';
 beforeEach(function (): void {
 	wcSetSuperuser();
 	$pw = ProcessWire::getCurrentInstance();
-	$pw?->input?->post->removeAll();
-	$pw?->input?->get->removeAll();
+	if ($pw !== null) {
+		$pw->input->post->removeAll();
+		$pw->input->get->removeAll();
+	}
 	unset($_SERVER['HTTP_X_CSRF_TOKEN'], $_SERVER['HTTP_X_XSRF_TOKEN'], $_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE']);
 });
 
 afterEach(function (): void {
 	wcSetSuperuser();
 	$pw = ProcessWire::getCurrentInstance();
-	$pw?->input?->post->removeAll();
-	$pw?->input?->get->removeAll();
+	if ($pw !== null) {
+		$pw->input->post->removeAll();
+		$pw->input->get->removeAll();
+	}
 	unset($_SERVER['HTTP_X_CSRF_TOKEN'], $_SERVER['HTTP_X_XSRF_TOKEN'], $_SERVER['CONTENT_TYPE'], $_SERVER['HTTP_CONTENT_TYPE']);
-	$homePage = $pw?->pages?->get(1);
-	if ($homePage && $homePage->id) {
-		$pw?->fuel?->set('page', $homePage);
+	if ($pw !== null) {
+		$homePage = $pw->pages->get(1);
+		if ($homePage && $homePage->id) {
+			$pw->fuel->set('page', $homePage);
+		}
 	}
 });
 
@@ -149,11 +155,11 @@ test('granular non-superuser role sees only permitted tabs and payload slices wh
 			->and($payload['boost'])->toBeNull()
 			->and($payload['logs'])->toBeNull();
 
-		// executeNavJSON must also restrict flyout items to the 2 allowed tabs
+		// executeNavJSON must also restrict flyout items to the 2 allowed tabs with clickable Overview URL
 		$navDecoded = json_decode((string) $module->executeNavJSON(), true);
 		expect($navDecoded)->toBeArray()
 			->and(count($navDecoded['list']))->toBe(2)
-			->and($navDecoded['list'][0]['url'])->toBe('')
+			->and((string) ($navDecoded['list'][0]['url'] ?? ''))->toStartWith('/')
 			->and($navDecoded['list'][1]['url'])->toBe('migrations/');
 	} finally {
 		wcSetSuperuser();
@@ -200,12 +206,12 @@ namespace ProcessWire;
 return new class {
 	public function up(): void
 	{
-		wire('cache')?->save('wire-console:test:mig-state', 'up', 300);
+		wire('cache')->save('wire-console:test:mig-state', 'up', 300);
 	}
 
 	public function down(): void
 	{
-		wire('cache')?->save('wire-console:test:mig-state', 'down', 300);
+		wire('cache')->save('wire-console:test:mig-state', 'down', 300);
 	}
 };
 PHP);
@@ -214,7 +220,7 @@ PHP);
 		$runRes = $runtime->runMigrations(1);
 		expect($runRes['ok'])->toBeTrue()
 			->and(count($runRes['migrated']))->toBe(1)
-			->and($pw->cache?->get('wire-console:test:mig-state'))->toBe('up');
+			->and($pw->cache->get('wire-console:test:mig-state'))->toBe('up');
 
 		$statusAfterRun = $runtime->getMigrationsStatus();
 		expect($statusAfterRun['ran'])->toBeGreaterThanOrEqual(1);
@@ -223,7 +229,7 @@ PHP);
 		$rbRes = $runtime->rollbackMigrations(1);
 		expect($rbRes['ok'])->toBeTrue()
 			->and(count($rbRes['rolledBack']))->toBe(1)
-			->and($pw->cache?->get('wire-console:test:mig-state'))->toBe('down');
+			->and($pw->cache->get('wire-console:test:mig-state'))->toBe('down');
 
 		// Re-apply, then refresh WITH pre-migration SQL safety backup enabled
 		$runtime->runMigrations(1);
@@ -231,7 +237,7 @@ PHP);
 		expect($refreshRes['ok'])->toBeTrue()
 			->and($refreshRes['preBackupFile'])->toBeString()->not->toBeEmpty()
 			->and($refreshRes['migrated'])->not->toBeEmpty()
-			->and($pw->cache?->get('wire-console:test:mig-state'))->toBe('up');
+			->and($pw->cache->get('wire-console:test:mig-state'))->toBe('up');
 
 		if (is_string($refreshRes['preBackupFile']) && $refreshRes['preBackupFile'] !== '') {
 			$createdSafetyBackupPath = $runtime->resolveBackupFilePath($refreshRes['preBackupFile']);
@@ -241,9 +247,9 @@ PHP);
 		// Reset back to zero applied migrations so wire_migrations has no orphan row
 		$resetRes = $runtime->resetMigrations('reset', false);
 		expect($resetRes['ok'])->toBeTrue()
-			->and($pw->cache?->get('wire-console:test:mig-state'))->toBe('down');
+			->and($pw->cache->get('wire-console:test:mig-state'))->toBe('down');
 	} finally {
-		$pw->cache?->delete('wire-console:test:mig-state');
+		$pw->cache->delete('wire-console:test:mig-state');
 		if (is_string($createdMigrationPath) && is_file($createdMigrationPath)) {
 			@unlink($createdMigrationPath);
 		}
@@ -397,7 +403,7 @@ PHP);
 		expect($unknownRes['ok'])->toBeFalse()
 			->and($unknownRes['message'])->toContain('Unknown workspace action');
 
-		$pw->session?->remove('wc_ratelimit_system_cache_clear');
+		$pw->session->remove('wc_ratelimit_system_cache_clear');
 		$happyAction = $fresh->executeWorkspaceAction('clearSystemCaches', [
 			'cache_clear_mode' => 'wire',
 			'confirm_system_cache_clear' => 'CACHE',
@@ -427,7 +433,7 @@ class WcNonDueManualTask extends Task
 
 	public function handle(): void
 	{
-		$this->wire->cache?->save('wire-console:test:manual-task', 'manual-ran', 300);
+		$this->wire->cache->save('wire-console:test:manual-task', 'manual-ran', 300);
 	}
 }
 PHP);
@@ -446,21 +452,21 @@ class WcUnselectedDueTask extends Task
 
 	public function handle(): void
 	{
-		$this->wire->cache?->save('wire-console:test:unselected-task', 'should-not-run', 300);
+		$this->wire->cache->save('wire-console:test:unselected-task', 'should-not-run', 300);
 	}
 }
 PHP);
 		try {
-			$pw->cache?->delete('wire-console:test:manual-task');
-			$pw->cache?->delete('wire-console:test:unselected-task');
+			$pw->cache->delete('wire-console:test:manual-task');
+			$pw->cache->delete('wire-console:test:unselected-task');
 			$manualTaskRes = ConsoleRuntime::make($pw)->runScheduledTasks('WcNonDueManualTask');
 			expect($manualTaskRes['ok'])->toBeTrue()
 				->and($manualTaskRes['executed'])->toBe(['WcNonDueManualTask'])
-				->and($pw->cache?->get('wire-console:test:manual-task'))->toBe('manual-ran')
-				->and($pw->cache?->get('wire-console:test:unselected-task'))->toBeNull();
+				->and($pw->cache->get('wire-console:test:manual-task'))->toBe('manual-ran')
+				->and($pw->cache->get('wire-console:test:unselected-task'))->toBeNull();
 		} finally {
-			$pw->cache?->delete('wire-console:test:manual-task');
-			$pw->cache?->delete('wire-console:test:unselected-task');
+			$pw->cache->delete('wire-console:test:manual-task');
+			$pw->cache->delete('wire-console:test:unselected-task');
 			foreach ([$nonDueTaskFile, $unselectedDueTaskFile] as $tf) {
 				if (is_file($tf)) {
 					@unlink($tf);

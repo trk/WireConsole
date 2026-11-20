@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+if (PHP_SAPI === 'cli') {
+	@ini_set('memory_limit', '1G');
+}
+
 use ProcessWire\ProcessWire;
 use ProcessWire\ProcessWireConsole;
 
@@ -26,7 +30,7 @@ if (!function_exists('ProcessWire\\wire') || ProcessWire::getCurrentInstance() =
 }
 
 $pw = ProcessWire::getCurrentInstance();
-if ($pw?->hooks && $pw?->pages) {
+if ($pw !== null) {
 	$allowedDirs = [
 		str_replace('\\', '/', $moduleRoot) . '/',
 		str_replace('\\', '/', $projectRoot . '/site/modules/Inertia') . '/',
@@ -57,7 +61,7 @@ if ($pw?->hooks && $pw?->pages) {
 		}
 	}
 }
-$classLoader = $pw?->classLoader ?? \ProcessWire\wire('classLoader');
+$classLoader = $pw !== null ? $pw->classLoader : \ProcessWire\wire('classLoader');
 
 $inertiaRoot = $projectRoot . '/site/modules/Inertia';
 if (is_file($inertiaRoot . '/Inertia.module.php')) {
@@ -85,8 +89,8 @@ if (!function_exists('bootReactForTesting')) {
 	function bootReactForTesting(): \ProcessWire\React
 	{
 		$pw = ProcessWire::getCurrentInstance();
-		$modules = $pw?->modules;
-		$react = $pw?->react;
+		$modules = $pw !== null ? $pw->modules : null;
+		$react = $pw !== null ? $pw->react : null;
 		if (!$react instanceof \ProcessWire\React) {
 			if ($modules && $modules->isInstalled('React')) {
 				try {
@@ -109,7 +113,9 @@ if (!function_exists('bootReactForTesting')) {
 		if ($modules) {
 			$modules->set('React', $react);
 		}
-		$pw?->fuel?->set('react', $react);
+		if ($pw !== null) {
+			$pw->fuel->set('react', $react);
+		}
 
 		return $react;
 	}
@@ -126,9 +132,11 @@ if (!function_exists('wcTestModule')) {
 		$pw = ProcessWire::getCurrentInstance();
 		bootReactForTesting();
 
-		$adminPage = $pw?->pages?->get(2);
-		if ($adminPage && $adminPage->id) {
-			$pw?->fuel?->set('page', $adminPage);
+		if ($pw !== null) {
+			$adminPage = $pw->pages->get(2);
+			if ($adminPage->id) {
+				$pw->fuel->set('page', $adminPage);
+			}
 		}
 
 		$module = new ProcessWireConsole();
@@ -146,16 +154,16 @@ if (!function_exists('wcTestModule')) {
 	function wcSetSuperuser(): void
 	{
 		$pw = ProcessWire::getCurrentInstance();
-		$users = $pw?->users;
-		if (!$users) {
+		if ($pw === null) {
 			return;
 		}
+		$users = $pw->users;
 		$admin = $users->get(41);
 		if (!$admin || !$admin->id) {
 			$admin = $users->get('roles=superuser');
 		}
 		if ($admin && $admin->id) {
-			$defaultLang = $pw?->languages?->getDefault();
+			$defaultLang = $pw->languages?->getDefault();
 			if ($defaultLang && $defaultLang->id) {
 				$admin->setQuietly('language', $defaultLang);
 			}

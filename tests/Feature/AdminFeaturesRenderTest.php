@@ -12,16 +12,20 @@ require_once __DIR__ . '/../bootstrap.php';
 beforeEach(function (): void {
 	wcSetSuperuser();
 	$pw = ProcessWire::getCurrentInstance();
-	$pw?->input?->post->removeAll();
-	$pw?->input?->get->removeAll();
+	if ($pw !== null) {
+		$pw->input->post->removeAll();
+		$pw->input->get->removeAll();
+	}
 });
 
 afterEach(function (): void {
 	wcSetSuperuser();
 	$pw = ProcessWire::getCurrentInstance();
-	$homePage = $pw?->pages?->get(1);
-	if ($homePage && $homePage->id) {
-		$pw?->fuel?->set('page', $homePage);
+	if ($pw !== null) {
+		$homePage = $pw->pages->get(1);
+		if ($homePage && $homePage->id) {
+			$pw->fuel->set('page', $homePage);
+		}
 	}
 });
 
@@ -143,17 +147,24 @@ test('ProcessWireConsole executeNavJSON returns accessible tabs with classic adm
 		->and($decoded['url'])->not->toBeEmpty()
 		->and($decoded['add'])->toBeNull()
 		->and(count($decoded['list']))->toBe(9)
-		->and($decoded['list'][0]['url'])->toBe('')
-		->and($decoded['list'][0]['icon'])->toBe('dashboard')
+		->and((string) $decoded['list'][0]['url'])->toStartWith('/')
+		->and($decoded['list'][0]['icon'])->toBe('rwv--layout-dashboard')
 		->and($decoded['list'][1]['url'])->toBe('migrations/')
-		->and($decoded['list'][1]['icon'])->toBe('database')
-		->and($decoded['list'][2]['icon'])->toBe('refresh')
-		->and($decoded['list'][3]['icon'])->toBe('leaf')
-		->and($decoded['list'][4]['icon'])->toBe('clock-o')
-		->and($decoded['list'][5]['icon'])->toBe('hdd-o')
-		->and($decoded['list'][6]['icon'])->toBe('flask')
-		->and($decoded['list'][7]['icon'])->toBe('magic')
-		->and($decoded['list'][8]['icon'])->toBe('list-alt');
+		->and($decoded['list'][1]['className'])->toBe('separator')
+		->and($decoded['list'][1]['icon'])->toBe('rwv--database')
+		->and($decoded['list'][2]['icon'])->toBe('rwv--stack-2')
+		->and($decoded['list'][3]['icon'])->toBe('rwv--plant')
+		->and($decoded['list'][4]['icon'])->toBe('rwv--clock')
+		->and($decoded['list'][5]['icon'])->toBe('rwv--server')
+		->and($decoded['list'][6]['className'])->toBe('separator')
+		->and($decoded['list'][6]['icon'])->toBe('rwv--flask')
+		->and($decoded['list'][7]['icon'])->toBe('rwv--sparkles')
+		->and($decoded['list'][8]['icon'])->toBe('rwv--list-details');
+
+	$css = (string) file_get_contents(\ProcessWire\React::instance($module)->icons()->generateAdminCss());
+	foreach ($decoded['list'] as $navItem) {
+		expect($css)->toContain('.fa-' . (string) $navItem['icon']);
+	}
 });
 
 test('ProcessWireConsole blocks unprivileged guest access across renderSection and executeAction', function (): void {
@@ -165,5 +176,6 @@ test('ProcessWireConsole blocks unprivileged guest access across renderSection a
 
 	expect(fn () => $module->execute())->toThrow(WirePermissionException::class)
 		->and(fn () => $module->executeMigrations())->toThrow(WirePermissionException::class)
+		->and(fn () => $module->executeNavJSON())->toThrow(WirePermissionException::class)
 		->and(fn () => $module->executeAction())->toThrow(WirePermissionException::class);
 });

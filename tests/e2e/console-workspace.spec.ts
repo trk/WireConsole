@@ -58,7 +58,7 @@ async function confirmAndExecuteModal(page: Page): Promise<void> {
 	const confirmButton = dialog.getByRole('button', { name: 'Confirm', exact: true });
 	await expect(confirmButton).toBeDisabled();
 
-	const checkbox = dialog.locator('input[type="checkbox"]');
+	const checkbox = dialog.getByRole('checkbox');
 	await checkbox.check();
 	await expect(confirmButton).toBeEnabled();
 	await confirmButton.click();
@@ -264,13 +264,24 @@ test.describe('WireConsole Admin Workspace, Operations & RBAC (ProcessWireConsol
 		await expect(page.getByText('Log Channels & Audit Trail')).toBeVisible();
 
 		// Theme toggle & mobile responsive drawer verification
-		const themeButton = page.locator('header button[title^="Theme mode:"]');
-		if (await themeButton.isVisible()) {
-			const initialTitle = (await themeButton.getAttribute('title')) || '';
-			await themeButton.click();
-			await expect(themeButton).not.toHaveAttribute('title', initialTitle);
-			await themeButton.click();
-			await themeButton.click();
+		const userMenuTrigger = page.locator('[data-rw-user-menu-trigger]');
+		if (await userMenuTrigger.isVisible()) {
+			await userMenuTrigger.click();
+			await expect(page.locator('[data-rw-theme-section]')).toBeVisible();
+
+			const darkPrefPromise = page.waitForResponse(
+				(res) => res.url().includes('/_react/workspace-prefs') && res.request().method() === 'POST',
+			);
+			await page.locator('[data-rw-theme-mode-option="dark"]').click();
+			expect((await darkPrefPromise).status()).toBe(200);
+			await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+
+			const restoreModePromise = page.waitForResponse(
+				(res) => res.url().includes('/_react/workspace-prefs') && res.request().method() === 'POST',
+			);
+			await page.locator('[data-rw-theme-mode-option="system"]').click();
+			expect((await restoreModePromise).status()).toBe(200);
+			await page.keyboard.press('Escape');
 		}
 
 		await page.setViewportSize({ width: 390, height: 844 });
@@ -420,7 +431,7 @@ test.describe('WireConsole Admin Workspace, Operations & RBAC (ProcessWireConsol
 		// Inject deterministic WireCache marker into scaffolded queue class so workQueueBatch proves real execution
 		runPhpJson(`
 			$queueFile = $wire->config->paths->site . 'queue/${E2E_QUEUE_CLASS}.php';
-			file_put_contents($queueFile, "<?php\\ndeclare(strict_types=1);\\nnamespace Site\\\\Queue;\\nuse Totoglu\\\\Console\\\\Queue\\\\Queue;\\nclass ${E2E_QUEUE_CLASS} extends Queue {\\n\\tpublic function handle(array \\$data = []): void {\\n\\t\\t\\\\ProcessWire\\\\wire('cache')?->save('${E2E_CACHE_KEY}', (string)(\\$data['token'] ?? 'ran'), 300);\\n\\t}\\n}\\n");
+			file_put_contents($queueFile, "<?php\\ndeclare(strict_types=1);\\nnamespace Site\\\\Queue;\\nuse Totoglu\\\\Console\\\\Queue\\\\Queue;\\nclass ${E2E_QUEUE_CLASS} extends Queue {\\n\\tpublic function handle(array \\$data = []): void {\\n\\t\\t\\\\ProcessWire\\\\wire('cache')->save('${E2E_CACHE_KEY}', (string)(\\$data['token'] ?? 'ran'), 300);\\n\\t}\\n}\\n");
 			echo json_encode(['ok' => true]);
 		`);
 
