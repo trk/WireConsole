@@ -1,29 +1,27 @@
+import type * as React from 'react';
+import { DynamicIcon, useState } from '@pw/react/core';
 import {
-	React,
-	useState,
 	Button,
 	Card,
+	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle,
-	CardDescription,
-	CardContent,
-	Label,
-	Input,
-	Select,
-	Table,
-	TableHeader,
-	TableBody,
-	TableRow,
-	TableHead,
-	TableCell,
-	StatCard,
 	CliBox,
 	EmptyState,
-	DynamicIcon,
-	useTranslations,
-	type ActionHelperProps,
-} from '../runtime';
-import type { SeederItem, SeedingPayload } from '../types';
+	Input,
+	Label,
+	Select,
+	StatCard,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from '@pw/react/ui';
+import { useTranslations } from '@pw/react/hooks';
+import type { ActionHelperProps, SeederItem, SeedingPayload } from '../types';
 
 interface SeedingPanelProps extends ActionHelperProps {
 	seeding: SeedingPayload | null;
@@ -100,13 +98,13 @@ export function SeedingPanel({
 							/>
 						</div>
 						<CliBox
+							wrap
 							command={
 								selectedSeeder === 'all'
 									? 'php vendor/bin/wire db:seed --force'
 									: `php vendor/bin/wire db:seed --class=${selectedSeeder} --force`
 							}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
-							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 						<div className="flex justify-end">
 							<Button
@@ -153,9 +151,9 @@ export function SeedingPanel({
 							/>
 						</div>
 						<CliBox
+							wrap
 							command={`php vendor/bin/wire make:seeder ${newSeederName || 'ProductCatalogSeeder'}`}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
-							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 						<div className="flex justify-end">
 							<Button

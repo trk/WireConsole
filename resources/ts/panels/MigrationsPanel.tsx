@@ -1,33 +1,31 @@
+import type * as React from 'react';
+import { DynamicIcon, useState } from '@pw/react/core';
 import {
-	React,
-	useState,
-	Button,
-	Badge,
-	Card,
-	CardHeader,
-	CardTitle,
-	CardDescription,
-	CardContent,
-	Label,
-	Input,
-	Select,
-	Switch,
-	Table,
-	TableHeader,
-	TableBody,
-	TableRow,
-	TableHead,
-	TableCell,
 	Alert,
 	AlertDescription,
-	StatCard,
+	Badge,
+	Button,
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
 	CliBox,
 	EmptyState,
-	DynamicIcon,
-	useTranslations,
-	type ActionHelperProps,
-} from '../runtime';
-import type { MigrationItem, MigrationsPayload } from '../types';
+	Input,
+	Label,
+	Select,
+	StatCard,
+	Switch,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from '@pw/react/ui';
+import { useTranslations } from '@pw/react/hooks';
+import type { ActionHelperProps, MigrationItem, MigrationsPayload } from '../types';
 
 interface MigrationsPanelProps extends ActionHelperProps {
 	migrations: MigrationsPayload | null;
@@ -172,9 +170,9 @@ export function MigrationsPanel({
 						</div>
 
 						<CliBox
+							wrap
 							command="php vendor/bin/wire migrate"
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
-							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 
 						<div className="flex flex-wrap items-center justify-end gap-2">
@@ -242,9 +240,9 @@ export function MigrationsPanel({
 							label={t('migrations.safetyBackupSwitch', 'Create SQL safety backup before running')}
 						/>
 						<CliBox
+							wrap
 							command={`php vendor/bin/wire migrate:${resetMode}`}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
-							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 						<div className="flex justify-end">
 							<Button
@@ -302,9 +300,9 @@ export function MigrationsPanel({
 							/>
 						</div>
 						<CliBox
+							wrap
 							command={`php vendor/bin/wire make:migration ${newMigrationName || 'create_product_fields'}${migrationType !== 'blank' ? ` --type=${migrationType}` : ''}`}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
-							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 						<div className="flex justify-end">
 							<Button

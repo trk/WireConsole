@@ -1,31 +1,30 @@
+import type * as React from 'react';
+import { DynamicIcon, useState } from '@pw/react/core';
 import {
-	React,
-	useState,
-	Button,
 	Badge,
+	Button,
 	Card,
+	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle,
-	CardDescription,
-	CardContent,
-	Label,
-	Input,
-	Textarea,
-	Select,
-	Table,
-	TableHeader,
-	TableBody,
-	TableRow,
-	TableHead,
-	TableCell,
-	StatCard,
 	CliBox,
 	EmptyState,
-	DynamicIcon,
-	useTranslations,
-	type ActionHelperProps,
-} from '../runtime';
+	Input,
+	Label,
+	Select,
+	StatCard,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+	Textarea,
+} from '@pw/react/ui';
+import { useTranslations } from '@pw/react/hooks';
 import type {
+	ActionHelperProps,
 	DiscoveredQueueHandler,
 	FailedQueueJob,
 	PendingQueueJob,
@@ -181,9 +180,9 @@ export function QueuesPanel({
 							</div>
 						</div>
 						<CliBox
+							wrap
 							command={`php vendor/bin/wire queue:work --queue=${workQueueName || 'default'} --once`}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
-							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 						<div className="flex justify-end">
 							<Button
@@ -519,14 +518,14 @@ export function QueuesPanel({
 								description={t('queues.emptyQueueDescription', 'No pending or delayed jobs waiting in queue_jobs.')}
 							/>
 						) : (
-							<Table style={{ tableLayout: 'fixed' }}>
+							<Table className="table-fixed">
 								<TableHeader>
 									<TableRow>
-										<TableHead style={{ width: '4rem' }}>{t('workspace.idHead', 'ID')}</TableHead>
-										<TableHead style={{ width: '5.5rem' }}>{t('queues.queueShortLabel', 'Queue')}</TableHead>
+										<TableHead className="w-16">{t('workspace.idHead', 'ID')}</TableHead>
+										<TableHead className="w-22">{t('queues.queueShortLabel', 'Queue')}</TableHead>
 										<TableHead>{t('queues.handlerHead', 'Handler')}</TableHead>
-										<TableHead style={{ width: '7.5rem' }}>{t('workspace.statusHead', 'Status')}</TableHead>
-										<TableHead style={{ width: '8.5rem' }}>{t('queues.availableAtHead', 'Available At')}</TableHead>
+										<TableHead className="w-30">{t('workspace.statusHead', 'Status')}</TableHead>
+										<TableHead className="w-34">{t('queues.availableAtHead', 'Available At')}</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>

@@ -1,33 +1,31 @@
+import type * as React from 'react';
+import { DynamicIcon, useState } from '@pw/react/core';
 import {
-	React,
-	useState,
-	Button,
 	Badge,
+	Button,
 	Card,
+	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle,
-	CardDescription,
-	CardContent,
-	Label,
-	Input,
-	Textarea,
-	Select,
-	Switch,
-	Table,
-	TableHeader,
-	TableBody,
-	TableRow,
-	TableHead,
-	TableCell,
-	StatCard,
 	CliBox,
 	CodePreview,
 	EmptyState,
-	DynamicIcon,
-	useTranslations,
-	type ActionHelperProps,
-} from '../runtime';
-import type { BoostModuleInfo, BoostPayload, McpToolInfo } from '../types';
+	Input,
+	Label,
+	Select,
+	StatCard,
+	Switch,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+	Textarea,
+} from '@pw/react/ui';
+import { useTranslations } from '@pw/react/hooks';
+import type { ActionHelperProps, BoostModuleInfo, BoostPayload, McpToolInfo } from '../types';
 
 interface BoostPanelProps extends ActionHelperProps {
 	boost: BoostPayload | null;
@@ -243,9 +241,9 @@ export function BoostPanel({
 							/>
 						</div>
 						<CliBox
+							wrap
 							command="php vendor/bin/wire boost:mcp"
 							label={t('boost.mcpServerEntryLabel', 'MCP Server Entry')}
-							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 						<div className="flex justify-end">
 							<Button
@@ -481,11 +479,11 @@ export function BoostPanel({
 							role="region"
 							aria-label={t('boost.mcpCatalogCount', { count: mcpTools.length }, 'MCP Tool Catalog ({count})')}
 						>
-							<Table style={{ tableLayout: 'fixed' }}>
+							<Table className="table-fixed">
 								<TableHeader>
 									<TableRow>
-										<TableHead style={{ width: '11rem' }}>{t('boost.toolNameHead', 'Tool Name')}</TableHead>
-										<TableHead style={{ width: '6.5rem' }}>{t('boost.modeHead', 'Mode')}</TableHead>
+										<TableHead className="w-44">{t('boost.toolNameHead', 'Tool Name')}</TableHead>
+										<TableHead className="w-26">{t('boost.modeHead', 'Mode')}</TableHead>
 										<TableHead>{t('boost.descriptionHead', 'Description')}</TableHead>
 									</TableRow>
 								</TableHeader>

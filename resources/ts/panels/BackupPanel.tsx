@@ -1,29 +1,27 @@
+import type * as React from 'react';
+import { DynamicIcon, useState } from '@pw/react/core';
 import {
-	React,
-	useState,
 	Button,
 	Card,
+	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle,
-	CardDescription,
-	CardContent,
-	Label,
-	Input,
-	Switch,
-	Table,
-	TableHeader,
-	TableBody,
-	TableRow,
-	TableHead,
-	TableCell,
-	StatCard,
 	CliBox,
 	EmptyState,
-	DynamicIcon,
-	useTranslations,
-	type ActionHelperProps,
-} from '../runtime';
-import type { BackupItem, BackupPayload } from '../types';
+	Input,
+	Label,
+	StatCard,
+	Switch,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from '@pw/react/ui';
+import { useTranslations } from '@pw/react/hooks';
+import type { ActionHelperProps, BackupItem, BackupPayload } from '../types';
 
 interface BackupPanelProps extends ActionHelperProps {
 	backup: BackupPayload | null;
@@ -99,9 +97,9 @@ export function BackupPanel({
 							/>
 						</div>
 						<CliBox
+							wrap
 							command="php vendor/bin/wire db:backup"
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
-							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 						<div className="flex justify-end">
 							<Button
@@ -172,9 +170,9 @@ export function BackupPanel({
 							label={t('backup.safetyRestoreSwitch', 'Automatically create a safety backup before restoring any SQL file')}
 						/>
 						<CliBox
+							wrap
 							command={`php vendor/bin/wire backup:purge --days=${purgeDays || 30}`}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
-							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 					</CardContent>
 				</Card>
@@ -220,13 +218,11 @@ export function BackupPanel({
 													{t('workspace.preview', 'Preview')}
 												</Button>
 												{isSuperuser && downloadBackupUrl && (
-													<a
-														href={`${downloadBackupUrl}?file=${encodeURIComponent(item.name)}`}
-														className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-													>
-														<DynamicIcon name="download" className="h-3.5 w-3.5" />
-														{t('workspace.download', 'Download')}
-													</a>
+													<Button variant="ghost" size="sm" icon="download" asChild>
+														<a href={`${downloadBackupUrl}?file=${encodeURIComponent(item.name)}`}>
+															{t('workspace.download', 'Download')}
+														</a>
+													</Button>
 												)}
 												<Button
 													variant="destructive"

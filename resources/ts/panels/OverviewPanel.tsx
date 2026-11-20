@@ -1,26 +1,24 @@
+import type * as React from 'react';
+import { DynamicIcon, useState } from '@pw/react/core';
 import {
-	React,
-	useState,
-	Button,
+	Alert,
+	AlertDescription,
+	AlertTitle,
 	Badge,
+	Button,
 	Card,
+	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle,
-	CardDescription,
-	CardContent,
-	Label,
-	Input,
-	Select,
-	Alert,
-	AlertTitle,
-	AlertDescription,
-	StatCard,
 	CliBox,
-	DynamicIcon,
-	useTranslations,
-	type ActionHelperProps,
-} from '../runtime';
-import type { OverviewPayload } from '../types';
+	Input,
+	Label,
+	Select,
+	StatCard,
+} from '@pw/react/ui';
+import { useTranslations } from '@pw/react/hooks';
+import type { ActionHelperProps, OverviewPayload } from '../types';
 
 interface OverviewPanelProps extends ActionHelperProps {
 	overview: OverviewPayload;
@@ -162,9 +160,9 @@ export function OverviewPanel({
 									</AlertDescription>
 								</Alert>
 								<CliBox
+									wrap
 									command="php vendor/bin/wire up"
 									label={t('workspace.cliEquivalent', 'CLI Equivalent')}
-									className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 								/>
 								<div className="flex justify-end">
 									<Button
@@ -210,9 +208,9 @@ export function OverviewPanel({
 									</div>
 								</div>
 								<CliBox
+									wrap
 									command={`php vendor/bin/wire down --retry=${maintenanceRetry || 3600}`}
 									label={t('workspace.cliEquivalent', 'CLI Equivalent')}
-									className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 								/>
 								<div className="flex justify-end">
 									<Button
@@ -266,6 +264,7 @@ export function OverviewPanel({
 							/>
 						</div>
 						<CliBox
+							wrap
 							command={
 								cacheMode === 'wire'
 									? "php vendor/bin/wire cache:wire:clear --pattern='%'"
@@ -274,7 +273,6 @@ export function OverviewPanel({
 										: 'php vendor/bin/wire cache:clear'
 							}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
-							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 						<div className="flex justify-end">
 							<Button

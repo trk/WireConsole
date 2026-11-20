@@ -1,29 +1,26 @@
+import type * as React from 'react';
+import { DynamicIcon, useEffect, useState } from '@pw/react/core';
 import {
-	React,
-	useState,
-	useEffect,
-	Button,
 	Badge,
+	Button,
 	Card,
+	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle,
-	CardDescription,
-	CardContent,
-	Label,
+	EmptyState,
 	Input,
+	Label,
 	Select,
 	Table,
-	TableHeader,
 	TableBody,
-	TableRow,
-	TableHead,
 	TableCell,
-	EmptyState,
-	DynamicIcon,
-	useTranslations,
-	type ActionHelperProps,
-} from '../runtime';
-import type { LogChannelInfo, LogEntryItem, LogsPayload } from '../types';
+	TableHead,
+	TableHeader,
+	TableRow,
+} from '@pw/react/ui';
+import { useTranslations } from '@pw/react/hooks';
+import type { ActionHelperProps, LogChannelInfo, LogEntryItem, LogsPayload } from '../types';
 
 interface LogsPanelProps extends ActionHelperProps {
 	logs: LogsPayload | null;
@@ -197,7 +194,7 @@ export function LogsPanel({
 							description={t('logs.emptyDescription', { channel: selectedChannel }, 'No matching log entries in channel "{channel}".')}
 						/>
 					) : (
-						<Table style={{ tableLayout: 'fixed' }}>
+						<Table className="table-fixed">
 							<TableHeader>
 								<TableRow>
 									<TableHead className="w-40">{t('logs.timestampHead', 'Timestamp')}</TableHead>
@@ -237,10 +234,7 @@ export function LogsPanel({
 														)}
 													</div>
 													{entry.audit.contextFormatted && (
-														<pre
-															style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
-															className="mt-1 break-all rounded bg-muted/50 p-2 font-mono text-[11px]"
-														>
+														<pre className="mt-1 whitespace-pre-wrap wrap-anywhere break-all rounded bg-muted/50 p-2 font-mono text-[11px]">
 															{entry.audit.contextFormatted}
 														</pre>
 													)}

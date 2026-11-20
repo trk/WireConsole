@@ -1,18 +1,8 @@
-import {
-	React,
-	useState,
-	useEffect,
-	router,
-	AppShell,
-	Button,
-	Sheet,
-	CodePreview,
-	ConfirmDialog,
-	useTranslations,
-	type AppShellRecordHeaderProps,
-	type ConfirmDialogConfig,
-} from '../runtime';
-import type { TabDefinition, WorkspaceProps } from '../types';
+import { router, useEffect, useState } from '@pw/react/core';
+import { AppShell, type AppShellRecordHeaderProps } from '@pw/react/layout';
+import { Button, CodePreview, ConfirmDialog, Sheet } from '@pw/react/ui';
+import { useKeyboardShortcuts, useTranslations } from '@pw/react/hooks';
+import type { ConfirmDialogConfig, TabDefinition, WorkspaceProps } from '../types';
 import { OverviewPanel } from '../panels/OverviewPanel';
 import { MigrationsPanel } from '../panels/MigrationsPanel';
 import { QueuesPanel } from '../panels/QueuesPanel';
@@ -214,6 +204,34 @@ export function Workspace(props: WorkspaceProps) {
 
 	const isDown = Boolean(props.overview?.maintenance?.isDown);
 
+	const handleRefreshTab = () => {
+		if (busyAction !== null) {
+			return;
+		}
+		const baseUrl = actionUrl.replace(/\/action\/?$/, '/');
+		const search = window.location.search || '';
+		const targetUrl =
+			(currentTab === 'overview' ? baseUrl : `${baseUrl}${encodeURIComponent(currentTab)}/`) + search;
+		router.get(targetUrl, {}, { preserveState: true, preserveScroll: true });
+	};
+
+	const shortcutsEnabled =
+		props.workspace?.enableKeyboardShortcuts !== false &&
+		busyAction === null &&
+		!confirmState.open &&
+		!(inspectorOpen && Boolean(props.inspectedFile));
+
+	useKeyboardShortcuts([
+		{
+			id: 'wire-console.refresh',
+			keys: 'r',
+			label: t('workspace.refreshTelemetry', 'Refresh Status'),
+			group: 'module',
+			when: shortcutsEnabled,
+			handler: handleRefreshTab,
+		},
+	]);
+
 	const recordHeader: AppShellRecordHeaderProps = {
 		title: activeTabMeta.label,
 		subtitle: activeTabMeta.description,
@@ -224,13 +242,7 @@ export function Workspace(props: WorkspaceProps) {
 				size="sm"
 				icon="refresh"
 				disabled={busyAction !== null}
-				onClick={() => {
-					const baseUrl = actionUrl.replace(/\/action\/?$/, '/');
-					const search = window.location.search || '';
-					const targetUrl =
-						(currentTab === 'overview' ? baseUrl : `${baseUrl}${encodeURIComponent(currentTab)}/`) + search;
-					router.get(targetUrl, {}, { preserveState: true, preserveScroll: true });
-				}}
+				onClick={handleRefreshTab}
 			>
 				{t('workspace.refreshTelemetry', 'Refresh Status')}
 			</Button>

@@ -1,30 +1,28 @@
+import type * as React from 'react';
+import { DynamicIcon, useState } from '@pw/react/core';
 import {
-	React,
-	useState,
-	Button,
 	Badge,
+	Button,
 	Card,
+	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle,
-	CardDescription,
-	CardContent,
-	Label,
-	Input,
-	Select,
-	Table,
-	TableHeader,
-	TableBody,
-	TableRow,
-	TableHead,
-	TableCell,
-	StatCard,
 	CliBox,
 	EmptyState,
-	DynamicIcon,
-	useTranslations,
-	type ActionHelperProps,
-} from '../runtime';
-import type { ScheduledTaskItem, SchedulingPayload } from '../types';
+	Input,
+	Label,
+	Select,
+	StatCard,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from '@pw/react/ui';
+import { useTranslations } from '@pw/react/hooks';
+import type { ActionHelperProps, ScheduledTaskItem, SchedulingPayload } from '../types';
 
 interface SchedulingPanelProps extends ActionHelperProps {
 	scheduling: SchedulingPayload | null;
@@ -102,9 +100,9 @@ export function SchedulingPanel({
 							/>
 						</div>
 						<CliBox
+							wrap
 							command="php vendor/bin/wire schedule:run"
 							label={t('scheduling.cliCronEntryLabel', 'CLI Cron Entry')}
-							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 						<div className="flex justify-end">
 							<Button
@@ -147,9 +145,9 @@ export function SchedulingPanel({
 							/>
 						</div>
 						<CliBox
+							wrap
 							command={`php vendor/bin/wire make:task ${newTaskName || 'PruneExpiredSessionsTask'}`}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
-							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 						<div className="flex justify-end">
 							<Button

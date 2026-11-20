@@ -3,12 +3,21 @@
 		"target": "ES2022",
 		"module": "ESNext",
 		"moduleResolution": "bundler",
-		"jsx": "react",
-		"jsxFactory": "React.createElement",
-		"jsxFragmentFactory": "React.Fragment",
+		"jsx": "react-jsx",
 		"strict": true,
+		"noUnusedLocals": true,
 		"skipLibCheck": true,
-		"noEmit": true
+		"noEmit": true,
+		"baseUrl": ".",
+		"paths": {
+			"@pw/react": ["../React/resources/ts/sdk/index.ts"],
+			"@pw/react/*": ["../React/resources/ts/sdk/*.ts"],
+			"react": ["../React/node_modules/@types/react"],
+			"react/*": ["../React/node_modules/@types/react/*"],
+			"react/jsx-runtime": ["../React/node_modules/@types/react/jsx-runtime"],
+			"react-dom": ["../React/node_modules/@types/react-dom"],
+			"react-dom/*": ["../React/node_modules/@types/react-dom/*"]
+		}
 	},
 	"include": ["resources/ts/**/*.ts", "resources/ts/**/*.tsx"]
 }

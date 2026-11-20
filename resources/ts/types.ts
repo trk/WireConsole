@@ -1,4 +1,26 @@
-import type { WorkspaceSharedContext } from './runtime';
+import type { WorkspaceSharedContext } from '@pw/react/layout';
+
+export type ConfirmDialogVariant = 'primary' | 'warning' | 'danger';
+
+export interface ConfirmDialogConfig {
+	action: string;
+	guardKey: string;
+	confirmWord: string;
+	title: string;
+	description: string;
+	variant?: ConfirmDialogVariant;
+	payload?: Record<string, unknown>;
+}
+
+export interface ActionHelperProps {
+	actionUrl: string;
+	activeTab: string;
+	isSuperuser: boolean;
+	busyAction: string | null;
+	runAction: (action: string, payload?: Record<string, unknown>) => void;
+	openConfirm: (config: ConfirmDialogConfig) => void;
+	inspectFile: (category: string, file: string) => void;
+}
 
 export interface TabDefinition {
 	label: string;

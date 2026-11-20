@@ -1,32 +1,30 @@
+import type * as React from 'react';
+import { DynamicIcon, useState } from '@pw/react/core';
 import {
-	React,
-	useState,
-	Button,
 	Badge,
+	Button,
 	Card,
+	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle,
-	CardDescription,
-	CardContent,
-	Label,
-	Input,
-	Select,
-	Switch,
-	Table,
-	TableHeader,
-	TableBody,
-	TableRow,
-	TableHead,
-	TableCell,
-	StatCard,
 	CliBox,
 	CodePreview,
 	EmptyState,
-	DynamicIcon,
-	useTranslations,
-	type ActionHelperProps,
-} from '../runtime';
-import type { DiscoveredTestFile, TestingPayload } from '../types';
+	Input,
+	Label,
+	Select,
+	StatCard,
+	Switch,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from '@pw/react/ui';
+import { useTranslations } from '@pw/react/hooks';
+import type { ActionHelperProps, DiscoveredTestFile, TestingPayload } from '../types';
 
 interface TestingPanelProps extends ActionHelperProps {
 	testing: TestingPayload | null;
@@ -192,9 +190,9 @@ export function TestingPanel({
 						/>
 
 						<CliBox
+							wrap
 							command={`php vendor/bin/wire test${testPath ? ` ${testPath}` : ''}${testFilter ? ` --filter=${testFilter}` : ''}${testGroup ? ` --group=${testGroup}` : ''}${stopOnFailure ? ' --stop-on-failure' : ''}`}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
-							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 
 						<div className="flex justify-end">
@@ -268,9 +266,9 @@ export function TestingPanel({
 						</div>
 
 						<CliBox
+							wrap
 							command={e2eCliCommand}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
-							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 
 						<div className="flex flex-wrap items-center justify-end gap-2">
@@ -365,9 +363,9 @@ export function TestingPanel({
 							/>
 						</div>
 						<CliBox
+							wrap
 							command={scaffoldCliCommand}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
-							className="[&_code]:overflow-visible! [&_code]:whitespace-normal! [&_code]:break-all!"
 						/>
 						<div className="flex justify-end">
 							<Button
