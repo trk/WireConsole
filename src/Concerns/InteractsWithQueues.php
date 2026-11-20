@@ -334,7 +334,7 @@ trait InteractsWithQueues
 				];
 			}
 
-			$safeQueue = (string) ($this->wire()->sanitizer?->name(trim($queueName)) ?? '');
+			$safeQueue = (string) $this->wire()->sanitizer->name(trim($queueName));
 			if ($safeQueue === '') {
 				return [
 					'ok' => false,
@@ -553,7 +553,7 @@ trait InteractsWithQueues
 			];
 		}
 
-		$cleanQueue = (string) ($this->wire()->sanitizer?->name(trim($queueName)) ?? '');
+		$cleanQueue = (string) $this->wire()->sanitizer->name(trim($queueName));
 		if ($cleanQueue === '') {
 			$cleanQueue = 'default';
 		}
@@ -688,7 +688,7 @@ trait InteractsWithQueues
 			$manager->resolveClass($cleanClass);
 			$manager->ensureTables();
 
-			$cleanQueue = (string) ($this->wire()->sanitizer?->name(trim($queueName)) ?? '');
+			$cleanQueue = (string) $this->wire()->sanitizer->name(trim($queueName));
 			if ($cleanQueue === '') {
 				$cleanQueue = 'default';
 			}

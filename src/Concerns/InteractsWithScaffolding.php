@@ -133,7 +133,7 @@ trait InteractsWithScaffolding
 			$fileName = basename($filePath);
 
 			try {
-				$this->wire()->modules?->refresh();
+				$this->wire()->modules->refresh();
 			} catch (\Throwable) {
 				// Ignore registry refresh errors during scaffolding
 			}

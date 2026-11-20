@@ -141,6 +141,7 @@ class ProcessWireConsole extends ProcessReact
 					'order' => 60,
 					'permission' => self::PERMISSION_VIEW,
 					'scripts' => $this->getModuleScriptAssets(),
+					'styles' => $this->getModuleStyleAssets(),
 					'statsCallback' => function (): array {
 						$runtime = $this->runtime();
 						$maintenance = $runtime->getMaintenanceStatus();
@@ -257,6 +258,26 @@ class ProcessWireConsole extends ProcessReact
 			$iconAssets,
 			[$moduleUrl . 'dist/ProcessWireConsole.js?v=' . $ver],
 		)));
+	}
+
+	/**
+	 * Return module-specific delta stylesheet assets loaded after `ReactInertia.css`.
+	 *
+	 * @return list<string>
+	 */
+	public function getModuleStyleAssets(): array
+	{
+		$config = $this->wire()->config;
+
+		$stylePath = __DIR__ . '/dist/WireConsole.css';
+		if (!is_file($stylePath)) {
+			return [];
+		}
+
+		$ver = (string) (@filemtime($stylePath) ?: '2.1.2');
+		$moduleUrl = rtrim((string) $config->urls->siteModules, '/') . '/' . basename(__DIR__) . '/';
+
+		return [$moduleUrl . 'dist/WireConsole.css?v=' . $ver];
 	}
 
 	/**
@@ -557,44 +578,31 @@ class ProcessWireConsole extends ProcessReact
 	 */
 	public function ___executeNavJSON(array $options = []): string|array
 	{
-		$tabs = $this->runtime()->getAccessibleTabs();
-		$items = [];
-
-		foreach ($tabs as $key => $meta) {
-			$items[] = [
-				'id' => $key === 'overview' ? '' : rawurlencode((string) $key) . '/',
-				'name' => html_entity_decode($meta['label'], ENT_QUOTES, 'UTF-8'),
-				'icon' => self::toAdminFlyoutIcon($meta['icon']),
-				'_class' => '',
-			];
+		$runtime = $this->runtime();
+		if (!$runtime->userCanView(self::PERMISSION_VIEW)) {
+			throw new WirePermissionException('Access denied.');
 		}
 
-		$options['items'] = $items;
-		$options['itemLabel'] = 'name';
-		$options['edit'] = '{id}';
-		$options['add'] = null;
-		$options['iconKey'] = 'icon';
-		$options['classKey'] = '_class';
-		$options['sort'] = false;
+		$tabs = $runtime->getAccessibleTabs();
+		$items = [];
+		$prevGroup = null;
 
-		return parent::___executeNavJSON($options);
-	}
+		foreach ($tabs as $key => $meta) {
+			$group = match ((string) $key) {
+				'overview' => 0,
+				'migrations', 'queues', 'seeding', 'scheduling', 'backup' => 1,
+				default => 2,
+			};
+			$items[] = [
+				'url' => $key === 'overview' ? '' : rawurlencode((string) $key) . '/',
+				'label' => $meta['label'],
+				'icon' => $meta['icon'],
+				'separator' => $prevGroup !== null && $group !== $prevGroup,
+			];
+			$prevGroup = $group;
+		}
 
-	/**
-	 * Map workspace vector icon names to classic ProcessWire admin flyout navigation icon names.
-	 */
-	private static function toAdminFlyoutIcon(string $icon): string
-	{
-		return match ($icon) {
-			'layout-dashboard' => 'dashboard',
-			'stack-2' => 'refresh',
-			'plant' => 'leaf',
-			'clock' => 'clock-o',
-			'server' => 'hdd-o',
-			'sparkles' => 'magic',
-			'list-details' => 'list-alt',
-			default => $icon,
-		};
+		return $this->buildAdminNavJSON($items, array_merge($options, ['add' => null]));
 	}
 
 	/**

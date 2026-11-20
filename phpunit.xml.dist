@@ -3,6 +3,9 @@
          xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
          bootstrap="tests/bootstrap.php"
          colors="true">
+    <php>
+        <ini name="memory_limit" value="1G"/>
+    </php>
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>

@@ -223,7 +223,7 @@ class ConsoleRuntime extends Wire
 	 */
 	public function isDemoMode(): bool
 	{
-		return (bool) ($this->wire()->config?->demo ?? false);
+		return (bool) $this->wire()->config->demo;
 	}
 
 	/**
@@ -251,7 +251,7 @@ class ConsoleRuntime extends Wire
 	 */
 	public function getProjectRootPath(): string
 	{
-		$root = (string) ($this->wire()->config?->paths?->root ?? '');
+		$root = (string) $this->wire()->config->paths->root;
 		if ($root !== '' && is_dir($root)) {
 			return rtrim(str_replace('\\', '/', $root), '/') . '/';
 		}
@@ -894,12 +894,12 @@ class ConsoleRuntime extends Wire
 				'status' => $status,
 				'user' => $user && $user->id ? (string) $user->name : 'guest',
 				'userId' => $user && $user->id ? (int) $user->id : 0,
-				'ip' => (string) ($this->wire()->session?->getIP() ?? ''),
+				'ip' => (string) $this->wire()->session->getIP(),
 				'context' => $this->redactContext($context),
 			];
 			$json = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 			if (is_string($json)) {
-				$this->wire()->log?->save(self::LOG_CHANNEL, $json, [
+				$this->wire()->log->save(self::LOG_CHANNEL, $json, [
 					'url' => $this->resolveSafeLogUrl(),
 				]);
 			}

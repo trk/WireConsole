@@ -36,7 +36,7 @@ trait InteractsWithSystemAndLogs
 			return $this->versionMatrixCache;
 		}
 
-		$pwVersion = (string) ($this->wire()->config?->version ?? '');
+		$pwVersion = (string) $this->wire()->config->version;
 		if ($pwVersion === '') {
 			$pwVersion = ProcessWire::versionMajor . '.' . ProcessWire::versionMinor . '.' . ProcessWire::versionRevision;
 			$suffix = trim(ProcessWire::versionSuffix);
@@ -125,7 +125,10 @@ trait InteractsWithSystemAndLogs
 	 */
 	public function getMaintenanceFilePath(): string
 	{
-		$sitePath = (string) ($this->wire()->config?->paths?->site ?? ($this->getProjectRootPath() . 'site/'));
+		$sitePath = (string) $this->wire()->config->paths->site;
+		if ($sitePath === '') {
+			$sitePath = $this->getProjectRootPath() . 'site/';
+		}
 
 		return rtrim(str_replace('\\', '/', $sitePath), '/') . '/down.json';
 	}
@@ -225,7 +228,7 @@ trait InteractsWithSystemAndLogs
 		}
 
 		if ($secret !== null && trim($secret) !== '') {
-			$this->wire()->session?->set('maintenance_secret', trim($secret));
+			$this->wire()->session->set('maintenance_secret', trim($secret));
 		}
 
 		return [
@@ -286,7 +289,7 @@ trait InteractsWithSystemAndLogs
 					try {
 						$modules->refresh();
 					} catch (\Error) {
-						$this->wire()->cache?->delete('Modules.*');
+						$this->wire()->cache->delete('Modules.*');
 					}
 					$cleared[] = 'ModulesRegistry';
 				}
@@ -404,7 +407,7 @@ trait InteractsWithSystemAndLogs
 	{
 		$log = $this->wire()->log;
 		$sanitizer = $this->wire()->sanitizer;
-		$logsDir = (string) ($this->wire()->config?->paths?->logs ?? '');
+		$logsDir = (string) $this->wire()->config->paths->logs;
 		if (!$log || !$sanitizer || $logsDir === '') {
 			return [];
 		}
@@ -498,7 +501,7 @@ trait InteractsWithSystemAndLogs
 	public function clearLogChannel(string $channelName): array
 	{
 		$sanitizer = $this->wire()->sanitizer;
-		$logsDir = (string) ($this->wire()->config?->paths?->logs ?? '');
+		$logsDir = (string) $this->wire()->config->paths->logs;
 		if (!$sanitizer || $logsDir === '') {
 			return [
 				'ok' => false,
@@ -553,7 +556,7 @@ trait InteractsWithSystemAndLogs
 	 */
 	public function clearAllLogChannels(): array
 	{
-		$logsDir = (string) ($this->wire()->config?->paths?->logs ?? '');
+		$logsDir = (string) $this->wire()->config->paths->logs;
 		if ($logsDir === '' || !is_dir($logsDir)) {
 			return [
 				'ok' => false,

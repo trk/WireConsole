@@ -7,7 +7,3 @@ parameters:
 		- src
 		- ProcessWireConsole.module.php
 	treatPhpDocTypesAsCertain: false
-	ignoreErrors:
-		# Defensive nullsafe guards when ProcessWire Config/Paths properties are uninitialized in isolated unit tests
-		-
-			identifier: nullsafe.neverNull

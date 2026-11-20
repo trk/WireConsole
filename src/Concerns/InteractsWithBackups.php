@@ -17,12 +17,15 @@ trait InteractsWithBackups
 	 */
 	public function getBackupDirectory(): string
 	{
-		$assetsPath = (string) ($this->wire()->config?->paths?->assets ?? ($this->getProjectRootPath() . 'site/assets/'));
+		$assetsPath = (string) $this->wire()->config->paths->assets;
+		if ($assetsPath === '') {
+			$assetsPath = $this->getProjectRootPath() . 'site/assets/';
+		}
 		$backupDir = rtrim(str_replace('\\', '/', $assetsPath), '/') . '/backups/database/';
 
 		if (!is_dir($backupDir)) {
 			try {
-				$this->wire()->files?->mkdir($backupDir, true);
+				$this->wire()->files->mkdir($backupDir, true);
 			} catch (\Throwable) {
 				@mkdir($backupDir, 0755, true);
 			}

@@ -604,7 +604,7 @@ trait InteractsWithTesting
 			}
 			$existingAdminUrl = getenv('PW_ADMIN_URL');
 			if (!is_string($existingAdminUrl) || trim($existingAdminUrl) === '') {
-				$rawAdminUrl = trim((string) ($config->urls?->admin ?? '/processwire/'), '/');
+				$rawAdminUrl = trim((string) $config->urls->admin, '/');
 				$extraEnv['PW_ADMIN_URL'] = $rawAdminUrl !== '' ? '/' . $rawAdminUrl . '/' : '/processwire/';
 			}
 		}
