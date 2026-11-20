@@ -50,6 +50,7 @@ $runtime = $console->runtime();
 | `isAutoload` | `public function isAutoload(): bool` | Returns `true` so deferred workspace (`'console'`) and widget (`'console-overview'`) registrations attach on boot. |
 | `init` | `public function init(): void` | Registers admin vector icons via `IconManager::registerAdminIcons(...)` and defers workspace/widget registration via `React::deferModuleRegistration(...)`. |
 | `getModuleScriptAssets` | `public function getModuleScriptAssets(): array` | Returns `list<string>` containing `React`'s `ReactIcons.js` asset URL and the versioned `dist/ProcessWireConsole.js` bundle URL. |
+| `getModuleStyleAssets` | `public function getModuleStyleAssets(): array` | Returns `list<string>` containing the versioned `dist/WireConsole.css` delta stylesheet URL when compiled. |
 | `runtime` | `public function runtime(): ConsoleRuntime` | Returns the wired `Totoglu\WireConsole\ConsoleRuntime` instance. |
 | `*execute` | `public function ___execute(): string` | Renders `WireConsole/Workspace` for the `overview` section (`Setup > Console`). |
 | `*executeMigrations` | `public function ___executeMigrations(): string` | Renders the `migrations` section (`./migrations/`). |
@@ -120,10 +121,11 @@ Registered under `Totoglu\WireConsole` in `ProcessWireConsole::__construct()` an
 
 ---
 
-## 3. Inertia + React Frontend (`resources/ts/` -> `dist/ProcessWireConsole.js`)
+## 3. Inertia + React Frontend (`resources/ts/`, `resources/css/` -> `dist/ProcessWireConsole.js`, `dist/WireConsole.css`)
 
-- `resources/ts/runtime.ts` — Strictly typed bindings onto `window.ReactWorkspaceRuntime` (`React`, `Inertia`, `AppShell`, `DynamicIcon`, UI primitives, and `useTranslations`).
+- `@pw/react/*` SDK (`@pw/react/core`, `@pw/react/layout`, `@pw/react/ui`, `@pw/react/hooks`) — Strictly typed externalized bindings to React, Inertia, `AppShell`, `DynamicIcon`, UI primitives, `useTranslations`, and `useKeyboardShortcuts`.
+- `resources/css/entries/WireConsole.css` — Module Tailwind CSS v4 delta stylesheet (`@source "../../ts/**/*.{ts,tsx}"`) compiled to `dist/WireConsole.css` and loaded via `getModuleStyleAssets()`.
 - `resources/ts/types.ts` — Strict TypeScript interfaces for `WorkspaceProps` and all 9 section payloads.
 - `resources/ts/entries/ProcessWireConsole.tsx` — Registers `WireConsole/Workspace` via `registerPages(...)` and compiles to `dist/ProcessWireConsole.js`.
-- `resources/ts/pages/Workspace.tsx` — `AppShell` layout, RBAC-safe section navigation, slide-over `Sheet` source inspector, and `ConfirmDialog` acknowledgment workflow.
+- `resources/ts/pages/Workspace.tsx` — `AppShell` layout, RBAC-safe section navigation, `useKeyboardShortcuts` (`r` refresh), slide-over `Sheet` source inspector, and `ConfirmDialog` acknowledgment workflow.
 - `resources/ts/panels/*.tsx` — Section panels (`OverviewPanel`, `MigrationsPanel`, `QueuesPanel`, `SeedingPanel`, `SchedulingPanel`, `BackupPanel`, `TestingPanel`, `BoostPanel`, `LogsPanel`).
