@@ -62,7 +62,7 @@ class ProcessWireConsole extends ProcessReact
 	{
 		return [
 			'title' => 'Console',
-			'version' => 212,
+			'version' => 220,
 			'summary' => 'Administrative workspace for system health, schema migrations, queues, seeders, scheduled tasks, database backups, testing, AI skills, and activity logs.',
 			'author' => 'Iskender TOTOGLU',
 			'href' => 'https://github.com/trk/WireConsole',
@@ -246,7 +246,7 @@ class ProcessWireConsole extends ProcessReact
 			return [];
 		}
 
-		$ver = (string) (@filemtime($scriptPath) ?: '2.1.2');
+		$ver = (string) (@filemtime($scriptPath) ?: '2.2.0');
 		$moduleUrl = rtrim((string) $config->urls->siteModules, '/') . '/' . basename(__DIR__) . '/';
 		try {
 			$iconAssets = React::instance($this)->resolveModuleAssetUrl('ReactIcons.js');
@@ -274,7 +274,7 @@ class ProcessWireConsole extends ProcessReact
 			return [];
 		}
 
-		$ver = (string) (@filemtime($stylePath) ?: '2.1.2');
+		$ver = (string) (@filemtime($stylePath) ?: '2.2.0');
 		$moduleUrl = rtrim((string) $config->urls->siteModules, '/') . '/' . basename(__DIR__) . '/';
 
 		return [$moduleUrl . 'dist/WireConsole.css?v=' . $ver];
