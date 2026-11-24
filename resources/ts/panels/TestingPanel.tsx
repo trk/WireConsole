@@ -10,10 +10,10 @@ import {
 	CardTitle,
 	CliBox,
 	CodePreview,
+	Combobox,
 	EmptyState,
 	Input,
 	Label,
-	Select,
 	StatCard,
 	Switch,
 	Table,
@@ -23,6 +23,7 @@ import {
 	TableHeader,
 	TableRow,
 } from '@pw/react/ui';
+import { SchemaField } from '@pw/react/fields';
 import { useTranslations } from '@pw/react/hooks';
 import type { ActionHelperProps, DiscoveredTestFile, TestingPayload } from '../types';
 
@@ -67,27 +68,36 @@ export function TestingPanel({
 	const e2eFiles = files.filter((f) => f.runner === 'playwright');
 	const lastResult = testing.lastResult ?? null;
 
-	const testPathOptions = [
-		{ value: '', label: t('testing.allTestSuites', 'All Pest Test Suites') },
-		...pestFiles.map((f) => ({
-			value: f.relativePath,
-			label: `${f.name} (${f.suite})`,
-		})),
-	];
+	const testPathOptions = pestFiles.map((f) => ({
+		value: f.relativePath,
+		label: f.name,
+		description: `${f.suite} • ${f.relativePath}`,
+	}));
 
-	const e2ePathOptions = [
-		{ value: '', label: t('testing.allE2eSpecs', 'All Discovered E2E Specs') },
-		...e2eFiles.map((f) => ({
-			value: f.relativePath,
-			label: `${f.name} (${f.suite})`,
-		})),
-	];
+	const e2ePathOptions = e2eFiles.map((f) => ({
+		value: f.relativePath,
+		label: f.name,
+		description: `${f.suite} • ${f.relativePath}`,
+	}));
 
 	const testKindOptions = [
-		{ value: 'feature', label: t('testing.kindFeatureOption', 'Pest Feature Test (Feature/)') },
-		{ value: 'unit', label: t('testing.kindUnitOption', 'Pest Unit Test (--unit)') },
-		{ value: 'e2e', label: t('testing.kindE2eOption', 'Playwright E2E Spec (--e2e)') },
+		{
+			value: 'feature',
+			label: t('testing.kindFeatureShort', 'Feature'),
+			description: t('testing.kindFeatureOption', 'Pest Feature Test (Feature/)'),
+		},
+		{
+			value: 'unit',
+			label: t('testing.kindUnitShort', 'Unit'),
+			description: t('testing.kindUnitOption', 'Pest Unit Test (--unit)'),
+		},
+		{
+			value: 'e2e',
+			label: t('testing.kindE2eShort', 'Playwright E2E'),
+			description: t('testing.kindE2eOption', 'Playwright E2E Spec (--e2e)'),
+		},
 	];
+	const activeTestKindOption = testKindOptions.find((opt) => opt.value === testKind);
 
 	const sampleScaffoldName = testKind === 'e2e' ? 'checkout-flow' : 'PageRoutingTest';
 	const scaffoldCliCommand = `php vendor/bin/wire make:test ${newTestName || sampleScaffoldName}${testKind === 'unit' ? ' --unit' : testKind === 'e2e' ? ' --e2e' : ''}${newTestModule.trim() ? ` --module=${newTestModule.trim()}` : ''}`;
@@ -154,11 +164,14 @@ export function TestingPanel({
 					<CardContent className="space-y-4">
 						<div className="space-y-1.5">
 							<Label htmlFor="test-path">{t('testing.targetPathLabel', 'Target File / Suite Path')}</Label>
-							<Select
+							<Combobox
 								id="test-path"
-								value={testPath}
-								onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTestPath(e.target.value)}
+								value={testPath || null}
+								onValueChange={(next) => setTestPath(next)}
 								options={testPathOptions}
+								placeholder={t('testing.allTestSuites', 'All Pest Test Suites')}
+								clearable={testPath !== ''}
+								aria-label={t('testing.targetPathLabel', 'Target File / Suite Path')}
 							/>
 						</div>
 						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -237,11 +250,14 @@ export function TestingPanel({
 					<CardContent className="space-y-4">
 						<div className="space-y-1.5">
 							<Label htmlFor="e2e-path">{t('testing.e2eTargetPathLabel', 'Target E2E Spec Path')}</Label>
-							<Select
+							<Combobox
 								id="e2e-path"
-								value={e2ePath}
-								onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setE2ePath(e.target.value)}
+								value={e2ePath || null}
+								onValueChange={(next) => setE2ePath(next)}
 								options={e2ePathOptions}
+								placeholder={t('testing.allE2eSpecs', 'All Discovered E2E Specs')}
+								clearable={e2ePath !== ''}
+								aria-label={t('testing.e2eTargetPathLabel', 'Target E2E Spec Path')}
 							/>
 						</div>
 						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -331,15 +347,24 @@ export function TestingPanel({
 						<CardDescription>{t('testing.scaffoldDesc', 'Create a Pest PHP test or Playwright E2E spec in site/tests/ or an installed module.')}</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-4">
-						<div className="space-y-1.5">
-							<Label htmlFor="make-test-kind">{t('testing.testKindLabel', 'Test Kind')}</Label>
-							<Select
-								id="make-test-kind"
-								value={testKind}
-								onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTestKind(e.target.value)}
-								options={testKindOptions}
-							/>
-						</div>
+						<SchemaField
+							field={{
+								id: 'make-test-kind',
+								name: 'make_test_kind',
+								type: 'segmented',
+								label: t('testing.testKindLabel', 'Test Kind'),
+								description: activeTestKindOption?.description,
+								options: testKindOptions,
+								fullWidth: true,
+							}}
+							inlinePortal
+							value={testKind}
+							onChange={(nextVal) => {
+								if (typeof nextVal === 'string' && nextVal !== '') {
+									setTestKind(nextVal);
+								}
+							}}
+						/>
 						<div className="space-y-1.5">
 							<Label htmlFor="make-test-name">{t('testing.testClassNameLabel', 'Test / Spec Name')}</Label>
 							<Input

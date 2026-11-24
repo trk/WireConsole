@@ -8,10 +8,10 @@ import {
 	CardHeader,
 	CardTitle,
 	CliBox,
+	Combobox,
 	EmptyState,
 	Input,
 	Label,
-	Select,
 	StatCard,
 	Table,
 	TableBody,
@@ -51,7 +51,7 @@ export function SeedingPanel({
 	const seeders: SeederItem[] = Array.isArray(seeding.seeders) ? seeding.seeders : [];
 	const seederOptions = [
 		{ value: 'all', label: t('seeding.allSeedersOption', 'All Seeders (or DatabaseSeeder)') },
-		...seeders.map((s) => ({ value: s.name, label: `${s.name} (${s.class})` })),
+		...seeders.map((s) => ({ value: s.name, label: s.name, description: s.class })),
 	];
 
 	return (
@@ -90,11 +90,13 @@ export function SeedingPanel({
 					<CardContent className="space-y-4">
 						<div className="space-y-1.5">
 							<Label htmlFor="seeder-class">{t('seeding.targetSeederLabel', 'Target Seeder')}</Label>
-							<Select
+							<Combobox
 								id="seeder-class"
 								value={selectedSeeder}
-								onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedSeeder(e.target.value)}
+								onValueChange={(next) => setSelectedSeeder(next || 'all')}
 								options={seederOptions}
+								clearable={selectedSeeder !== 'all'}
+								aria-label={t('seeding.targetSeederLabel', 'Target Seeder')}
 							/>
 						</div>
 						<CliBox

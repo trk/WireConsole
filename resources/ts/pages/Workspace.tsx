@@ -17,6 +17,39 @@ interface ConfirmModalState extends ConfirmDialogConfig {
 	open: boolean;
 }
 
+export function buildConsoleSectionUrl(
+	actionUrl: string,
+	tab: string,
+	locationSearch = '',
+	includeLogQuery = false
+): string {
+	const baseUrl = actionUrl.replace(/\/action\/?$/, '/');
+	const path = tab === 'overview' ? baseUrl : `${baseUrl}${encodeURIComponent(tab)}/`;
+	if (!locationSearch) {
+		return path;
+	}
+
+	const incoming = new URLSearchParams(locationSearch);
+	const kept = new URLSearchParams();
+	for (const shellKey of ['ws', 'modal']) {
+		const val = incoming.get(shellKey);
+		if (val !== null && val !== '') {
+			kept.set(shellKey, val);
+		}
+	}
+	if (includeLogQuery && tab === 'logs') {
+		for (const logKey of ['channel', 'search', 'limit']) {
+			const val = incoming.get(logKey);
+			if (val !== null && val !== '') {
+				kept.set(logKey, val);
+			}
+		}
+	}
+
+	const qs = kept.toString();
+	return qs !== '' ? `${path}?${qs}` : path;
+}
+
 export function Workspace(props: WorkspaceProps) {
 	const { t } = useTranslations('ProcessWireConsole');
 	const [currentTab, setCurrentTab] = useState<string>(props.activeTab || 'overview');
@@ -55,6 +88,7 @@ export function Workspace(props: WorkspaceProps) {
 	const downloadBackupUrl: string = props.downloadBackupUrl || '';
 	const isDemoMode: boolean = Boolean(props.isDemoMode);
 	const isSuperuser: boolean = Boolean(props.isSuperuser) && !isDemoMode;
+	const canRunReadOnlyMcp: boolean = Boolean(props.isSuperuser);
 
 	const runAction = (action: string, payload: Record<string, unknown> = {}) => {
 		setBusyAction(action);
@@ -86,6 +120,25 @@ export function Workspace(props: WorkspaceProps) {
 	const handleConfirmExecute = () => {
 		const { action, guardKey, confirmWord, payload } = confirmState;
 		setConfirmState((prev) => ({ ...prev, open: false }));
+		if (isDemoMode && action === 'runMcpReadOnlyTool') {
+			const targetUrl = buildConsoleSectionUrl(actionUrl, 'boost', window.location.search);
+			setBusyAction(action);
+			router.get(
+				targetUrl,
+				{
+					mcp_tool: String(payload?.mcp_tool_name ?? 'pw_schema_read'),
+					mcp_args: String(payload?.mcp_tool_args ?? '{}'),
+				},
+				{
+					preserveState: true,
+					preserveScroll: true,
+					onFinish: () => {
+						setBusyAction(null);
+					},
+				}
+			);
+			return;
+		}
 		runAction(action, {
 			...(payload || {}),
 			[`confirm_${guardKey}`]: confirmWord,
@@ -94,8 +147,7 @@ export function Workspace(props: WorkspaceProps) {
 
 	const inspectFile = (category: string, file: string) => {
 		if (isDemoMode) {
-			const baseUrl = actionUrl.replace(/\/action\/?$/, '/');
-			const targetUrl = currentTab === 'overview' ? baseUrl : `${baseUrl}${encodeURIComponent(currentTab)}/`;
+			const targetUrl = buildConsoleSectionUrl(actionUrl, currentTab, window.location.search);
 			router.get(
 				targetUrl,
 				{
@@ -120,20 +172,23 @@ export function Workspace(props: WorkspaceProps) {
 			return;
 		}
 		setCurrentTab(nextTab);
-		try {
-			const baseUrl = actionUrl.replace(/\/action\/?$/, '/');
-			const search = window.location.search || '';
-			const targetUrl = (nextTab === 'overview' ? baseUrl : `${baseUrl}${encodeURIComponent(nextTab)}/`) + search;
-			window.history.replaceState({}, '', targetUrl);
-		} catch {
-			// Ignore history state errors
-		}
+		const targetUrl = buildConsoleSectionUrl(actionUrl, nextTab, window.location.search);
+		router.get(
+			targetUrl,
+			{},
+			{
+				only: ['activeTab'],
+				preserveState: true,
+				preserveScroll: true,
+				replace: true,
+			}
+		);
 	};
 
 	const handleFilterLogs = (channel: string, search: string, limit: number) => {
-		const baseUrl = actionUrl.replace(/\/action\/?$/, '/');
+		const targetUrl = buildConsoleSectionUrl(actionUrl, 'logs', window.location.search);
 		router.get(
-			`${baseUrl}logs/`,
+			targetUrl,
 			{
 				tab: 'logs',
 				channel,
@@ -170,6 +225,7 @@ export function Workspace(props: WorkspaceProps) {
 			badge,
 			badgeVariant,
 			active: currentTab === key,
+			dividerBefore: key === 'migrations' || key === 'testing',
 			onClick: () => handleNavigateTab(key),
 		};
 	});
@@ -208,10 +264,7 @@ export function Workspace(props: WorkspaceProps) {
 		if (busyAction !== null) {
 			return;
 		}
-		const baseUrl = actionUrl.replace(/\/action\/?$/, '/');
-		const search = window.location.search || '';
-		const targetUrl =
-			(currentTab === 'overview' ? baseUrl : `${baseUrl}${encodeURIComponent(currentTab)}/`) + search;
+		const targetUrl = buildConsoleSectionUrl(actionUrl, currentTab, window.location.search, true);
 		router.get(targetUrl, {}, { preserveState: true, preserveScroll: true });
 	};
 
@@ -317,7 +370,11 @@ export function Workspace(props: WorkspaceProps) {
 					<TestingPanel {...helperProps} testing={props.testing} />
 				)}
 				{currentTab === 'boost' && (
-					<BoostPanel {...helperProps} boost={props.boost} />
+					<BoostPanel
+						{...helperProps}
+						boost={props.boost}
+						canRunReadOnlyMcp={canRunReadOnlyMcp}
+					/>
 				)}
 				{currentTab === 'logs' && (
 					<LogsPanel

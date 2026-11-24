@@ -9,10 +9,10 @@ import {
 	CardHeader,
 	CardTitle,
 	CliBox,
+	Combobox,
 	EmptyState,
 	Input,
 	Label,
-	Select,
 	StatCard,
 	Table,
 	TableBody,
@@ -53,7 +53,11 @@ export function SchedulingPanel({
 	const dueCount = tasks.filter((taskItem) => taskItem.isDue).length;
 	const taskOptions = [
 		{ value: 'due', label: t('scheduling.allDueOption', 'All Currently Due Tasks (schedule:run)') },
-		...tasks.map((taskItem) => ({ value: taskItem.name, label: `${taskItem.name} (${taskItem.expression})` })),
+		...tasks.map((taskItem) => ({
+			value: taskItem.name,
+			label: taskItem.name,
+			description: taskItem.expression,
+		})),
 	];
 
 	return (
@@ -92,11 +96,13 @@ export function SchedulingPanel({
 					<CardContent className="space-y-4">
 						<div className="space-y-1.5">
 							<Label htmlFor="schedule-task">{t('scheduling.targetScopeLabel', 'Target Scope')}</Label>
-							<Select
+							<Combobox
 								id="schedule-task"
 								value={selectedTask}
-								onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedTask(e.target.value)}
+								onValueChange={(next) => setSelectedTask(next || 'due')}
 								options={taskOptions}
+								clearable={selectedTask !== 'due'}
+								aria-label={t('scheduling.targetScopeLabel', 'Target Scope')}
 							/>
 						</div>
 						<CliBox

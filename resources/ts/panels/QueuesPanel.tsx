@@ -20,8 +20,8 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
-	Textarea,
 } from '@pw/react/ui';
+import { SchemaField } from '@pw/react/fields';
 import { useTranslations } from '@pw/react/hooks';
 import type {
 	ActionHelperProps,
@@ -155,7 +155,7 @@ export function QueuesPanel({
 								onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWorkQueueName(e.target.value)}
 							/>
 						</div>
-						<div className="grid grid-cols-2 gap-3">
+						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 							<div className="space-y-1.5">
 								<Label htmlFor="work-max-jobs">{t('queues.maxJobsLabel', 'Max Jobs (1-50)')}</Label>
 								<Input
@@ -233,7 +233,7 @@ export function QueuesPanel({
 								options={dispatchOptions}
 							/>
 						</div>
-						<div className="grid grid-cols-2 gap-3">
+						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 							<div className="space-y-1.5">
 								<Label htmlFor="dispatch-job-queue">{t('queues.queueShortLabel', 'Queue')}</Label>
 								<Input
@@ -253,16 +253,20 @@ export function QueuesPanel({
 								/>
 							</div>
 						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="dispatch-job-payload">{t('queues.jsonPayloadLabel', 'JSON Data')}</Label>
-							<Textarea
-								id="dispatch-job-payload"
-								rows={2}
-								className="font-mono text-xs"
-								value={dispatchPayload}
-								onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDispatchPayload(e.target.value)}
-							/>
-						</div>
+						<SchemaField
+							field={{
+								id: 'dispatch-job-payload',
+								name: 'dispatch_job_payload',
+								type: 'textarea',
+								editorMode: 'json',
+								monospace: true,
+								rows: 3,
+								label: t('queues.jsonPayloadLabel', 'JSON Data'),
+							}}
+							inlinePortal
+							value={dispatchPayload}
+							onChange={(nextVal) => setDispatchPayload(typeof nextVal === 'string' ? nextVal : '')}
+						/>
 						<div className="flex justify-end">
 							<Button
 								icon="send"
@@ -419,7 +423,7 @@ export function QueuesPanel({
 			{failedJobs.length > 0 && (
 				<Card>
 					<CardHeader className="pb-3">
-						<div className="flex items-center justify-between">
+						<div className="flex flex-wrap items-center justify-between gap-2">
 							<div>
 								<CardTitle>{t('queues.failedJobsCountTitle', { count: failedJobs.length }, 'Failed Jobs ({count})')}</CardTitle>
 								<CardDescription>{t('queues.failedJobsDesc', 'Failed queue executions recorded in failed_jobs')}</CardDescription>
@@ -518,7 +522,7 @@ export function QueuesPanel({
 								description={t('queues.emptyQueueDescription', 'No pending or delayed jobs waiting in queue_jobs.')}
 							/>
 						) : (
-							<Table className="table-fixed">
+							<Table className="min-w-[620px] table-fixed">
 								<TableHeader>
 									<TableRow>
 										<TableHead className="w-16">{t('workspace.idHead', 'ID')}</TableHead>

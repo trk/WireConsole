@@ -11,10 +11,10 @@ import {
 	CardHeader,
 	CardTitle,
 	CliBox,
+	Combobox,
 	EmptyState,
 	Input,
 	Label,
-	Select,
 	StatCard,
 	Switch,
 	Table,
@@ -24,6 +24,7 @@ import {
 	TableHeader,
 	TableRow,
 } from '@pw/react/ui';
+import { SchemaField } from '@pw/react/fields';
 import { useTranslations } from '@pw/react/hooks';
 import type { ActionHelperProps, MigrationItem, MigrationsPayload } from '../types';
 
@@ -47,10 +48,23 @@ export function MigrationsPanel({
 	const [migrationType, setMigrationType] = useState('blank');
 
 	const resetModeOptions = [
-		{ value: 'refresh', label: t('migrations.modeRefreshOption', 'Refresh (Rollback All + Re-run All)') },
-		{ value: 'reset', label: t('migrations.modeResetOption', 'Reset (Rollback All Applied Migrations)') },
-		{ value: 'fresh', label: t('migrations.modeFreshOption', 'Fresh (Drop Tracking Table + Re-run All)') },
+		{
+			value: 'refresh',
+			label: t('migrations.modeRefreshShort', 'Refresh'),
+			description: t('migrations.modeRefreshOption', 'Refresh (Rollback All + Re-run All)'),
+		},
+		{
+			value: 'reset',
+			label: t('migrations.modeResetShort', 'Reset'),
+			description: t('migrations.modeResetOption', 'Reset (Rollback All Applied Migrations)'),
+		},
+		{
+			value: 'fresh',
+			label: t('migrations.modeFreshShort', 'Fresh'),
+			description: t('migrations.modeFreshOption', 'Fresh (Drop Tracking Table + Re-run All)'),
+		},
 	];
+	const activeResetModeOption = resetModeOptions.find((opt) => opt.value === resetMode);
 
 	const migrationStubOptions = [
 		{ value: 'blank', label: t('migrations.stubBlankOption', 'Blank Migration (up / down)') },
@@ -122,7 +136,7 @@ export function MigrationsPanel({
 					</CardHeader>
 					<CardContent className="space-y-4">
 						{!migrations.tableExists && (
-							<Alert variant="warning" className="flex items-center justify-between gap-3 p-3 text-xs">
+							<Alert variant="warning" className="flex flex-wrap items-center justify-between gap-3 p-3 text-xs">
 								<AlertDescription>
 									{t('migrations.tableMissingNotice', 'Tracking table wire_migrations is not installed.')}
 								</AlertDescription>
@@ -146,7 +160,7 @@ export function MigrationsPanel({
 							</Alert>
 						)}
 
-						<div className="grid grid-cols-2 gap-3">
+						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 							<div className="space-y-1.5">
 								<Label htmlFor="migration-steps">{t('migrations.migrateStepsLabel', 'Migrate Steps (0 = all)')}</Label>
 								<Input
@@ -171,7 +185,7 @@ export function MigrationsPanel({
 
 						<CliBox
 							wrap
-							command="php vendor/bin/wire migrate"
+							command={`php vendor/bin/wire migrate${Number(steps) > 0 ? ` --step=${Number(steps)}` : ''}`}
 							label={t('workspace.cliEquivalent', 'CLI Equivalent')}
 						/>
 
@@ -224,15 +238,24 @@ export function MigrationsPanel({
 						<CardDescription>{t('migrations.resetRefreshDesc', 'Full migration cycle controls with optional SQL safety snapshot.')}</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-4">
-						<div className="space-y-1.5">
-							<Label htmlFor="reset-mode">{t('migrations.operationMode', 'Operation Mode')}</Label>
-							<Select
-								id="reset-mode"
-								value={resetMode}
-								onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setResetMode(e.target.value)}
-								options={resetModeOptions}
-							/>
-						</div>
+						<SchemaField
+							field={{
+								id: 'reset-mode',
+								name: 'reset_mode',
+								type: 'segmented',
+								label: t('migrations.operationMode', 'Operation Mode'),
+								description: activeResetModeOption?.description,
+								options: resetModeOptions,
+								fullWidth: true,
+							}}
+							inlinePortal
+							value={resetMode}
+							onChange={(nextVal) => {
+								if (typeof nextVal === 'string' && nextVal !== '') {
+									setResetMode(nextVal);
+								}
+							}}
+						/>
 						<Switch
 							id="reset-pre-backup-switch"
 							checked={resetPreBackup}
@@ -292,11 +315,17 @@ export function MigrationsPanel({
 						</div>
 						<div className="space-y-1.5">
 							<Label htmlFor="make-migration-type">{t('migrations.migrationStubTypeLabel', 'Migration Stub Type')}</Label>
-							<Select
+							<Combobox
 								id="make-migration-type"
 								value={migrationType}
-								onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setMigrationType(e.target.value)}
+								onValueChange={(next) => {
+									if (next) {
+										setMigrationType(next);
+									}
+								}}
 								options={migrationStubOptions}
+								clearable={false}
+								aria-label={t('migrations.migrationStubTypeLabel', 'Migration Stub Type')}
 							/>
 						</div>
 						<CliBox
@@ -338,7 +367,7 @@ export function MigrationsPanel({
 			{/* Migrations Status Table */}
 			<Card>
 				<CardHeader className="pb-3">
-					<div className="flex items-center justify-between">
+					<div className="flex flex-wrap items-center justify-between gap-2">
 						<div>
 							<CardTitle>{t('migrations.discoveredTitle', 'Discovered Schema Migrations')}</CardTitle>
 							<CardDescription>{t('migrations.discoveredDesc', 'Files located in site/migrations/')}</CardDescription>

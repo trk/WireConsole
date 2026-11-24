@@ -8,6 +8,7 @@ import {
 	CardDescription,
 	CardHeader,
 	CardTitle,
+	Combobox,
 	EmptyState,
 	Input,
 	Label,
@@ -73,7 +74,8 @@ export function LogsPanel({
 		channels.length > 0
 			? channels.map((c) => ({
 					value: c.name,
-					label: `${c.name} (${c.sizeFormatted})`,
+					label: c.name,
+					description: c.sizeFormatted,
 				}))
 			: [{ value: 'wire-console-audit', label: 'wire-console-audit' }];
 
@@ -141,15 +143,18 @@ export function LogsPanel({
 					<form onSubmit={handleApplyFilter} className="grid grid-cols-1 gap-3 sm:grid-cols-4">
 						<div className="space-y-1.5">
 							<Label htmlFor="log-channel-select">{t('logs.channelLabel', 'Channel')}</Label>
-							<Select
+							<Combobox
 								id="log-channel-select"
 								value={selectedChannel}
-								onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-									const next = e.target.value;
-									setSelectedChannel(next);
-									onFilterLogs(next, search, Number(limit) || 50);
+								onValueChange={(next) => {
+									if (next && next !== selectedChannel) {
+										setSelectedChannel(next);
+										onFilterLogs(next, search, Number(limit) || 50);
+									}
 								}}
 								options={channelOptions}
+								clearable={false}
+								aria-label={t('logs.channelLabel', 'Channel')}
 							/>
 						</div>
 						<div className="space-y-1.5 sm:col-span-2">
@@ -181,7 +186,7 @@ export function LogsPanel({
 
 			<Card>
 				<CardHeader className="pb-3">
-					<div className="flex items-center justify-between">
+					<div className="flex flex-wrap items-center justify-between gap-2">
 						<CardTitle>{t('logs.channelEntriesTitle', { channel: selectedChannel }, 'Channel Entries: {channel}')}</CardTitle>
 						<Badge variant="outline">{t('logs.entriesCount', { count: entries.length }, '{count} entry(s)')}</Badge>
 					</div>
@@ -194,7 +199,7 @@ export function LogsPanel({
 							description={t('logs.emptyDescription', { channel: selectedChannel }, 'No matching log entries in channel "{channel}".')}
 						/>
 					) : (
-						<Table className="table-fixed">
+						<Table className="min-w-[640px] table-fixed">
 							<TableHeader>
 								<TableRow>
 									<TableHead className="w-40">{t('logs.timestampHead', 'Timestamp')}</TableHead>

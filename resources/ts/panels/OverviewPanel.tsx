@@ -17,6 +17,7 @@ import {
 	Select,
 	StatCard,
 } from '@pw/react/ui';
+import { SchemaField } from '@pw/react/fields';
 import { useTranslations } from '@pw/react/hooks';
 import type { ActionHelperProps, OverviewPayload } from '../types';
 
@@ -125,7 +126,7 @@ export function OverviewPanel({
 			<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 				<Card className="min-w-0">
 					<CardHeader className="pb-3">
-						<div className="flex items-center justify-between gap-2">
+						<div className="flex flex-wrap items-center justify-between gap-2">
 							<div className="flex items-center gap-2">
 								<DynamicIcon name="shield" className="h-4 w-4 text-primary" />
 								<CardTitle>{t('overview.maintenanceTitle', 'Maintenance Mode')}</CardTitle>
@@ -186,16 +187,21 @@ export function OverviewPanel({
 							</div>
 						) : (
 							<div className="space-y-3">
-								<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-									<div className="space-y-1.5">
-										<Label htmlFor="maintenance-secret">{t('overview.bypassSecretLabel', 'Bypass Secret Token (optional)')}</Label>
-										<Input
-											id="maintenance-secret"
-											placeholder={t('overview.bypassSecretPlaceholder', 'e.g. deploy-preview-token')}
-											value={maintenanceSecret}
-											onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMaintenanceSecret(e.target.value)}
-										/>
-									</div>
+								<div className="space-y-3">
+									<SchemaField
+										field={{
+											id: 'maintenance-secret',
+											name: 'maintenance_secret',
+											type: 'text',
+											isSecret: true,
+											secretMasked: true,
+											label: t('overview.bypassSecretLabel', 'Bypass Secret Token (optional)'),
+											placeholder: t('overview.bypassSecretPlaceholder', 'e.g. deploy-preview-token'),
+										}}
+										inlinePortal
+										value={maintenanceSecret}
+										onChange={(nextVal) => setMaintenanceSecret(typeof nextVal === 'string' ? nextVal : '')}
+									/>
 									<div className="space-y-1.5">
 										<Label htmlFor="maintenance-retry">{t('overview.retryAfterLabel', 'Retry-After Seconds')}</Label>
 										<Input
@@ -242,7 +248,7 @@ export function OverviewPanel({
 
 				<Card className="min-w-0">
 					<CardHeader className="pb-3">
-						<div className="flex items-center justify-between gap-2">
+						<div className="flex flex-wrap items-center justify-between gap-2">
 							<div className="flex items-center gap-2">
 								<DynamicIcon name="bolt" className="h-4 w-4 text-primary" />
 								<CardTitle>{t('overview.cacheFlushTitle', 'System & WireCache Flush')}</CardTitle>
@@ -323,7 +329,7 @@ export function OverviewPanel({
 					<CardContent className="space-y-4">
 						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 							<div className="rounded-lg border border-border bg-muted/20 p-3.5">
-								<div className="flex items-center justify-between">
+								<div className="flex flex-wrap items-center justify-between gap-2">
 									<span className="font-mono text-xs font-semibold text-foreground">trk/processwire-console</span>
 									<Badge variant={packages.console?.installed ? 'success' : 'warning'}>
 										{packages.console?.version ?? t('migrations.notInstalled', 'Not Installed')}
@@ -343,7 +349,7 @@ export function OverviewPanel({
 							</div>
 
 							<div className="rounded-lg border border-border bg-muted/20 p-3.5">
-								<div className="flex items-center justify-between">
+								<div className="flex flex-wrap items-center justify-between gap-2">
 									<span className="font-mono text-xs font-semibold text-foreground">trk/processwire-boost</span>
 									<Badge variant={packages.boost?.installed ? 'success' : 'warning'}>
 										{packages.boost?.version ?? t('migrations.notInstalled', 'Not Installed')}
@@ -456,7 +462,7 @@ export function OverviewPanel({
 								{ label: t('overview.consolePackageLabel', 'Console Package'), value: versions.console ?? '—' },
 								{ label: t('overview.boostPackageLabel', 'Boost Package'), value: versions.boost ?? '—' },
 							].map((row) => (
-								<div key={row.label} className="flex items-center justify-between py-2">
+								<div key={row.label} className="flex flex-wrap items-center justify-between gap-2 py-2">
 									<dt className="text-muted-foreground">{row.label}</dt>
 									<dd className="font-mono font-medium text-foreground">{row.value}</dd>
 								</div>

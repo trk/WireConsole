@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import { DynamicIcon, useState } from '@pw/react/core';
+import { DynamicIcon, useEffect, useState } from '@pw/react/core';
 import {
 	Badge,
 	Button,
@@ -22,18 +22,20 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
-	Textarea,
 } from '@pw/react/ui';
+import { SchemaField } from '@pw/react/fields';
 import { useTranslations } from '@pw/react/hooks';
 import type { ActionHelperProps, BoostModuleInfo, BoostPayload, McpToolInfo } from '../types';
 
 interface BoostPanelProps extends ActionHelperProps {
 	boost: BoostPayload | null;
+	canRunReadOnlyMcp?: boolean;
 }
 
 export function BoostPanel({
 	boost,
 	isSuperuser,
+	canRunReadOnlyMcp,
 	busyAction,
 	openConfirm,
 	inspectFile,
@@ -44,24 +46,39 @@ export function BoostPanel({
 	const readOnlyTools: string[] = Array.isArray(boost?.readOnlyTools) ? boost.readOnlyTools : [];
 	const mcpResult = boost?.mcpResult ?? null;
 
+	const initialFeatures = [
+		status?.config?.guidelines !== false ? 'guidelines' : null,
+		status?.config?.skills !== false ? 'skills' : null,
+		status?.config?.mcp ? 'mcp' : null,
+	].filter((item): item is string => item !== null);
+	const configFeaturesKey = (initialFeatures.length > 0 ? initialFeatures : ['guidelines', 'skills', 'mcp']).join(',');
+	const configAgentsKey = (status?.config?.agents ?? []).join(',');
+	const configModulesKey = (status?.config?.modules ?? []).join(',');
+
 	const [discoverNewModules, setDiscoverNewModules] = useState(true);
-	const [featuresInput, setFeaturesInput] = useState(
-		[
-			status?.config?.guidelines !== false ? 'guidelines' : null,
-			status?.config?.skills !== false ? 'skills' : null,
-			status?.config?.mcp ? 'mcp' : null,
-		]
-			.filter(Boolean)
-			.join(',') || 'guidelines,skills,mcp'
+	const [featuresTags, setFeaturesTags] = useState<string[]>(
+		configFeaturesKey ? configFeaturesKey.split(',') : ['guidelines', 'skills', 'mcp']
 	);
-	const [agentsInput, setAgentsInput] = useState((status?.config?.agents ?? []).join(','));
-	const [modulesInput, setModulesInput] = useState((status?.config?.modules ?? []).join(','));
+	const [agentsTags, setAgentsTags] = useState<string[]>(status?.config?.agents ?? []);
+	const [modulesTags, setModulesTags] = useState<string[]>(status?.config?.modules ?? []);
 	const [remoteRepo, setRemoteRepo] = useState('');
 	const [remoteForce, setRemoteForce] = useState(false);
 	const [mcpToolName, setMcpToolName] = useState(readOnlyTools[0] ?? 'pw_schema_read');
 	const [mcpToolArgs, setMcpToolArgs] = useState('{}');
 	const [newModuleName, setNewModuleName] = useState('');
 	const [newModuleType, setNewModuleType] = useState('module');
+
+	useEffect(() => {
+		setFeaturesTags(configFeaturesKey ? configFeaturesKey.split(',') : ['guidelines', 'skills', 'mcp']);
+	}, [configFeaturesKey]);
+
+	useEffect(() => {
+		setAgentsTags(configAgentsKey ? configAgentsKey.split(',') : []);
+	}, [configAgentsKey]);
+
+	useEffect(() => {
+		setModulesTags(configModulesKey ? configModulesKey.split(',') : []);
+	}, [configModulesKey]);
 
 	if (!boost || !status || !mcp) {
 		return (
@@ -77,12 +94,30 @@ export function BoostPanel({
 	const discoverableModules: BoostModuleInfo[] = Array.isArray(status.discoverableModules) ? status.discoverableModules : [];
 	const mcpTools: McpToolInfo[] = Array.isArray(mcp.tools) ? mcp.tools : [];
 	const readOnlyToolOptions = readOnlyTools.map((tool) => ({ value: tool, label: tool }));
+	const availableAgentSuggestions = (status.availableAgents ?? []).map((agent) => agent.name);
 	const moduleTypeOptions = [
-		{ value: 'module', label: t('boost.moduleTypeStandardOption', 'Standard Module (module)') },
-		{ value: 'process', label: t('boost.moduleTypeProcessOption', 'Admin Process Module (process)') },
-		{ value: 'fieldtype', label: t('boost.moduleTypeFieldtypeOption', 'Database Fieldtype (fieldtype)') },
-		{ value: 'inputfield', label: t('boost.moduleTypeInputfieldOption', 'Admin Inputfield (inputfield)') },
+		{
+			value: 'module',
+			label: t('boost.moduleTypeStandardShort', 'Standard'),
+			description: t('boost.moduleTypeStandardOption', 'Standard Module (module)'),
+		},
+		{
+			value: 'process',
+			label: t('boost.moduleTypeProcessShort', 'Process'),
+			description: t('boost.moduleTypeProcessOption', 'Admin Process Module (process)'),
+		},
+		{
+			value: 'fieldtype',
+			label: t('boost.moduleTypeFieldtypeShort', 'Fieldtype'),
+			description: t('boost.moduleTypeFieldtypeOption', 'Database Fieldtype (fieldtype)'),
+		},
+		{
+			value: 'inputfield',
+			label: t('boost.moduleTypeInputfieldShort', 'Inputfield'),
+			description: t('boost.moduleTypeInputfieldOption', 'Admin Inputfield (inputfield)'),
+		},
 	];
+	const activeModuleTypeOption = moduleTypeOptions.find((opt) => opt.value === newModuleType);
 
 	return (
 		<div className="space-y-6">
@@ -157,31 +192,47 @@ export function BoostPanel({
 						</div>
 
 						<div className="border-t border-border pt-3 space-y-3">
-							<div className="space-y-1.5">
-								<Label htmlFor="boost-features">{t('boost.enabledFeaturesLabel', 'Enabled Features (CSV)')}</Label>
-								<Input
-									id="boost-features"
-									value={featuresInput}
-									onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFeaturesInput(e.target.value)}
-								/>
-							</div>
-							<div className="space-y-1.5">
-								<Label htmlFor="boost-agents">{t('boost.targetAgentsLabel', 'Target Agents (CSV)')}</Label>
-								<Input
-									id="boost-agents"
-									placeholder={t('boost.targetAgentsPlaceholder', 'claude_code,cursor,codex')}
-									value={agentsInput}
-									onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAgentsInput(e.target.value)}
-								/>
-							</div>
-							<div className="space-y-1.5">
-								<Label htmlFor="boost-modules">{t('boost.enabledModulesLabel', 'Enabled Modules (CSV)')}</Label>
-								<Input
-									id="boost-modules"
-									value={modulesInput}
-									onChange={(e: React.ChangeEvent<HTMLInputElement>) => setModulesInput(e.target.value)}
-								/>
-							</div>
+							<SchemaField
+								field={{
+									id: 'boost-features',
+									name: 'boost_features',
+									type: 'tags',
+									label: t('boost.enabledFeaturesLabel', 'Enabled Features'),
+									suggestions: ['guidelines', 'skills', 'mcp'],
+									allowCustom: false,
+									tagsPredefinedOnly: true,
+								}}
+								inlinePortal
+								value={featuresTags}
+								onChange={(nextVal) => setFeaturesTags(Array.isArray(nextVal) ? nextVal.map((item) => String(item)) : [])}
+							/>
+							<SchemaField
+								field={{
+									id: 'boost-agents',
+									name: 'boost_agents',
+									type: 'tags',
+									label: t('boost.targetAgentsLabel', 'Target Agents'),
+									placeholder: t('boost.targetAgentsPlaceholder', 'Add agent (e.g. claude_code)'),
+									suggestions: availableAgentSuggestions,
+									allowCustom: true,
+								}}
+								inlinePortal
+								value={agentsTags}
+								onChange={(nextVal) => setAgentsTags(Array.isArray(nextVal) ? nextVal.map((item) => String(item)) : [])}
+							/>
+							<SchemaField
+								field={{
+									id: 'boost-modules',
+									name: 'boost_modules',
+									type: 'tags',
+									label: t('boost.enabledModulesLabel', 'Enabled Modules'),
+									suggestions: discoverableModules.map((mod) => mod.name),
+									allowCustom: true,
+								}}
+								inlinePortal
+								value={modulesTags}
+								onChange={(nextVal) => setModulesTags(Array.isArray(nextVal) ? nextVal.map((item) => String(item)) : [])}
+							/>
 							<div className="flex justify-end">
 								<Button
 									variant="secondary"
@@ -197,9 +248,9 @@ export function BoostPanel({
 											title: t('boost.saveConfirmTitle', 'Save Boost Configuration'),
 											description: t('boost.saveConfirmDesc', 'Persist .agents/boost.json and reinstall selected features.'),
 											payload: {
-												boost_features: featuresInput,
-												boost_agents: agentsInput,
-												boost_modules: modulesInput,
+												boost_features: featuresTags.join(','),
+												boost_agents: agentsTags.join(','),
+												boost_modules: modulesTags.join(','),
 											},
 										})
 									}
@@ -230,16 +281,20 @@ export function BoostPanel({
 								options={readOnlyToolOptions}
 							/>
 						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="mcp-tool-args">{t('boost.jsonRpcArgsLabel', 'JSON-RPC Arguments')}</Label>
-							<Textarea
-								id="mcp-tool-args"
-								rows={3}
-								className="font-mono text-xs"
-								value={mcpToolArgs}
-								onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setMcpToolArgs(e.target.value)}
-							/>
-						</div>
+						<SchemaField
+							field={{
+								id: 'mcp-tool-args',
+								name: 'mcp_tool_args',
+								type: 'textarea',
+								editorMode: 'json',
+								monospace: true,
+								rows: 3,
+								label: t('boost.jsonRpcArgsLabel', 'JSON-RPC Arguments'),
+							}}
+							inlinePortal
+							value={mcpToolArgs}
+							onChange={(nextVal) => setMcpToolArgs(typeof nextVal === 'string' ? nextVal : '')}
+						/>
 						<CliBox
 							wrap
 							command="php vendor/bin/wire boost:mcp"
@@ -248,7 +303,7 @@ export function BoostPanel({
 						<div className="flex justify-end">
 							<Button
 								icon="player-play"
-								disabled={!isSuperuser || busyAction !== null || !mcp.available}
+								disabled={!(canRunReadOnlyMcp ?? isSuperuser) || busyAction !== null || !mcp.available}
 								onClick={() =>
 									openConfirm({
 										action: 'runMcpReadOnlyTool',
@@ -325,15 +380,24 @@ export function BoostPanel({
 						</div>
 
 						<div className="border-t border-border pt-3 space-y-2.5">
-							<div className="space-y-1.5">
-								<Label htmlFor="make-module-type">{t('boost.moduleStubTypeLabel', 'Module Stub Type')}</Label>
-								<Select
-									id="make-module-type"
-									value={newModuleType}
-									onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewModuleType(e.target.value)}
-									options={moduleTypeOptions}
-								/>
-							</div>
+							<SchemaField
+								field={{
+									id: 'make-module-type',
+									name: 'make_module_type',
+									type: 'segmented',
+									label: t('boost.moduleStubTypeLabel', 'Module Stub Type'),
+									description: activeModuleTypeOption?.description,
+									options: moduleTypeOptions,
+									fullWidth: true,
+								}}
+								inlinePortal
+								value={newModuleType}
+								onChange={(nextVal) => {
+									if (typeof nextVal === 'string' && nextVal !== '') {
+										setNewModuleType(nextVal);
+									}
+								}}
+							/>
 							<div className="space-y-1.5">
 								<Label htmlFor="make-module-name">{t('boost.scaffoldModuleLabel', 'Scaffold ProcessWire Module')}</Label>
 								<div className="flex gap-2">
@@ -388,12 +452,12 @@ export function BoostPanel({
 			<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 				<Card>
 					<CardHeader className="pb-3">
-						<div className="flex items-center justify-between">
+						<div className="flex flex-wrap items-center justify-between gap-2">
 							<div>
 								<CardTitle>{t('boost.installedSkillsCount', { count: installedSkills.length }, 'Installed Skills ({count})')}</CardTitle>
 								<CardDescription>{t('boost.installedSkillsDesc', 'Select any skill to inspect its SKILL.md playbook')}</CardDescription>
 							</div>
-							<div className="flex gap-1.5">
+							<div className="flex flex-wrap gap-1.5">
 								{[
 									{ id: 'agents-md', label: 'AGENTS.md' },
 									{ id: 'boost-json', label: 'boost.json' },
@@ -479,7 +543,7 @@ export function BoostPanel({
 							role="region"
 							aria-label={t('boost.mcpCatalogCount', { count: mcpTools.length }, 'MCP Tool Catalog ({count})')}
 						>
-							<Table className="table-fixed">
+							<Table className="min-w-[560px] table-fixed">
 								<TableHeader>
 									<TableRow>
 										<TableHead className="w-44">{t('boost.toolNameHead', 'Tool Name')}</TableHead>

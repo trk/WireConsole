@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import { DynamicIcon, useState } from '@pw/react/core';
+import { DynamicIcon, sanitizeSameOriginUrl, useState } from '@pw/react/core';
 import {
 	Button,
 	Card,
@@ -52,6 +52,7 @@ export function BackupPanel({
 	}
 
 	const items: BackupItem[] = Array.isArray(backup.items) ? backup.items : [];
+	const safeDownloadBase = downloadBackupUrl ? sanitizeSameOriginUrl(downloadBackupUrl) : '';
 
 	return (
 		<div className="space-y-6">
@@ -217,9 +218,9 @@ export function BackupPanel({
 												>
 													{t('workspace.preview', 'Preview')}
 												</Button>
-												{isSuperuser && downloadBackupUrl && (
+												{isSuperuser && safeDownloadBase && (
 													<Button variant="ghost" size="sm" icon="download" asChild>
-														<a href={`${downloadBackupUrl}?file=${encodeURIComponent(item.name)}`}>
+														<a href={`${safeDownloadBase}?file=${encodeURIComponent(item.name)}`}>
 															{t('workspace.download', 'Download')}
 														</a>
 													</Button>
