@@ -52,7 +52,7 @@ test('ProcessWireConsole defines the Inertia + React Console process module meta
 	$info = ProcessWireConsole::getModuleInfo();
 
 	expect($info['title'])->toBe('Console')
-		->and($info['version'])->toBe(220)
+		->and($info['version'])->toBe(221)
 		->and($info['singular'])->toBeTrue()
 		->and($info['autoload'])->toBeFalse()
 		->and($info['reactCapabilities'])->toBe(['workspace', 'icons', 'commandSearch'])
@@ -130,7 +130,7 @@ test('ProcessWireConsole uninstall removes the wire-console-audit log channel, c
 	$module->setWire($pw);
 
 	$composer = json_decode((string) file_get_contents(dirname(__DIR__, 2) . '/composer.json'), true);
-	expect($composer['version'] ?? null)->toBe('2.2.0')
+	expect($composer['version'] ?? null)->toBe('2.2.1')
 		->and($composer['require']['trk/processwire-inertia'] ?? null)->toBe('^1.0')
 		->and($composer['require']['trk/processwire-react'] ?? null)->toBe('^1.0 || ^2.0');
 
