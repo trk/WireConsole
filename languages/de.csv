@@ -20,6 +20,11 @@ Logs,Protokolle,,site/modules/WireConsole/ProcessWireConsole.module.php,b2d37ae1
 "Open Console","Konsole öffnen",,site/modules/WireConsole/ProcessWireConsole.module.php,f1ea2ce47c3e71a6a3e3e2a6bb1164aa
 "System Logs",Systemprotokolle,,site/modules/WireConsole/ProcessWireConsole.module.php,aeecbbb69417fe48f1eadcd84373a2b3
 "Invalid or missing CSRF token. Please refresh and try again.","Ungültiges oder fehlendes CSRF-Token. Bitte aktualisieren Sie die Seite und versuchen Sie es erneut.",,site/modules/WireConsole/ProcessWireConsole.module.php,18adb91549b4b3324012ffd074ee2a78
+"Superuser permission is required to execute read-only MCP inspection tools.","Für die Ausführung schreibgeschützter MCP-Inspektionstools ist eine Superuser-Berechtigung erforderlich.",,site/modules/WireConsole/ProcessWireConsole.module.php,40530710c03bbb1daa39a3226bef7058
+"Request payload exceeds the maximum allowed size of %d bytes.","Die Nutzlast der Anfrage überschreitet die maximal zulässige Größe von %d Bytes.",,site/modules/WireConsole/ProcessWireConsole.module.php,cabd7bceffefcac1436db2d2d9b132b5
+"Rate limit active: please wait %d seconds before repeating this action.","Ratenbegrenzung aktiv: bitte warten Sie %d Sekunden, bevor Sie diese Aktion wiederholen.",,site/modules/WireConsole/ProcessWireConsole.module.php,c07ab996f8014267baa19acd146a5eab
+"Malformed or overly nested JSON request payload.","Fehlerhaft formatierte oder zu tief verschachtelte JSON-Anfragenutzlast.",,site/modules/WireConsole/ProcessWireConsole.module.php,05f28f4b569d63c67568b8251b4fa6d4
+"Request payload exceeds the maximum allowed %d elements.","Die Nutzlast der Anfrage überschreitet das zulässige Maximum von %d Elementen.",,site/modules/WireConsole/ProcessWireConsole.module.php,aeec8100fdc37531e0eeca55c4cd045a
 "Superuser permission is required to download SQL backups.","Zum Herunterladen von SQL-Backups ist eine Superuser-Berechtigung erforderlich.",,site/modules/WireConsole/ProcessWireConsole.module.php,e149805ce7475964001173989df7eade
 "SQL backup downloads are disabled in demo mode.","Das Herunterladen von SQL-Sicherungen ist im Demo-Modus deaktiviert.",,site/modules/WireConsole/ProcessWireConsole.module.php,283d903555fb15d943032d0115c60795
 "Requested SQL backup file was not found.","Die angeforderte SQL-Backup-Datei wurde nicht gefunden.",,site/modules/WireConsole/ProcessWireConsole.module.php,985f890d9fdecc9ee00afaf460a728fa
@@ -136,6 +141,9 @@ Rollback,Rollback,,site/modules/WireConsole/ProcessWireConsole.module.php,446c9e
 "Reset, Refresh & Fresh","Reset, Refresh & Fresh",,site/modules/WireConsole/ProcessWireConsole.module.php,9a0c275f4b07c990b9765aa4fec11cf3
 "Full migration cycle controls with optional SQL safety snapshot.","Vollständige Migrationszyklus-Steuerung mit optionalem SQL-Sicherheits-Snapshot.",,site/modules/WireConsole/ProcessWireConsole.module.php,02376eb542b8134bc06bb09e19c6b63f
 "Operation Mode",Betriebsmodus,,site/modules/WireConsole/ProcessWireConsole.module.php,d64851ed86febe900e5925123ba57e83
+Refresh,Aktualisieren,,site/modules/WireConsole/ProcessWireConsole.module.php,63a6a88c066880c5ac42394a22803ca6
+Reset,Zurücksetzen,,site/modules/WireConsole/ProcessWireConsole.module.php,526d688f37a86d3c3f27d0c5016eb71d
+Fresh,Neuaufbau,,site/modules/WireConsole/ProcessWireConsole.module.php,fe8965a9748c1bc48af1711be837124e
 "Refresh (Rollback All + Re-run All)","Aktualisieren (Alle zurückrollen + Alle neu ausführen)",,site/modules/WireConsole/ProcessWireConsole.module.php,c960eea0adf4b15990787fcde55d3014
 "Reset (Rollback All Applied Migrations)","Zurücksetzen (Alle angewendeten Migrationen zurückrollen)",,site/modules/WireConsole/ProcessWireConsole.module.php,a9b6bbbdba6b2c7c1152bc8a488fc4d5
 "Fresh (Drop Tracking Table + Re-run All)","Neuaufbau (Tracking-Tabelle löschen + Alle neu ausführen)",,site/modules/WireConsole/ProcessWireConsole.module.php,97dddc1fb32cac892d750a873ce1ea19
@@ -371,6 +379,9 @@ Passed,Bestanden,,site/modules/WireConsole/ProcessWireConsole.module.php,a0d0628
 "Scaffold Test or E2E Spec","Test oder E2E-Spec erstellen",,site/modules/WireConsole/ProcessWireConsole.module.php,2776aade204f8fed7e261f5c4a689adc
 "Create a Pest PHP test or Playwright E2E spec in site/tests/ or an installed module.","Pest-PHP-Test oder Playwright-E2E-Spec in site/tests/ oder einem installierten Modul erstellen.",,site/modules/WireConsole/ProcessWireConsole.module.php,a5d0ab724c3fca007fd724d61d9893b1
 "Test Kind",Testtyp,,site/modules/WireConsole/ProcessWireConsole.module.php,067eeaf867a636d50429cf3bb25307d0
+Feature,Feature,,site/modules/WireConsole/ProcessWireConsole.module.php,21021ea0e52be8e9c599f4dff41e5be0
+Unit,Unit,,site/modules/WireConsole/ProcessWireConsole.module.php,19c562a36aeb455d09534f93b4f5236f
+"Playwright E2E","Playwright E2E",,site/modules/WireConsole/ProcessWireConsole.module.php,e3849c5ca574a451086549ed47581fbf
 "Pest Feature Test (Feature/)","Pest-Feature-Test (Feature/)",,site/modules/WireConsole/ProcessWireConsole.module.php,fcb5197ef7435261d893ae1225185adb
 "Pest Unit Test (--unit)","Pest-Unit-Test (--unit)",,site/modules/WireConsole/ProcessWireConsole.module.php,2bedc5e3d13179d283bcae87908fffa0
 "Playwright E2E Spec (--e2e)","Playwright-E2E-Spec (--e2e)",,site/modules/WireConsole/ProcessWireConsole.module.php,b4b5adb1e54bd8cb585b8de5cf35c004
@@ -412,10 +423,10 @@ Suite,Suite,,site/modules/WireConsole/ProcessWireConsole.module.php,6a3b8215faee
 "Sync Boost Now","Boost jetzt synchronisieren",,site/modules/WireConsole/ProcessWireConsole.module.php,63ca8c270c13a2239e4b77bc6dabee6a
 "Synchronize ProcessWire Boost","ProcessWire Boost synchronisieren",,site/modules/WireConsole/ProcessWireConsole.module.php,857b756e86193445cee0173f5b9e9565
 "Regenerate AI guidelines, skills, and .agents/map.json.","KI-Richtlinien, Skills und .agents/map.json neu generieren.",,site/modules/WireConsole/ProcessWireConsole.module.php,61d44635ac2cda39b3d4cb71ba63080d
-"Enabled Features (CSV)","Aktivierte Funktionen (CSV)",,site/modules/WireConsole/ProcessWireConsole.module.php,8132b2da8bf270fd378dd13e3338f1ae
-"Target Agents (CSV)","Ziel-Agenten (CSV)",,site/modules/WireConsole/ProcessWireConsole.module.php,52a7d4e3fc52d83b079b2afc03cf4953
-"claude_code,cursor,codex","claude_code,cursor,codex",,site/modules/WireConsole/ProcessWireConsole.module.php,6ac62e02fe46ca51a83c433c52c396b7
-"Enabled Modules (CSV)","Aktivierte Module (CSV)",,site/modules/WireConsole/ProcessWireConsole.module.php,15f846f2a3f51248336722c9517dc6aa
+"Enabled Features","Aktivierte Funktionen",,site/modules/WireConsole/ProcessWireConsole.module.php,8595035f27b7163bf60408f5ae47bee1
+"Target Agents",Ziel-Agenten,,site/modules/WireConsole/ProcessWireConsole.module.php,17ab054d18d7e6bb012f9283f48f6646
+"Add agent (e.g. claude_code)","Agent hinzufügen (z. B. claude_code)",,site/modules/WireConsole/ProcessWireConsole.module.php,cce90f4e42efd8516f599d5172ba7c83
+"Enabled Modules","Aktivierte Module",,site/modules/WireConsole/ProcessWireConsole.module.php,dfe6e46e2d3e3ba76b5d9aee197c0747
 "Save Configuration","Konfiguration speichern",,site/modules/WireConsole/ProcessWireConsole.module.php,08580e93520802cb11555ba3d1a7b842
 "Save Boost Configuration","Boost-Konfiguration speichern",,site/modules/WireConsole/ProcessWireConsole.module.php,855b07eb348c6b4c9e635ad64f6ef3cb
 "Persist .agents/boost.json and reinstall selected features.",".agents/boost.json speichern und ausgewählte Funktionen neu installieren.",,site/modules/WireConsole/ProcessWireConsole.module.php,ef7502b2bede28d27fea79c9339f5f91
@@ -437,6 +448,10 @@ Suite,Suite,,site/modules/WireConsole/ProcessWireConsole.module.php,6a3b8215faee
 "Fetch and security-audit skills from ""{repo}"".","Skills aus ""{repo}"" abrufen und sicherheitsprüfen.",,site/modules/WireConsole/ProcessWireConsole.module.php,8f5988e79c59625d734613e8fbe6b849
 "Scaffold ProcessWire Module","ProcessWire-Modul generieren",,site/modules/WireConsole/ProcessWireConsole.module.php,5c5ddbc3256b0c2ac06f56b5c4faf211
 "Module Stub Type",Modul-Vorlagentyp,,site/modules/WireConsole/ProcessWireConsole.module.php,2e98c5b577dcb968809dd717f38bdced
+Standard,Standard,,site/modules/WireConsole/ProcessWireConsole.module.php,eb6d8ae6f20283755b339c0dc273988b
+Process,Prozess,,site/modules/WireConsole/ProcessWireConsole.module.php,b6ec7abeb6ae29cc35a4b47475e12afe
+Fieldtype,Feldtyp,,site/modules/WireConsole/ProcessWireConsole.module.php,eeccef6865b610d55442ac1ea6e7bc0e
+Inputfield,Eingabefeld,,site/modules/WireConsole/ProcessWireConsole.module.php,1f41b58b0614cb14432fc3ca79b728a4
 "Standard Module (module)","Standardmodul (module)",,site/modules/WireConsole/ProcessWireConsole.module.php,3456f711574a87ffe396aacf244693d6
 "Admin Process Module (process)","Admin-Prozessmodul (process)",,site/modules/WireConsole/ProcessWireConsole.module.php,42fb9c0a3c021b86659ce71ba7b8edb6
 "Database Fieldtype (fieldtype)","Datenbank-Feldtyp (fieldtype)",,site/modules/WireConsole/ProcessWireConsole.module.php,28e565d14a14c63b5a3e28b3ee436aa7
@@ -489,7 +504,6 @@ User,Benutzer,,site/modules/WireConsole/ProcessWireConsole.module.php,8f9bfe9d13
 "Access denied: missing permission to inspect files in this category.","Zugriff verweigert: fehlende Berechtigung zum Untersuchen von Dateien in dieser Kategorie.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,d6b990f1ae05d3e733c87f0442b3a62b
 "Requested file could not be found or is outside the allowlisted directories.","Die angeforderte Datei wurde nicht gefunden oder liegt außerhalb der freigegebenen Verzeichnisse.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,6679d8a0758a2fa3f91ba494b7ee4d2d
 "Loaded preview for %s (%s).","Vorschau für %s (%s) geladen.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,24dc489f62c7c82edbbc5607a610b1cb
-"Database backup manager is unavailable.","Datenbank-Backup-Manager ist nicht verfügbar.",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,4b58227b04f65c8271ab11b4a87b06c5
 "Backup file could not be written.","Backup-Datei konnte nicht geschrieben werden.",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,88810f594fad01fd310f3c549027a3be
 "Created SQL backup snapshot: %s","SQL-Backup-Snapshot erstellt: %s",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,c7af0375fb35ec47f8c8464164e4c1dd
 "No backup files found to purge.","Keine Backup-Dateien zum Bereinigen gefunden.",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,07f243707ddbbd30f3cb234dfd402589

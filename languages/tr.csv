@@ -20,6 +20,11 @@ Logs,Günlükler,,site/modules/WireConsole/ProcessWireConsole.module.php,b2d37ae
 "Open Console","Konsolu Aç",,site/modules/WireConsole/ProcessWireConsole.module.php,f1ea2ce47c3e71a6a3e3e2a6bb1164aa
 "System Logs","Sistem Günlükleri",,site/modules/WireConsole/ProcessWireConsole.module.php,aeecbbb69417fe48f1eadcd84373a2b3
 "Invalid or missing CSRF token. Please refresh and try again.","Geçersiz veya eksik CSRF belirteci. Lütfen sayfayı yenileyip tekrar deneyin.",,site/modules/WireConsole/ProcessWireConsole.module.php,18adb91549b4b3324012ffd074ee2a78
+"Superuser permission is required to execute read-only MCP inspection tools.","Salt okunur MCP inceleme araçlarını çalıştırmak için süper kullanıcı izni gereklidir.",,site/modules/WireConsole/ProcessWireConsole.module.php,40530710c03bbb1daa39a3226bef7058
+"Request payload exceeds the maximum allowed size of %d bytes.","İstek yükü izin verilen maksimum %d bayt boyutunu aşıyor.",,site/modules/WireConsole/ProcessWireConsole.module.php,cabd7bceffefcac1436db2d2d9b132b5
+"Rate limit active: please wait %d seconds before repeating this action.","Hız sınırı etkin: bu işlemi tekrarlamadan önce lütfen %d saniye bekleyin.",,site/modules/WireConsole/ProcessWireConsole.module.php,c07ab996f8014267baa19acd146a5eab
+"Malformed or overly nested JSON request payload.","Hatalı biçimlendirilmiş veya aşırı iç içe JSON istek yükü.",,site/modules/WireConsole/ProcessWireConsole.module.php,05f28f4b569d63c67568b8251b4fa6d4
+"Request payload exceeds the maximum allowed %d elements.","İstek yükü izin verilen maksimum %d öğe sınırını aşıyor.",,site/modules/WireConsole/ProcessWireConsole.module.php,aeec8100fdc37531e0eeca55c4cd045a
 "Superuser permission is required to download SQL backups.","SQL yedeklerini indirmek için süper kullanıcı izni gereklidir.",,site/modules/WireConsole/ProcessWireConsole.module.php,e149805ce7475964001173989df7eade
 "SQL backup downloads are disabled in demo mode.","Demo modunda SQL yedek indirmeleri devre dışıdır.",,site/modules/WireConsole/ProcessWireConsole.module.php,283d903555fb15d943032d0115c60795
 "Requested SQL backup file was not found.","İstenen SQL yedek dosyası bulunamadı.",,site/modules/WireConsole/ProcessWireConsole.module.php,985f890d9fdecc9ee00afaf460a728fa
@@ -136,6 +141,9 @@ Rollback,"Geri Al",,site/modules/WireConsole/ProcessWireConsole.module.php,446c9
 "Reset, Refresh & Fresh","Sıfırla, Yenile ve Baştan Kur",,site/modules/WireConsole/ProcessWireConsole.module.php,9a0c275f4b07c990b9765aa4fec11cf3
 "Full migration cycle controls with optional SQL safety snapshot.","İsteğe bağlı SQL güvenlik yedeğiyle tam taşıma döngüsü kontrolleri.",,site/modules/WireConsole/ProcessWireConsole.module.php,02376eb542b8134bc06bb09e19c6b63f
 "Operation Mode","İşlem Modu",,site/modules/WireConsole/ProcessWireConsole.module.php,d64851ed86febe900e5925123ba57e83
+Refresh,Yenile,,site/modules/WireConsole/ProcessWireConsole.module.php,63a6a88c066880c5ac42394a22803ca6
+Reset,Sıfırla,,site/modules/WireConsole/ProcessWireConsole.module.php,526d688f37a86d3c3f27d0c5016eb71d
+Fresh,Temiz,,site/modules/WireConsole/ProcessWireConsole.module.php,fe8965a9748c1bc48af1711be837124e
 "Refresh (Rollback All + Re-run All)","Yenile (Tümünü Geri Al + Tümünü Yeniden Çalıştır)",,site/modules/WireConsole/ProcessWireConsole.module.php,c960eea0adf4b15990787fcde55d3014
 "Reset (Rollback All Applied Migrations)","Sıfırla (Uygulanan Tüm Taşımaları Geri Al)",,site/modules/WireConsole/ProcessWireConsole.module.php,a9b6bbbdba6b2c7c1152bc8a488fc4d5
 "Fresh (Drop Tracking Table + Re-run All)","Temiz Kurulum (İzleme Tablosunu Sil + Tümünü Yeniden Çalıştır)",,site/modules/WireConsole/ProcessWireConsole.module.php,97dddc1fb32cac892d750a873ce1ea19
@@ -371,6 +379,9 @@ Passed,Başarılı,,site/modules/WireConsole/ProcessWireConsole.module.php,a0d06
 "Scaffold Test or E2E Spec","Test veya E2E Senaryosu Oluştur",,site/modules/WireConsole/ProcessWireConsole.module.php,2776aade204f8fed7e261f5c4a689adc
 "Create a Pest PHP test or Playwright E2E spec in site/tests/ or an installed module.","site/tests/ dizininde veya kurulu bir modülde Pest PHP testi ya da Playwright E2E senaryosu oluşturun.",,site/modules/WireConsole/ProcessWireConsole.module.php,a5d0ab724c3fca007fd724d61d9893b1
 "Test Kind","Test Türü",,site/modules/WireConsole/ProcessWireConsole.module.php,067eeaf867a636d50429cf3bb25307d0
+Feature,Özellik,,site/modules/WireConsole/ProcessWireConsole.module.php,21021ea0e52be8e9c599f4dff41e5be0
+Unit,Birim,,site/modules/WireConsole/ProcessWireConsole.module.php,19c562a36aeb455d09534f93b4f5236f
+"Playwright E2E","Playwright E2E",,site/modules/WireConsole/ProcessWireConsole.module.php,e3849c5ca574a451086549ed47581fbf
 "Pest Feature Test (Feature/)","Pest Özellik Testi (Feature/)",,site/modules/WireConsole/ProcessWireConsole.module.php,fcb5197ef7435261d893ae1225185adb
 "Pest Unit Test (--unit)","Pest Birim Testi (--unit)",,site/modules/WireConsole/ProcessWireConsole.module.php,2bedc5e3d13179d283bcae87908fffa0
 "Playwright E2E Spec (--e2e)","Playwright E2E Senaryosu (--e2e)",,site/modules/WireConsole/ProcessWireConsole.module.php,b4b5adb1e54bd8cb585b8de5cf35c004
@@ -412,10 +423,10 @@ Suite,Paket,,site/modules/WireConsole/ProcessWireConsole.module.php,6a3b8215faee
 "Sync Boost Now","Boost’u Şimdi Eşitle",,site/modules/WireConsole/ProcessWireConsole.module.php,63ca8c270c13a2239e4b77bc6dabee6a
 "Synchronize ProcessWire Boost","ProcessWire Boost’u Eşitle",,site/modules/WireConsole/ProcessWireConsole.module.php,857b756e86193445cee0173f5b9e9565
 "Regenerate AI guidelines, skills, and .agents/map.json.","Yapay zeka yönergelerini, becerileri ve .agents/map.json dosyasını yeniden oluşturun.",,site/modules/WireConsole/ProcessWireConsole.module.php,61d44635ac2cda39b3d4cb71ba63080d
-"Enabled Features (CSV)","Etkin Özellikler (CSV)",,site/modules/WireConsole/ProcessWireConsole.module.php,8132b2da8bf270fd378dd13e3338f1ae
-"Target Agents (CSV)","Hedef Ajanlar (CSV)",,site/modules/WireConsole/ProcessWireConsole.module.php,52a7d4e3fc52d83b079b2afc03cf4953
-"claude_code,cursor,codex","claude_code,cursor,codex",,site/modules/WireConsole/ProcessWireConsole.module.php,6ac62e02fe46ca51a83c433c52c396b7
-"Enabled Modules (CSV)","Etkin Modüller (CSV)",,site/modules/WireConsole/ProcessWireConsole.module.php,15f846f2a3f51248336722c9517dc6aa
+"Enabled Features","Etkin Özellikler",,site/modules/WireConsole/ProcessWireConsole.module.php,8595035f27b7163bf60408f5ae47bee1
+"Target Agents","Hedef Ajanlar",,site/modules/WireConsole/ProcessWireConsole.module.php,17ab054d18d7e6bb012f9283f48f6646
+"Add agent (e.g. claude_code)","Ajan ekle (örn. claude_code)",,site/modules/WireConsole/ProcessWireConsole.module.php,cce90f4e42efd8516f599d5172ba7c83
+"Enabled Modules","Etkin Modüller",,site/modules/WireConsole/ProcessWireConsole.module.php,dfe6e46e2d3e3ba76b5d9aee197c0747
 "Save Configuration","Yapılandırmayı Kaydet",,site/modules/WireConsole/ProcessWireConsole.module.php,08580e93520802cb11555ba3d1a7b842
 "Save Boost Configuration","Boost Yapılandırmasını Kaydet",,site/modules/WireConsole/ProcessWireConsole.module.php,855b07eb348c6b4c9e635ad64f6ef3cb
 "Persist .agents/boost.json and reinstall selected features.",".agents/boost.json dosyasını kaydedin ve seçili özellikleri yeniden kurun.",,site/modules/WireConsole/ProcessWireConsole.module.php,ef7502b2bede28d27fea79c9339f5f91
@@ -437,6 +448,10 @@ Suite,Paket,,site/modules/WireConsole/ProcessWireConsole.module.php,6a3b8215faee
 "Fetch and security-audit skills from ""{repo}"".","""{repo}"" deposundan becerileri indirin ve güvenlik denetiminden geçirin.",,site/modules/WireConsole/ProcessWireConsole.module.php,8f5988e79c59625d734613e8fbe6b849
 "Scaffold ProcessWire Module","ProcessWire Modül Taslağı Oluştur",,site/modules/WireConsole/ProcessWireConsole.module.php,5c5ddbc3256b0c2ac06f56b5c4faf211
 "Module Stub Type","Modül Taslak Türü",,site/modules/WireConsole/ProcessWireConsole.module.php,2e98c5b577dcb968809dd717f38bdced
+Standard,Standart,,site/modules/WireConsole/ProcessWireConsole.module.php,eb6d8ae6f20283755b339c0dc273988b
+Process,Süreç,,site/modules/WireConsole/ProcessWireConsole.module.php,b6ec7abeb6ae29cc35a4b47475e12afe
+Fieldtype,"Alan Türü",,site/modules/WireConsole/ProcessWireConsole.module.php,eeccef6865b610d55442ac1ea6e7bc0e
+Inputfield,"Giriş Alanı",,site/modules/WireConsole/ProcessWireConsole.module.php,1f41b58b0614cb14432fc3ca79b728a4
 "Standard Module (module)","Standart Modül (module)",,site/modules/WireConsole/ProcessWireConsole.module.php,3456f711574a87ffe396aacf244693d6
 "Admin Process Module (process)","Yönetim Süreç Modülü (process)",,site/modules/WireConsole/ProcessWireConsole.module.php,42fb9c0a3c021b86659ce71ba7b8edb6
 "Database Fieldtype (fieldtype)","Veritabanı Alan Türü (fieldtype)",,site/modules/WireConsole/ProcessWireConsole.module.php,28e565d14a14c63b5a3e28b3ee436aa7
@@ -489,7 +504,6 @@ User,Kullanıcı,,site/modules/WireConsole/ProcessWireConsole.module.php,8f9bfe9
 "Access denied: missing permission to inspect files in this category.","Erişim reddedildi: bu kategorideki dosyaları inceleme izni eksik.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,d6b990f1ae05d3e733c87f0442b3a62b
 "Requested file could not be found or is outside the allowlisted directories.","İstenen dosya bulunamadı veya izin verilen dizinlerin dışında.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,6679d8a0758a2fa3f91ba494b7ee4d2d
 "Loaded preview for %s (%s).","%s (%s) için önizleme yüklendi.",,site/modules/WireConsole/src/Concerns/HandlesWorkspaceActions.php,24dc489f62c7c82edbbc5607a610b1cb
-"Database backup manager is unavailable.","Veritabanı yedekleme yöneticisi kullanılamıyor.",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,4b58227b04f65c8271ab11b4a87b06c5
 "Backup file could not be written.","Yedek dosyası yazılamadı.",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,88810f594fad01fd310f3c549027a3be
 "Created SQL backup snapshot: %s","SQL yedek anlık görüntüsü oluşturuldu: %s",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,c7af0375fb35ec47f8c8464164e4c1dd
 "No backup files found to purge.","Temizlenecek yedek dosyası bulunamadı.",,site/modules/WireConsole/src/Concerns/InteractsWithBackups.php,07f243707ddbbd30f3cb234dfd402589
