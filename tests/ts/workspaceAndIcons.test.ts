@@ -305,8 +305,9 @@ test('accessibility & routing contracts hold across TSX panels and Workspace she
 		'Workspace.tsx must not use window.location.pathname for GET navigation after POST actions',
 	);
 	assert.ok(
-		workspaceTsx.includes('`${baseUrl}logs/`'),
-		'Workspace.tsx handleFilterLogs must route explicitly to `${baseUrl}logs/`',
+		workspaceTsx.includes('export function buildConsoleSectionUrl(') &&
+			workspaceTsx.includes("buildConsoleSectionUrl(actionUrl, 'logs', window.location.search)"),
+		'Workspace.tsx handleFilterLogs must route explicitly to the logs section via buildConsoleSectionUrl while preserving shell query flags',
 	);
 	assert.ok(
 		!workspaceTsx.includes('confirm: confirmWord'),
@@ -318,4 +319,42 @@ test('accessibility & routing contracts hold across TSX panels and Workspace she
 		!/\$payload\[[^\]]+\]\s*\?\?\s*\$payload\[/.test(actionsPhp),
 		'HandlesWorkspaceActions.php must enforce a single canonical payload key per parameter without fallback aliases',
 	);
+});
+
+test('panels use canonical React controls (SchemaField + Combobox) while preserving E2E native Selects', () => {
+	const readPanel = (name: string): string =>
+		fs.readFileSync(path.join(panelsRoot, `${name}.tsx`), 'utf8');
+
+	const overview = readPanel('OverviewPanel');
+	assert.ok(overview.includes("id: 'maintenance-secret'") && overview.includes('isSecret: true'), 'OverviewPanel must use secret SchemaField for #maintenance-secret');
+	assert.ok(overview.includes('<Select') && overview.includes('id="cache-clear-mode"'), 'OverviewPanel must keep native Select on #cache-clear-mode');
+
+	const migrations = readPanel('MigrationsPanel');
+	assert.ok(migrations.includes("id: 'reset-mode'") && migrations.includes("type: 'segmented'"), 'MigrationsPanel must use segmented SchemaField for #reset-mode');
+	assert.ok(migrations.includes('<Combobox') && migrations.includes('id="make-migration-type"'), 'MigrationsPanel must use Combobox for #make-migration-type');
+
+	const queues = readPanel('QueuesPanel');
+	assert.ok(queues.includes("id: 'dispatch-job-payload'") && queues.includes("editorMode: 'json'"), 'QueuesPanel must use JSON-mode textarea SchemaField for #dispatch-job-payload');
+	assert.ok(queues.includes('<Select') && queues.includes('id="dispatch-job-class"'), 'QueuesPanel must keep native Select on #dispatch-job-class');
+
+	const seeding = readPanel('SeedingPanel');
+	assert.ok(seeding.includes('<Combobox') && seeding.includes('id="seeder-class"'), 'SeedingPanel must use Combobox for #seeder-class');
+
+	const scheduling = readPanel('SchedulingPanel');
+	assert.ok(scheduling.includes('<Combobox') && scheduling.includes('id="schedule-task"'), 'SchedulingPanel must use Combobox for #schedule-task');
+
+	const testing = readPanel('TestingPanel');
+	assert.ok(testing.includes('<Combobox') && testing.includes('id="test-path"') && testing.includes('id="e2e-path"'), 'TestingPanel must use Combobox for #test-path and #e2e-path');
+	assert.ok(testing.includes("id: 'make-test-kind'") && testing.includes("type: 'segmented'"), 'TestingPanel must use segmented SchemaField for #make-test-kind');
+
+	const boost = readPanel('BoostPanel');
+	assert.ok(boost.includes("id: 'boost-features'") && boost.includes("type: 'tags'"), 'BoostPanel must use tags SchemaField for #boost-features');
+	assert.ok(boost.includes("id: 'boost-agents'") && boost.includes("type: 'tags'"), 'BoostPanel must use tags SchemaField for #boost-agents');
+	assert.ok(boost.includes("id: 'boost-modules'") && boost.includes("type: 'tags'"), 'BoostPanel must use tags SchemaField for #boost-modules');
+	assert.ok(boost.includes("id: 'mcp-tool-args'") && boost.includes("editorMode: 'json'"), 'BoostPanel must use JSON-mode textarea SchemaField for #mcp-tool-args');
+	assert.ok(boost.includes("id: 'make-module-type'") && boost.includes("type: 'segmented'"), 'BoostPanel must use segmented SchemaField for #make-module-type');
+	assert.ok(boost.includes('<Select') && boost.includes('id="mcp-tool-name"'), 'BoostPanel must keep native Select on #mcp-tool-name');
+
+	const logs = readPanel('LogsPanel');
+	assert.ok(logs.includes('<Combobox') && logs.includes('id="log-channel-select"'), 'LogsPanel must use Combobox for #log-channel-select');
 });

@@ -161,6 +161,19 @@ test('granular non-superuser role sees only permitted tabs and payload slices wh
 			->and(count($navDecoded['list']))->toBe(2)
 			->and((string) ($navDecoded['list'][0]['url'] ?? ''))->toStartWith('/')
 			->and($navDecoded['list'][1]['url'])->toBe('migrations/');
+
+		// Empty or root-only baseUrl must fail-closed to [] and never emit bare /migrations/ URLs
+		expect($runtime->searchCommandPalette('migrations', '', 5))->toBe([])
+			->and($runtime->searchCommandPalette('migrations', '/', 5))->toBe([]);
+
+		// Command Palette search must only return sections and artifacts permitted for this role
+		$validBaseUrl = '/processwire/setup/wire-console/';
+		$migResults = $runtime->searchCommandPalette('migrations', $validBaseUrl);
+		$migSearchIds = array_column($migResults, 'id');
+		expect($migSearchIds)->toContain('console-tab-migrations')
+			->and($migResults[0]['href'] ?? null)->toStartWith($validBaseUrl)
+			->and($runtime->searchCommandPalette('logs', $validBaseUrl))->toBe([])
+			->and($runtime->searchCommandPalette('pw-wire-console', $validBaseUrl))->toBe([]);
 	} finally {
 		wcSetSuperuser();
 		$cleanupUser = $users->get($userName);
@@ -250,6 +263,10 @@ PHP);
 			->and($pw->cache->get('wire-console:test:mig-state'))->toBe('down');
 	} finally {
 		$pw->cache->delete('wire-console:test:mig-state');
+		try {
+			$pw->database->exec("DELETE FROM `wire_migrations` WHERE `migration` LIKE '%wc_pest_lifecycle_check%'");
+		} catch (\Throwable) {
+		}
 		if (is_string($createdMigrationPath) && is_file($createdMigrationPath)) {
 			@unlink($createdMigrationPath);
 		}
@@ -529,6 +546,37 @@ test('Audit logger redacts sensitive keys recursively, truncates long strings, a
 	} finally {
 		if (is_file($tempLogFile)) {
 			@unlink($tempLogFile);
+		}
+	}
+});
+
+test('clearAllLogChannels reports accurate clearedCount on an isolated temporary logs directory', function (): void {
+	$pw = ProcessWire::getCurrentInstance();
+	$originalLogsPath = (string) $pw->config->paths->logs;
+	$tempLogsDir = rtrim(sys_get_temp_dir(), '/\\') . '/wc_clear_logs_' . bin2hex(random_bytes(4)) . '/';
+	mkdir($tempLogsDir, 0755, true);
+
+	file_put_contents($tempLogsDir . 'wc-temp-alpha.txt', "line 1\nline 2\n");
+	file_put_contents($tempLogsDir . 'wc-temp-beta.txt', "line A\nline B\n");
+
+	try {
+		$pw->config->paths->set('logs', $tempLogsDir);
+		$runtime = ConsoleRuntime::make($pw);
+		$result = $runtime->clearAllLogChannels();
+
+		expect($result['ok'])->toBeTrue()
+			->and($result['clearedCount'])->toBe(2)
+			->and((string) file_get_contents($tempLogsDir . 'wc-temp-alpha.txt'))->toBe('')
+			->and((string) file_get_contents($tempLogsDir . 'wc-temp-beta.txt'))->toBe('');
+	} finally {
+		$pw->config->paths->set('logs', $originalLogsPath);
+		foreach (['wc-temp-alpha.txt', 'wc-temp-beta.txt'] as $f) {
+			if (is_file($tempLogsDir . $f)) {
+				@unlink($tempLogsDir . $f);
+			}
+		}
+		if (is_dir($tempLogsDir)) {
+			@rmdir($tempLogsDir);
 		}
 	}
 });

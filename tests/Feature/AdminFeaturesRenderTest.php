@@ -179,3 +179,39 @@ test('ProcessWireConsole blocks unprivileged guest access across renderSection a
 		->and(fn () => $module->executeNavJSON())->toThrow(WirePermissionException::class)
 		->and(fn () => $module->executeAction())->toThrow(WirePermissionException::class);
 });
+
+test('ProcessWireConsole deferred workspace hooks are idempotent and detachable via React::forgetDeferredRegistrations()', function (): void {
+	$pw = ProcessWire::getCurrentInstance();
+	$react = \ProcessWire\React::instance($pw);
+	$wsBefore = count($react->getHooks('registerWorkspaces'));
+	$wdBefore = count($react->getHooks('registerWidgets'));
+	$csBefore = count($react->getHooks('registerCommandSearch'));
+
+	$probe = new \ProcessWire\ProcessWireConsole();
+	$pw->wire($probe);
+
+	try {
+		$probe->init();
+		$probe->init();
+		expect(count($react->getHooks('registerWorkspaces')))->toBe($wsBefore + 1)
+			->and(count($react->getHooks('registerWidgets')))->toBe($wdBefore + 1)
+			->and(count($react->getHooks('registerCommandSearch')))->toBe($csBefore + 1);
+
+		$searchRegistry = $react->commandSearch();
+		expect($searchRegistry->has('wire-console'))->toBeTrue();
+
+		$sectionHits = $searchRegistry->search('migrations', $pw->user, 10, 5);
+		$hitIds = array_column($sectionHits, 'id');
+		expect($hitIds)->toContain('console-tab-migrations');
+
+		$skillHits = $probe->runtime()->searchCommandPalette('pw-wire-console', '/processwire/setup/wire-console/', 5);
+		$skillIds = array_column($skillHits, 'id');
+		expect($skillIds)->toContain('console-skill-pw-wire-console');
+	} finally {
+		\ProcessWire\React::forgetDeferredRegistrations($probe);
+	}
+
+	expect(count($react->getHooks('registerWorkspaces')))->toBe($wsBefore)
+		->and(count($react->getHooks('registerWidgets')))->toBe($wdBefore)
+		->and(count($react->getHooks('registerCommandSearch')))->toBe($csBefore);
+});

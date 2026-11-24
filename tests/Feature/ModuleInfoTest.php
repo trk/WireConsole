@@ -15,6 +15,7 @@ test('ProcessWireConsole registers WireClassLoader namespace strictly once in __
 
 	expect(substr_count($moduleSource, '->addNamespace('))->toBe(1)
 		->and($moduleSource)->toContain("\$this->wire()->classLoader->addNamespace('Totoglu\\\\WireConsole', __DIR__ . '/src/');")
+		->and($moduleSource)->toContain('parent::init();')
 		->and($moduleSource)->not->toContain('registerNamespace')
 		->and($moduleSource)->not->toContain('require_once')
 		->and($moduleSource)->not->toContain('class_exists')
@@ -53,7 +54,8 @@ test('ProcessWireConsole defines the Inertia + React Console process module meta
 	expect($info['title'])->toBe('Console')
 		->and($info['version'])->toBe(220)
 		->and($info['singular'])->toBeTrue()
-		->and($info['autoload'])->toBeTrue()
+		->and($info['autoload'])->toBeFalse()
+		->and($info['reactCapabilities'])->toBe(['workspace', 'icons', 'commandSearch'])
 		->and($info['useNavJSON'])->toBeTrue()
 		->and($info['page'])->toBe([
 			'name' => 'wire-console',
@@ -135,6 +137,11 @@ test('ProcessWireConsole uninstall removes the wire-console-audit log channel, c
 	$module->___install();
 	expect($pw->permissions->get(ProcessWireConsole::PERMISSION_VIEW)?->id)->toBeGreaterThan(0);
 
+	$module->init();
+	$react = \ProcessWire\React::instance($module);
+	expect($react->workspaces()->has('console'))->toBeTrue()
+		->and($react->widgets()->has('console-overview'))->toBeTrue();
+
 	$module->runtime()->audit('uninstall_check', 'ok');
 	$pw->cache->save('wire-console-test-key', '1', 60);
 	$channelsBefore = array_column($module->runtime()->getLogChannels(), 'name');
@@ -146,9 +153,12 @@ test('ProcessWireConsole uninstall removes the wire-console-audit log channel, c
 		$channelsAfter = array_column($module->runtime()->getLogChannels(), 'name');
 		expect($channelsAfter)->not->toContain(\Totoglu\WireConsole\ConsoleRuntime::LOG_CHANNEL)
 			->and($pw->cache->get('wire-console-test-key'))->toBeNull()
+			->and($react->workspaces()->has('console'))->toBeFalse()
+			->and($react->widgets()->has('console-overview'))->toBeFalse()
 			->and((int) ($pw->permissions->get(ProcessWireConsole::PERMISSION_VIEW)?->id ?? 0))->toBe(0);
 	} finally {
 		$module->___install();
+		wcTestModule();
 	}
 });
 
@@ -213,7 +223,7 @@ test('ProcessWireConsole exposes nested UI translations and matching LanguagePor
 	fclose($fp);
 
 	expect($exportHeader)->toBeArray()
-		->and($expectedRows)->toHaveCount(637);
+		->and($expectedRows)->toHaveCount(651);
 
 	$expectedLocales = ['en', 'tr', 'de', 'fr', 'es', 'ru'];
 	foreach ($expectedLocales as $locale) {
@@ -284,4 +294,84 @@ test('API.md method and parameter signatures match ProcessWireConsole and Consol
 		$actualParams = array_map(static fn(ReflectionParameter $p): string => $p->getName(), $methodRef->getParameters());
 		expect($actualParams)->toBe($docParams, "Parameter mismatch in API.md for ConsoleRuntime::{$methodName}()");
 	}
+});
+
+test('ProcessWireConsole is autoload => false and lazily pulled via reactCapabilities on clean boot', function (): void {
+	expect((new ProcessWireConsole())->isAutoload())->toBeFalse()
+		->and(wire('modules')->isAutoload('ProcessWireConsole'))->toBeFalse();
+
+	$root = dirname(__DIR__, 5);
+	$code = <<<'PHP'
+require __ROOT__ . '/wire/core/ProcessWire.php';
+$config = \ProcessWire\ProcessWire::buildConfig(__ROOT__);
+$wire = new \ProcessWire\ProcessWire($config);
+$home = $wire->pages->get(1);
+if ($home && $home->id) {
+	$wire->fuel->set('page', $home);
+}
+$loadedBefore = !($wire->modules->offsetGet('ProcessWireConsole') instanceof \ProcessWire\ModulePlaceholder)
+	&& class_exists(\ProcessWire\ProcessWireConsole::class, false);
+$classBefore = class_exists(\ProcessWire\ProcessWireConsole::class, false);
+/** @var \ProcessWire\React $react */
+$react = $wire->modules->get('React');
+$discovered = $react->discoverCapabilityModules();
+$loadedAfterDiscover = !($wire->modules->offsetGet('ProcessWireConsole') instanceof \ProcessWire\ModulePlaceholder)
+	&& class_exists(\ProcessWire\ProcessWireConsole::class, false);
+$guest = $wire->users->getGuestUser();
+$wire->users->setCurrentUser($guest);
+$ws = $react->workspaces();
+$wd = $react->widgets();
+$cs = $react->commandSearch();
+$tmpAssets = sys_get_temp_dir() . '/wc-cleanboot-' . bin2hex(random_bytes(4)) . '/';
+mkdir($tmpAssets, 0777, true);
+$origAssets = $wire->config->paths->assets;
+$wire->config->paths->assets = $tmpAssets;
+$cssPath = $react->icons()->generateAdminCss();
+$wire->config->paths->assets = $origAssets;
+$css = (string) @file_get_contents($cssPath);
+$wire->files->rmdir($tmpAssets, true);
+echo json_encode([
+	'loaded_before' => $loadedBefore,
+	'class_before' => $classBefore,
+	'discovered_ws' => in_array('ProcessWireConsole', $discovered['workspace'] ?? [], true),
+	'discovered_icons' => in_array('ProcessWireConsole', $discovered['icons'] ?? [], true),
+	'discovered_cs' => in_array('ProcessWireConsole', $discovered['commandSearch'] ?? [], true),
+	'loaded_after_discover' => $loadedAfterDiscover,
+	'loaded_after_pull' => $wire->modules->offsetGet('ProcessWireConsole') instanceof \ProcessWire\ProcessWireConsole,
+	'has_workspace' => $ws->has('console'),
+	'has_widget' => $wd->has('console-overview'),
+	'has_command_search' => $cs->has('wire-console'),
+	'icon_dashboard' => \Totoglu\React\Icon\IconManager::isAdminIconRegistered('layout-dashboard'),
+	'icon_terminal' => \Totoglu\React\Icon\IconManager::isAdminIconRegistered('terminal'),
+	'css_has_dashboard' => str_contains($css, '.fa-rwv--layout-dashboard'),
+], JSON_THROW_ON_ERROR);
+PHP;
+	$code = str_replace('__ROOT__', var_export($root, true), $code);
+
+	$spec = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+	$proc = proc_open([PHP_BINARY, '-r', $code], $spec, $pipes, $root);
+	expect(is_resource($proc))->toBeTrue();
+	fclose($pipes[0]);
+	$stdout = (string) stream_get_contents($pipes[1]);
+	$stderr = (string) stream_get_contents($pipes[2]);
+	fclose($pipes[1]);
+	fclose($pipes[2]);
+	$exit = proc_close($proc);
+
+	expect($exit)->toBe(0, 'Subprocess failed: ' . $stderr)
+		->and($stderr)->toBe('');
+	$data = json_decode($stdout, true, 16, JSON_THROW_ON_ERROR);
+	expect($data['loaded_before'] ?? null)->toBeFalse()
+		->and($data['class_before'] ?? null)->toBeFalse()
+		->and($data['discovered_ws'] ?? null)->toBeTrue()
+		->and($data['discovered_icons'] ?? null)->toBeTrue()
+		->and($data['discovered_cs'] ?? null)->toBeTrue()
+		->and($data['loaded_after_discover'] ?? null)->toBeFalse()
+		->and($data['loaded_after_pull'] ?? null)->toBeTrue()
+		->and($data['has_workspace'] ?? null)->toBeTrue()
+		->and($data['has_widget'] ?? null)->toBeTrue()
+		->and($data['has_command_search'] ?? null)->toBeTrue()
+		->and($data['icon_dashboard'] ?? null)->toBeTrue()
+		->and($data['icon_terminal'] ?? null)->toBeTrue()
+		->and($data['css_has_dashboard'] ?? null)->toBeTrue();
 });

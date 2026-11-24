@@ -1189,3 +1189,185 @@ PHP);
 		}
 	}
 });
+
+test('ProcessWireConsole executeAction fails closed on oversized or over-element pre-synced POST payloads', function (): void {
+	wcSetSuperuser();
+	$pw = ProcessWire::getCurrentInstance();
+	$module = wcTestModule();
+	$prevMethod = $_SERVER['REQUEST_METHOD'] ?? null;
+	$prevContentType = $_SERVER['CONTENT_TYPE'] ?? null;
+	$marker = 'wc-oversize-check-' . bin2hex(random_bytes(4));
+
+	$extractPageProps = static function (string $rendered): array {
+		if (preg_match('/<script\b[^>]*\bdata-page="app"[^>]*>(.*?)<\/script>/s', $rendered, $match)) {
+			$decoded = json_decode($match[1], true);
+			return is_array($decoded) ? $decoded : [];
+		}
+		$decoded = json_decode($rendered, true);
+		return is_array($decoded) ? $decoded : [];
+	};
+
+	try {
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_SERVER['CONTENT_TYPE'] = 'application/json';
+		$csrf = $pw->session->CSRF;
+
+		// 1. Pre-synced $input->post exceeding MAX_JSON_BODY_BYTES (64 KB)
+		$pw->input->post->removeAll();
+		$pw->input->post->set('tab', 'overview');
+		$pw->input->post->set('action', 'clearSystemCaches');
+		$pw->input->post->set('confirm_system_cache_clear', 'CACHE');
+		$pw->input->post->set('_token', (string) $csrf->getTokenValue());
+		$pw->input->post->set('oversized_marker', $marker . str_repeat('X', \ProcessWire\ProcessWireConsole::MAX_JSON_BODY_BYTES + 256));
+
+		$htmlOversized = $module->executeAction();
+		$pageOversized = $extractPageProps($htmlOversized);
+		$feedbackOversized = $pageOversized['props']['feedback'] ?? null;
+
+		expect($feedbackOversized)->toBeArray()
+			->and($feedbackOversized['ok'] ?? null)->toBeFalse()
+			->and($feedbackOversized['action'] ?? null)->toBe('payload')
+			->and((string) ($feedbackOversized['message'] ?? ''))->toContain('maximum allowed size');
+
+		// 2. Pre-synced $input->post exceeding MAX_JSON_ELEMENTS (256)
+		$pw->input->post->removeAll();
+		$pw->input->post->set('tab', 'overview');
+		$pw->input->post->set('action', 'clearSystemCaches');
+		$pw->input->post->set('_token', (string) $csrf->getTokenValue());
+		$pw->input->post->set('many_items', array_fill(0, \ProcessWire\ProcessWireConsole::MAX_JSON_ELEMENTS + 15, 'v'));
+
+		$htmlElements = $module->executeAction();
+		$pageElements = $extractPageProps($htmlElements);
+		$feedbackElements = $pageElements['props']['feedback'] ?? null;
+
+		expect($feedbackElements)->toBeArray()
+			->and($feedbackElements['ok'] ?? null)->toBeFalse()
+			->and($feedbackElements['action'] ?? null)->toBe('payload')
+			->and((string) ($feedbackElements['message'] ?? ''))->toContain('elements');
+
+		$auditEntries = $module->runtime()->readLogEntries(\Totoglu\WireConsole\ConsoleRuntime::LOG_CHANNEL, 20, 'rejected_oversized');
+		expect($auditEntries)->not->toBeEmpty();
+	} finally {
+		$pw->input->post->removeAll();
+		if ($prevMethod === null) {
+			unset($_SERVER['REQUEST_METHOD']);
+		} else {
+			$_SERVER['REQUEST_METHOD'] = $prevMethod;
+		}
+		if ($prevContentType === null) {
+			unset($_SERVER['CONTENT_TYPE']);
+		} else {
+			$_SERVER['CONTENT_TYPE'] = $prevContentType;
+		}
+	}
+});
+
+test('ProcessWireConsole executeBoost runs allowlisted read-only MCP tools over GET in demo mode', function (): void {
+	wcSetSuperuser();
+	$pw = ProcessWire::getCurrentInstance();
+	$module = wcTestModule();
+	$prevDemo = (bool) ($pw->config->demo ?? false);
+	$prevMethod = $_SERVER['REQUEST_METHOD'] ?? null;
+
+	$extractPageProps = static function (string $rendered): array {
+		if (preg_match('/<script\b[^>]*\bdata-page="app"[^>]*>(.*?)<\/script>/s', $rendered, $match)) {
+			$decoded = json_decode($match[1], true);
+			return is_array($decoded) ? $decoded : [];
+		}
+		$decoded = json_decode($rendered, true);
+		return is_array($decoded) ? $decoded : [];
+	};
+
+	try {
+		$pw->config->demo = true;
+		$_SERVER['REQUEST_METHOD'] = 'GET';
+		$pw->session->remove('wc_ratelimit_boost_mcp_test');
+		$pw->input->get->set('mcp_tool', 'pw_module_list');
+		$pw->input->get->set('mcp_args', '{}');
+
+		$rendered = $module->executeBoost();
+		$decoded = $extractPageProps($rendered);
+		$props = $decoded['props'] ?? [];
+
+		expect($props['isDemoMode'] ?? null)->toBeTrue()
+			->and($props['feedback']['ok'] ?? null)->toBeTrue()
+			->and($props['feedback']['action'] ?? null)->toBe('runMcpReadOnlyTool')
+			->and($props['boost']['mcpResult']['ok'] ?? null)->toBeTrue()
+			->and($props['boost']['mcpResult']['tool'] ?? null)->toBe('pw_module_list');
+	} finally {
+		$pw->config->demo = $prevDemo;
+		$pw->input->get->removeAll();
+		$pw->session->remove('wc_ratelimit_boost_mcp_test');
+		if ($prevMethod === null) {
+			unset($_SERVER['REQUEST_METHOD']);
+		} else {
+			$_SERVER['REQUEST_METHOD'] = $prevMethod;
+		}
+	}
+});
+
+test('parseQueueJobPayload redacts sensitive keys and caps formatted output while redactWorkspacePathsForNonSuperuser scrubs queue exceptions and payloads', function (): void {
+	$pw = ProcessWire::getCurrentInstance();
+	$probe = new class extends \Totoglu\WireConsole\ConsoleRuntime {
+		/** @return array{jobClass: string, payloadFormatted: string} */
+		public function exposeParseQueueJobPayload(string $raw): array
+		{
+			return $this->parseQueueJobPayload($raw);
+		}
+
+		/**
+		 * @param array<string, mixed> $payload
+		 * @return array<string, mixed>
+		 */
+		public function exposeRedactWorkspacePaths(array $payload): array
+		{
+			return $this->redactWorkspacePathsForNonSuperuser($payload);
+		}
+	};
+	$probe->setWire($pw);
+
+	$secretJson = (string) json_encode([
+		'class' => 'Site\\Queue\\SyncJob',
+		'data' => [
+			'password' => 'super-secret-pw-123',
+			'api_token' => 'tok_abc_999',
+			'client_secret' => 'sec_xyz_888',
+			'api_key' => 'key_live_777',
+			'notes' => array_map(static fn(int $i): string => "row-{$i}-" . str_repeat('a', 180), range(1, 20)),
+		],
+	]);
+
+	$parsed = $probe->exposeParseQueueJobPayload($secretJson);
+	expect($parsed['jobClass'])->toBe('Site\\Queue\\SyncJob')
+		->and($parsed['payloadFormatted'])->not->toContain('super-secret-pw-123')
+		->and($parsed['payloadFormatted'])->not->toContain('tok_abc_999')
+		->and($parsed['payloadFormatted'])->not->toContain('sec_xyz_888')
+		->and($parsed['payloadFormatted'])->not->toContain('key_live_777')
+		->and($parsed['payloadFormatted'])->toContain('[REDACTED]')
+		->and(mb_strlen($parsed['payloadFormatted'], 'UTF-8'))->toBeLessThanOrEqual(2003);
+
+	$root = $probe->getProjectRootPath();
+	$rootNoSlash = rtrim($root, '/');
+	$scrubbed = $probe->exposeRedactWorkspacePaths([
+		'overview' => [],
+		'queues' => [
+			'pendingJobs' => [
+				['id' => 1, 'queue' => 'default', 'payloadFormatted' => '{"secret":"raw-secret"}'],
+			],
+			'failedJobs' => [
+				[
+					'id' => 2,
+					'queue' => 'default',
+					'exceptionPreview' => "Error in {$root}site/queue/BrokenJob.php",
+					'exceptionFull' => "Stack:\n#0 {$root}site/queue/BrokenJob.php(12)\nRoot={$rootNoSlash}",
+					'payloadFormatted' => '{"token":"raw-token"}',
+				],
+			],
+		],
+	]);
+
+	expect($scrubbed['queues']['pendingJobs'][0]['payloadFormatted'] ?? null)->toBe('')
+		->and($scrubbed['queues']['failedJobs'][0]['payloadFormatted'] ?? null)->toBe('')
+		->and($scrubbed['queues']['failedJobs'][0]['exceptionPreview'] ?? '')->not->toContain($rootNoSlash)
+		->and($scrubbed['queues']['failedJobs'][0]['exceptionFull'] ?? '')->not->toContain($rootNoSlash);
+});

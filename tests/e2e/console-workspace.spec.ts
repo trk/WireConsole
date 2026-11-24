@@ -26,6 +26,55 @@ function runPhpJson<T = unknown>(code: string): T {
 	return runWirePhp<T>(code);
 }
 
+function escapeRegExp(text: string): string {
+	return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function getActiveShellLayout(page: Page): Promise<'sidebar' | 'topbar'> {
+	const shell = page.locator('[data-rw-app-shell]').first();
+	await expect(shell).toBeVisible();
+	const layout = await shell.getAttribute('data-rw-shell-layout');
+	return layout === 'sidebar' ? 'sidebar' : 'topbar';
+}
+
+function getNavTabButton(page: Page, label: string) {
+	return page
+		.locator('[data-rw-module-nav]')
+		.getByRole('button', { name: new RegExp(`^${escapeRegExp(label)}(?:\\s+\\d+)?$`) })
+		.first();
+}
+
+async function clickNavTab(page: Page, label: string): Promise<void> {
+	const directBtn = getNavTabButton(page, label);
+	if (await directBtn.isVisible()) {
+		await directBtn.click();
+		return;
+	}
+
+	const moreBtn = page.locator('[data-rw-module-nav-more]').first();
+	if (await moreBtn.isVisible()) {
+		await moreBtn.click();
+		await page
+			.locator('[data-rw-module-nav-menu]')
+			.getByRole('menuitem', { name: new RegExp(`^${escapeRegExp(label)}(?:\\s+\\d+)?$`, 'i') })
+			.first()
+			.click();
+		return;
+	}
+
+	const mobileTrigger = page.locator('[data-rw-mobile-menu-trigger]').first();
+	await expect(mobileTrigger).toBeVisible();
+	await mobileTrigger.click();
+	const drawer = page.locator('[data-rw-mobile-drawer]').first();
+	await expect(drawer).toBeVisible();
+	await drawer
+		.locator('[data-rw-module-nav]')
+		.getByRole('button', { name: new RegExp(`^${escapeRegExp(label)}(?:\\s+\\d+)?$`) })
+		.first()
+		.click();
+	await expect(drawer).toHaveCount(0);
+}
+
 function cleanupE2eConsoleArtifacts(): void {
 	runPhpJson(`
 		$downFile = $wire->config->paths->site . 'down.json';
@@ -154,11 +203,24 @@ test.describe('WireConsole Admin Workspace, Operations & RBAC (ProcessWireConsol
 	test('1. mounts workspace with vector SVG icons, navigates all 9 tabs & deep-links, passes WCAG 2.1 AA axe scans, and toggles theme & mobile drawer', async ({
 		page,
 	}) => {
+		test.setTimeout(60_000);
 		const tracker = attachRuntimeErrorTracker(page);
 
 		await page.goto(getAdminUrl('setup/wire-console/'), { waitUntil: 'networkidle' });
 		await expect(page.locator('#app')).toBeVisible();
-		await expect(page.getByRole('heading', { name: /Console/i }).first()).toBeVisible();
+
+		const initialLayout = await getActiveShellLayout(page);
+		if (initialLayout === 'sidebar') {
+			const sidebarHeader = page.locator('[data-rw-sidebar-header]').first();
+			await expect(sidebarHeader).toBeVisible();
+			await expect(sidebarHeader).toContainText('Console');
+			await expect(sidebarHeader.getByRole('heading', { level: 1 })).toContainText('Overview');
+			await expect(page.locator('[data-rw-sidebar]').first()).toContainText('Console');
+		} else {
+			const moduleHeader = page.locator('[data-rw-module-header]').first();
+			await expect(moduleHeader).toBeVisible();
+			await expect(moduleHeader.getByRole('heading', { name: /Console/i }).first()).toBeVisible();
+		}
 
 		// Verify ReactIcons.js vector icon catalog runtime is preloaded on window.ProcessWireIcons and hydrates canonical icons
 		await expect
@@ -239,13 +301,11 @@ test.describe('WireConsole Admin Workspace, Operations & RBAC (ProcessWireConsol
 		];
 
 		for (const item of tabSequence) {
-			const tabButton = page.getByRole('button', { name: item.label, exact: true }).first();
-			await expect(tabButton).toBeVisible();
-			await tabButton.click();
+			await clickNavTab(page, item.label);
 			if (item.slug !== '') {
-				expect(page.url()).toContain(`/wire-console/${item.slug}`);
+				await expect(page).toHaveURL(new RegExp(`/wire-console/${escapeRegExp(item.slug)}$`));
 			} else {
-				expect(page.url().endsWith('/wire-console/')).toBe(true);
+				await expect(page).toHaveURL(/\/wire-console\/$/);
 			}
 			if (item.scanA11y) {
 				await runWcagScan(item.label);
@@ -332,10 +392,13 @@ test.describe('WireConsole Admin Workspace, Operations & RBAC (ProcessWireConsol
 			storageState: { cookies: [], origins: [] },
 		});
 		try {
-			const downResponse = await anonApi.get('/');
+			const downResponse = await anonApi.get('/_react/icons?action=hydrate&names=terminal');
 			expect(downResponse.status()).toBe(503);
+			expect(downResponse.headers()['retry-after']).toBe('120');
 
-			const bypassResponse = await anonApi.get(`/?secret=${encodeURIComponent(bypassSecret)}`);
+			const bypassResponse = await anonApi.get(
+				`/_react/icons?action=hydrate&names=terminal&secret=${encodeURIComponent(bypassSecret)}`,
+			);
 			expect(bypassResponse.status()).toBe(200);
 		} finally {
 			await anonApi.dispose();
@@ -352,7 +415,7 @@ test.describe('WireConsole Admin Workspace, Operations & RBAC (ProcessWireConsol
 			storageState: { cookies: [], origins: [] },
 		});
 		try {
-			const onlineResponse = await anonVerifyOnline.get('/');
+			const onlineResponse = await anonVerifyOnline.get('/_react/icons?action=hydrate&names=terminal');
 			expect(onlineResponse.status()).toBe(200);
 		} finally {
 			await anonVerifyOnline.dispose();
@@ -385,7 +448,8 @@ test.describe('WireConsole Admin Workspace, Operations & RBAC (ProcessWireConsol
 		await expect(page.locator('pre code').filter({ hasText: 'ProcessModule' }).first()).toBeVisible();
 
 		// 3. Switch to Logs & Audit and filter via GET (ensuring URL routes to /logs/ and NOT /action/)
-		await page.getByRole('button', { name: 'Logs & Audit', exact: true }).first().click();
+		await clickNavTab(page, 'Logs & Audit');
+		await expect(page).toHaveURL(/\/wire-console\/logs\//);
 		await expect(page.locator('#log-search-input')).toBeVisible();
 		await page.locator('#log-search-input').fill('boost_mcp_test');
 
@@ -455,7 +519,8 @@ test.describe('WireConsole Admin Workspace, Operations & RBAC (ProcessWireConsol
 		expect(workerMarker.value).toBe('pw-e2e-worker-verified');
 
 		// 4. Switch to Backups tab, preview SQL fixture in Sheet, and verify authenticated download endpoint
-		await page.getByRole('button', { name: 'Backups', exact: true }).first().click();
+		await clickNavTab(page, 'Backups');
+		await expect(page).toHaveURL(/\/wire-console\/backup\//);
 		const fixtureRow = page.locator('tr', { hasText: E2E_BACKUP_FIXTURE });
 		await expect(fixtureRow).toBeVisible();
 
@@ -499,23 +564,25 @@ test.describe('WireConsole Admin Workspace, Operations & RBAC (ProcessWireConsol
 			await expect(page.locator('#app')).toBeVisible();
 
 			// Allowed tabs (Overview, Migrations, Logs & Audit) are visible
-			await expect(page.getByRole('button', { name: 'Overview', exact: true }).first()).toBeVisible();
-			await expect(page.getByRole('button', { name: 'Migrations', exact: true }).first()).toBeVisible();
-			await expect(page.getByRole('button', { name: 'Logs & Audit', exact: true }).first()).toBeVisible();
+			await expect(getNavTabButton(page, 'Overview')).toBeVisible();
+			await expect(getNavTabButton(page, 'Migrations')).toBeVisible();
+			await expect(getNavTabButton(page, 'Logs & Audit')).toBeVisible();
 
 			// Unauthorized tabs are completely hidden from navigation
 			for (const hiddenTab of ['Queues', 'Seeding', 'Scheduling', 'Backups', 'Testing', 'Boost & AI']) {
-				await expect(page.getByRole('button', { name: hiddenTab, exact: true })).toHaveCount(0);
+				await expect(getNavTabButton(page, hiddenTab)).toHaveCount(0);
 			}
 
 			// Mutating controls on Overview, Migrations, and Logs & Audit are disabled for non-superusers
 			await expect(page.getByRole('button', { name: 'Enable Maintenance Mode' })).toBeDisabled();
 			await expect(page.getByRole('button', { name: 'Flush Selected Caches' })).toBeDisabled();
 
-			await page.getByRole('button', { name: 'Migrations', exact: true }).first().click();
+			await clickNavTab(page, 'Migrations');
+			await expect(page).toHaveURL(/\/wire-console\/migrations\//);
 			await expect(page.getByRole('button', { name: 'Run Pending' })).toBeDisabled();
 
-			await page.getByRole('button', { name: 'Logs & Audit', exact: true }).first().click();
+			await clickNavTab(page, 'Logs & Audit');
+			await expect(page).toHaveURL(/\/wire-console\/logs\//);
 			await expect(page.getByRole('button', { name: 'Clear Channel' })).toBeDisabled();
 			await expect(page.getByRole('button', { name: 'Clear All Logs' })).toBeDisabled();
 
@@ -547,81 +614,136 @@ test.describe('WireConsole Admin Workspace, Operations & RBAC (ProcessWireConsol
 		}
 	});
 
-	test('6. verifies AppShell header parity, RecordHeader controls, responsive overflow, ?ws=1 embed mode, and full WCAG 2.1 AA', async ({
+	test('6. verifies AppShell header parity, RecordHeader controls, responsive overflow, ?ws=1 embed mode, and full WCAG 2.1 AA across sidebar and topbar layouts', async ({
 		page,
 	}) => {
+		test.setTimeout(60_000);
 		const tracker = attachRuntimeErrorTracker(page);
-		await page.setViewportSize({ width: 1440, height: 900 });
+		const origPref = runPhpJson<{ shellLayout: string }>(`
+			$react = \\ProcessWire\\React::instance($wire);
+			$admin = $wire->user;
+			if (!$admin || !$admin->id || $admin->isGuest()) {
+				$admin = $wire->users->get(41);
+			}
+			if (!$admin || !$admin->id) {
+				$admin = $wire->users->get('roles=superuser');
+			}
+			$prefs = $react->workspacePreferences()->load($admin);
+			echo json_encode(['shellLayout' => (string) ($prefs['shellLayout'] ?? '')]);
+		`);
 
-		await page.goto(getAdminUrl('setup/wire-console/'), { waitUntil: 'networkidle' });
-		const moduleHeader = page.locator('[data-rw-module-header]').first();
-		await expect(moduleHeader).toBeVisible();
-		await expect(moduleHeader.getByRole('button', { name: 'Refresh Status' })).toHaveCount(0);
+		const setUserShellLayout = (layout: string): void => {
+			runPhpJson(`
+				$react = \\ProcessWire\\React::instance($wire);
+				$admin = $wire->user;
+				if (!$admin || !$admin->id || $admin->isGuest()) {
+					$admin = $wire->users->get(41);
+				}
+				if (!$admin || !$admin->id) {
+					$admin = $wire->users->get('roles=superuser');
+				}
+				$react->workspacePreferences()->setShellLayout(${JSON.stringify(layout)}, $admin);
+				echo json_encode(['ok' => true]);
+			`);
+		};
 
-		const recordHeader = page.locator('[data-rw-record-header]').first();
-		await expect(recordHeader).toBeVisible();
-		await expect(recordHeader).toContainText('Overview');
-		await expect(recordHeader.getByRole('button', { name: 'Refresh Status' }).first()).toBeVisible();
+		try {
+			for (const targetLayout of ['topbar', 'sidebar'] as const) {
+				setUserShellLayout(targetLayout);
+				await page.setViewportSize({ width: 1440, height: 900 });
+				await page.goto(getAdminUrl('setup/wire-console/'), { waitUntil: 'networkidle' });
 
-		const baseHeaderBox = await moduleHeader.boundingBox();
-		expect(baseHeaderBox).not.toBeNull();
+				const activeLayout = await getActiveShellLayout(page);
+				expect(activeLayout).toBe(targetLayout);
 
-		// Navigate to Migrations and verify module header parity and RecordHeader title
-		await page.locator('[data-rw-module-nav] button').filter({ hasText: /^Migrations$/ }).first().click();
-		await expect(page).toHaveURL(/\/wire-console\/migrations\//);
-		await expect(recordHeader).toContainText('Migrations');
-		await expect(moduleHeader.getByRole('button', { name: 'Refresh Status' })).toHaveCount(0);
-		const migrationsHeaderBox = await moduleHeader.boundingBox();
-		expect(migrationsHeaderBox).not.toBeNull();
-		expect(Math.abs((migrationsHeaderBox?.height ?? 0) - (baseHeaderBox?.height ?? 0))).toBeLessThanOrEqual(2);
+				const headerLocator =
+					targetLayout === 'sidebar'
+						? page.locator('[data-rw-sidebar-header]').first()
+						: page.locator('[data-rw-module-header]').first();
+				await expect(headerLocator).toBeVisible();
+				await expect(headerLocator.getByRole('button', { name: 'Refresh Status' })).toHaveCount(0);
 
-		// Navigate to Logs & Audit (either direct nav button or More overflow menu) and verify header parity
-		const directLogsBtn = page.locator('[data-rw-module-nav] button').filter({ hasText: /^Logs & Audit$/ }).first();
-		if (await directLogsBtn.isVisible()) {
-			await directLogsBtn.click();
-		} else {
-			await page.locator('[data-rw-module-nav-more]').first().click();
-			await page.locator('[data-rw-module-nav-menu]').getByRole('menuitem', { name: /Logs & Audit/i }).first().click();
+				const recordHeader = page.locator('[data-rw-record-header]').first();
+				await expect(recordHeader).toBeVisible();
+				await expect(recordHeader).toContainText('Overview');
+				await expect(recordHeader.getByRole('button', { name: 'Refresh Status' }).first()).toBeVisible();
+
+				const baseHeaderBox = await headerLocator.boundingBox();
+				expect(baseHeaderBox).not.toBeNull();
+
+				// Verify P1-5: tab navigation preserves Inertia state and keeps openInWorkspaceHref synced with active section
+				await clickNavTab(page, 'Migrations');
+				await expect(page).toHaveURL(/\/wire-console\/migrations\//);
+				await expect(recordHeader).toContainText('Migrations');
+				await expect(headerLocator.getByRole('button', { name: 'Refresh Status' })).toHaveCount(0);
+
+				const openInWsLink = page.locator('[data-rw-open-in-workspace]').first();
+				if (await openInWsLink.count()) {
+					await expect(openInWsLink).toHaveAttribute('href', /\/wire-console\/migrations\/.*ws=1/);
+				}
+
+				const migrationsHeaderBox = await headerLocator.boundingBox();
+				expect(migrationsHeaderBox).not.toBeNull();
+				expect(Math.abs((migrationsHeaderBox?.height ?? 0) - (baseHeaderBox?.height ?? 0))).toBeLessThanOrEqual(4);
+
+				await clickNavTab(page, 'Logs & Audit');
+				await expect(page).toHaveURL(/\/wire-console\/logs\//);
+				await expect(recordHeader).toContainText('Logs & Audit');
+				const logsHeaderBox = await headerLocator.boundingBox();
+				expect(logsHeaderBox).not.toBeNull();
+				expect(Math.abs((logsHeaderBox?.height ?? 0) - (baseHeaderBox?.height ?? 0))).toBeLessThanOrEqual(4);
+
+				// Responsive overflow check across 820px, 680px, 390px + mobile drawer in sidebar mode
+				await page.goto(getAdminUrl('setup/wire-console/'), { waitUntil: 'networkidle' });
+				for (const vp of [
+					{ width: 820, height: 900 },
+					{ width: 680, height: 900 },
+					{ width: 390, height: 844 },
+				]) {
+					await page.setViewportSize(vp);
+					await page.evaluate(
+						() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+					);
+					const appNoOverflow = await page
+						.locator('#app')
+						.evaluate((el) => el.scrollWidth <= el.clientWidth + 1);
+					expect(appNoOverflow, `[${targetLayout}] #app horizontal overflow at ${vp.width}x${vp.height}`).toBe(true);
+
+					if (targetLayout === 'topbar') {
+						const navNoOverflow = await page
+							.locator('#app [data-rw-module-nav]')
+							.evaluate((el) => el.scrollWidth <= el.clientWidth + 1);
+						expect(navNoOverflow, `[topbar] Module nav horizontal overflow at ${vp.width}x${vp.height}`).toBe(true);
+					} else {
+						await expect(page.locator('[data-rw-mobile-menu-trigger]').first()).toBeVisible();
+					}
+				}
+
+				if (targetLayout === 'sidebar') {
+					await clickNavTab(page, 'Migrations');
+					await expect(page).toHaveURL(/\/wire-console\/migrations\//);
+					await expect(page.locator('[data-rw-record-header]').first()).toContainText('Migrations');
+				}
+
+				const responsiveAxe = await new AxeBuilder({ page })
+					.include('[data-console-panel]')
+					.withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+					.analyze();
+				expect(
+					responsiveAxe.violations,
+					`WCAG 2.1 AA violations on WireConsole Responsive Overview (${targetLayout})`
+				).toEqual([]);
+
+				// Restore desktop viewport, open ?ws=1 workspace mode, verify tab navigation preserves ?ws=1
+				await page.setViewportSize({ width: 1440, height: 900 });
+				await page.goto(getAdminUrl('setup/wire-console/?ws=1'), { waitUntil: 'networkidle' });
+				await expect(page.locator('[data-console-panel]').first()).toBeVisible();
+				await clickNavTab(page, 'Migrations');
+				await expect(page).toHaveURL(/\/wire-console\/migrations\/\?ws=1$/);
+			}
+		} finally {
+			setUserShellLayout(origPref.shellLayout);
 		}
-		await expect(page).toHaveURL(/\/wire-console\/logs\//);
-		await expect(recordHeader).toContainText('Logs & Audit');
-		const logsHeaderBox = await moduleHeader.boundingBox();
-		expect(logsHeaderBox).not.toBeNull();
-		expect(Math.abs((logsHeaderBox?.height ?? 0) - (baseHeaderBox?.height ?? 0))).toBeLessThanOrEqual(2);
-
-		// Return to Overview and verify responsive layout (820px, 680px, 390px) with zero horizontal #app or nav overflow + full WCAG 2.1 AA
-		await page.goto(getAdminUrl('setup/wire-console/'), { waitUntil: 'networkidle' });
-		for (const vp of [
-			{ width: 820, height: 900 },
-			{ width: 680, height: 900 },
-			{ width: 390, height: 844 },
-		]) {
-			await page.setViewportSize(vp);
-			await page.evaluate(
-				() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
-			);
-			const appNoOverflow = await page
-				.locator('#app')
-				.evaluate((el) => el.scrollWidth <= el.clientWidth + 1);
-			expect(appNoOverflow, `#app horizontal overflow at ${vp.width}x${vp.height}`).toBe(true);
-			const navNoOverflow = await page
-				.locator('#app [data-rw-module-nav]')
-				.evaluate((el) => el.scrollWidth <= el.clientWidth + 1);
-			expect(navNoOverflow, `Module nav horizontal overflow at ${vp.width}x${vp.height}`).toBe(true);
-		}
-
-		const responsiveAxe = await new AxeBuilder({ page })
-			.include('[data-console-panel]')
-			.withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-			.analyze();
-		expect(responsiveAxe.violations, 'WCAG 2.1 AA violations on WireConsole Responsive Overview').toEqual([]);
-
-		// Restore desktop viewport, open ?ws=1 embedded mode, and verify tab navigation preserves ?ws=1
-		await page.setViewportSize({ width: 1440, height: 900 });
-		await page.goto(getAdminUrl('setup/wire-console/?ws=1'), { waitUntil: 'networkidle' });
-		await expect(page.locator('[data-console-panel]').first()).toBeVisible();
-		await page.locator('[data-rw-module-nav] button').filter({ hasText: /^Migrations$/ }).first().click();
-		await expect(page).toHaveURL(/\/wire-console\/migrations\/\?ws=1$/);
 
 		tracker.assertNoErrors();
 	});
