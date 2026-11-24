@@ -6,6 +6,7 @@ namespace ProcessWire;
 
 use Totoglu\React\Icon\IconManager;
 use Totoglu\React\Inertia\ProcessReact;
+use Totoglu\React\Workspace\CommandSearchRegistry;
 use Totoglu\WireConsole\ConsoleRuntime;
 
 /**
@@ -48,6 +49,7 @@ class ProcessWireConsole extends ProcessReact
 	public const MAX_JSON_ELEMENTS = 256;
 
 	protected ?ConsoleRuntime $runtimeInstance = null;
+	private bool $workspaceRegistered = false;
 
 	public function __construct()
 	{
@@ -68,7 +70,8 @@ class ProcessWireConsole extends ProcessReact
 			'href' => 'https://github.com/trk/WireConsole',
 			'icon' => 'terminal',
 			'singular' => true,
-			'autoload' => true,
+			'autoload' => false,
+			'reactCapabilities' => ['workspace', 'icons', 'commandSearch'],
 			'useNavJSON' => true,
 			'page' => [
 				'name' => 'wire-console',
@@ -96,17 +99,10 @@ class ProcessWireConsole extends ProcessReact
 		];
 	}
 
-	/**
-	 * Ensure ProcessWire treats ProcessWireConsole as an autoload module so its
-	 * workspace definition is registered with React on boot.
-	 */
-	public function isAutoload(): bool
-	{
-		return true;
-	}
-
 	public function init(): void
 	{
+		parent::init();
+
 		IconManager::registerAdminIcons([
 			'terminal',
 			'layout-dashboard',
@@ -123,10 +119,15 @@ class ProcessWireConsole extends ProcessReact
 	}
 
 	/**
-	 * Defer the Console workspace and dashboard widget registration until requested.
+	 * Defer the Console workspace, dashboard widget, and command palette search provider registration until requested.
 	 */
 	private function registerWorkspace(): void
 	{
+		if ($this->workspaceRegistered) {
+			return;
+		}
+		$this->workspaceRegistered = true;
+
 		React::deferModuleRegistration(
 			$this,
 			function (React $workspace): void {
@@ -146,7 +147,9 @@ class ProcessWireConsole extends ProcessReact
 						$runtime = $this->runtime();
 						$maintenance = $runtime->getMaintenanceStatus();
 						$isDown = !empty($maintenance['isDown']);
-						$scheduledCount = count($runtime->getScheduledTasks());
+						$scheduledCount = $runtime->userCanView(self::PERMISSION_SCHEDULING)
+							? count($runtime->getScheduledTasks())
+							: 0;
 
 						return [
 							[
@@ -174,11 +177,15 @@ class ProcessWireConsole extends ProcessReact
 					'permission' => self::PERMISSION_VIEW,
 					'dataCallback' => function () use ($workspace): array {
 						$runtime = $this->runtime();
-						$baseUrl = rtrim($workspace->workspaces()->resolveUrl('console'), '/') . '/';
+						$resolvedUrl = rtrim($workspace->workspaces()->resolveUrl('console'), '/');
+						$baseUrl = $resolvedUrl !== '' ? $resolvedUrl . '/' : $this->rootUrl();
+						$canMigrations = $runtime->userCanView(self::PERMISSION_MIGRATIONS);
+						$canScheduling = $runtime->userCanView(self::PERMISSION_SCHEDULING);
+						$canLogs = $runtime->userCanView(self::PERMISSION_LOGS);
 						$maintenance = $runtime->getMaintenanceStatus();
 						$isDown = !empty($maintenance['isDown']);
-						$scheduledCount = count($runtime->getScheduledTasks());
-						$migrations = $runtime->getMigrationsStatus();
+						$scheduledCount = $canScheduling ? count($runtime->getScheduledTasks()) : 0;
+						$migrations = $canMigrations ? $runtime->getMigrationsStatus() : ['pending' => 0];
 						$pendingMigrations = (int) ($migrations['pending'] ?? 0);
 
 						return [
@@ -200,7 +207,7 @@ class ProcessWireConsole extends ProcessReact
 									'badge' => $pendingMigrations > 0 ? (string) $pendingMigrations : 'OK',
 									'badgeVariant' => $pendingMigrations > 0 ? 'warning' : 'success',
 									'icon' => 'database',
-									'href' => $baseUrl . 'migrations/',
+									'href' => $canMigrations ? $baseUrl . 'migrations/' : $baseUrl,
 								],
 								[
 									'id' => 'con-scheduling',
@@ -209,7 +216,7 @@ class ProcessWireConsole extends ProcessReact
 									'badge' => (string) $scheduledCount,
 									'badgeVariant' => 'secondary',
 									'icon' => 'clock',
-									'href' => $baseUrl . 'scheduling/',
+									'href' => $canScheduling ? $baseUrl . 'scheduling/' : $baseUrl,
 								],
 								[
 									'id' => 'con-logs',
@@ -218,16 +225,38 @@ class ProcessWireConsole extends ProcessReact
 									'badge' => $this->_('Logs'),
 									'badgeVariant' => 'outline',
 									'icon' => 'list-details',
-									'href' => $baseUrl . 'logs/',
+									'href' => $canLogs ? $baseUrl . 'logs/' : $baseUrl,
 								],
 							],
 							'actions' => [
 								['label' => $this->_('Open Console'), 'href' => $baseUrl, 'icon' => 'terminal', 'variant' => 'primary'],
-								['label' => $this->_('System Logs'), 'href' => $baseUrl . 'logs/', 'icon' => 'list-details', 'variant' => 'outline'],
+								['label' => $this->_('System Logs'), 'href' => $canLogs ? $baseUrl . 'logs/' : $baseUrl, 'icon' => 'list-details', 'variant' => 'outline'],
 							],
 						];
 					},
 				]);
+			}
+		);
+
+		React::deferCommandSearchRegistration(
+			$this,
+			function (CommandSearchRegistry $registry, React $workspace): void {
+				$registry->register(
+					'wire-console',
+					function (string $query, User $user, int $limit) use ($workspace): array {
+						$resolvedUrl = rtrim($workspace->workspaces()->resolveUrl('console'), '/');
+						if ($resolvedUrl === '') {
+							return [];
+						}
+
+						return $this->runtime()->searchCommandPalette($query, $resolvedUrl . '/', $limit);
+					},
+					[
+						'permission' => self::PERMISSION_VIEW,
+						'label' => $this->_('Console'),
+						'order' => 260,
+					]
+				);
 			}
 		);
 	}
@@ -390,8 +419,11 @@ class ProcessWireConsole extends ProcessReact
 		$input = $this->wire()->input;
 		$rootUrl = $this->rootUrl();
 
-		$requestPayload = $this->extractRequestPayload();
-		$requestedTab = trim(self::scalarString($requestPayload['tab'] ?? $input->get('tab'), $section));
+		$extracted = $this->extractRequestPayload();
+		$requestPayload = $extracted['ok'] ? $extracted['payload'] : [];
+		$requestedTab = $extracted['ok']
+			? trim(self::scalarString($requestPayload['tab'] ?? $input->get('tab'), $section))
+			: $section;
 		if ($requestedTab !== '') {
 			$section = $requestedTab;
 		}
@@ -400,43 +432,73 @@ class ProcessWireConsole extends ProcessReact
 		$testResult = null;
 		$mcpResult = null;
 		$inspectedFile = null;
+		$action = '';
 
-		$action = trim(self::scalarString($requestPayload['action'] ?? null));
-		if ($action !== '') {
-			if (!$this->verifyActionCsrf($requestPayload)) {
-				$feedback = [
-					'ok' => false,
-					'action' => $action,
-					'message' => $this->_('Invalid or missing CSRF token. Please refresh and try again.'),
-					'details' => '',
-					'timestamp' => date('H:i:s'),
-				];
-			} else {
-				$actionResult = $runtime->executeWorkspaceAction($action, $requestPayload);
-				$feedback = [
-					'ok' => (bool) ($actionResult['ok'] ?? false),
-					'action' => $action,
-					'message' => self::scalarString($actionResult['message'] ?? null),
-					'details' => self::scalarString($actionResult['details'] ?? $actionResult['output'] ?? null),
-					'timestamp' => date('H:i:s'),
-				];
+		if (!$extracted['ok']) {
+			$runtime->audit('workspace.payload', 'rejected_oversized', [
+				'reason' => $extracted['error'],
+				'section' => $section,
+			]);
+			$feedback = [
+				'ok' => false,
+				'action' => 'payload',
+				'message' => $extracted['error'],
+				'details' => '',
+				'timestamp' => date('H:i:s'),
+			];
+		} else {
+			$action = trim(self::scalarString($requestPayload['action'] ?? null));
+			if ($action !== '') {
+				if (!$this->verifyActionCsrf($requestPayload)) {
+					$feedback = [
+						'ok' => false,
+						'action' => $action,
+						'message' => $this->_('Invalid or missing CSRF token. Please refresh and try again.'),
+						'details' => '',
+						'timestamp' => date('H:i:s'),
+					];
+				} else {
+					$actionResult = $runtime->executeWorkspaceAction($action, $requestPayload);
+					$feedback = [
+						'ok' => (bool) ($actionResult['ok'] ?? false),
+						'action' => $action,
+						'message' => self::scalarString($actionResult['message'] ?? null),
+						'details' => self::scalarString($actionResult['details'] ?? $actionResult['output'] ?? null),
+						'timestamp' => date('H:i:s'),
+					];
 
-				if (isset($actionResult['tab']) && is_string($actionResult['tab']) && $actionResult['tab'] !== '') {
-					$section = $actionResult['tab'];
+					if (isset($actionResult['tab']) && is_string($actionResult['tab']) && $actionResult['tab'] !== '') {
+						$section = $actionResult['tab'];
+					}
+
+					if ($action === 'runTests' || $action === 'runE2eTests') {
+						$testResult = $actionResult;
+					} elseif ($action === 'runMcpReadOnlyTool') {
+						$mcpResult = $actionResult;
+					} elseif ($action === 'inspectFile' && isset($actionResult['data']) && is_array($actionResult['data'])) {
+						$inspectedFile = $actionResult['data'];
+					}
 				}
-
-				if ($action === 'runTests' || $action === 'runE2eTests') {
-					$testResult = $actionResult;
-				} elseif ($action === 'runMcpReadOnlyTool') {
-					$mcpResult = $actionResult;
-				} elseif ($action === 'inspectFile' && isset($actionResult['data']) && is_array($actionResult['data'])) {
-					$inspectedFile = $actionResult['data'];
+			} elseif ($section === 'boost' && $runtime->isDemoMode()) {
+				$mcpTool = trim(self::scalarString($input->get('mcp_tool')));
+				if ($mcpTool !== '') {
+					$demoMcp = $this->handleDemoMcpQuery(
+						$runtime,
+						$mcpTool,
+						self::scalarString($input->get('mcp_args'), '{}')
+					);
+					$feedback = $demoMcp['feedback'];
+					$mcpResult = $demoMcp['mcpResult'];
 				}
 			}
 		}
 
-		$inspectCategory = $action === '' ? trim(self::scalarString($input->get('inspect_category'))) : '';
-		$inspectId = $action === '' ? trim(self::scalarString($input->get('inspect_file'))) : '';
+		$inspectCategory = $extracted['ok'] && $action === ''
+			? trim(self::scalarString($input->get('inspect_category')))
+			: '';
+		$inspectId = $extracted['ok'] && $action === ''
+			? trim(self::scalarString($input->get('inspect_file')))
+			: '';
 
 		$options = [
 			'actionUrl' => $rootUrl . 'action/',
@@ -496,42 +558,209 @@ class ProcessWireConsole extends ProcessReact
 	}
 
 	/**
-	 * Extract POST or JSON body payload from the current request.
+	 * Execute an allowlisted read-only MCP tool during a GET request in demo mode with RBAC, size, rate-limit, and audit guards.
 	 *
-	 * @return array<string, mixed>
+	 * @return array{feedback: array{ok: bool, action: string, message: string, details: string, timestamp: string}, mcpResult: ?array<string, mixed>}
+	 */
+	private function handleDemoMcpQuery(ConsoleRuntime $runtime, string $mcpTool, string $rawArgs): array
+	{
+		if (!$runtime->userCanView(self::PERMISSION_BOOST) || !$runtime->isSuperuser()) {
+			$msg = $this->_('Superuser permission is required to execute read-only MCP inspection tools.');
+			$runtime->audit('boost_mcp_test', 'DENIED: ' . $msg, ['tool' => $mcpTool, 'demo' => true]);
+
+			return [
+				'feedback' => [
+					'ok' => false,
+					'action' => 'runMcpReadOnlyTool',
+					'message' => $msg,
+					'details' => '',
+					'timestamp' => date('H:i:s'),
+				],
+				'mcpResult' => null,
+			];
+		}
+
+		if (strlen($rawArgs) > self::MAX_JSON_BODY_BYTES) {
+			$msg = sprintf(
+				$this->_('Request payload exceeds the maximum allowed size of %d bytes.'),
+				self::MAX_JSON_BODY_BYTES
+			);
+			$runtime->audit('boost_mcp_test', 'DENIED: oversized args', ['tool' => $mcpTool, 'demo' => true]);
+
+			return [
+				'feedback' => [
+					'ok' => false,
+					'action' => 'runMcpReadOnlyTool',
+					'message' => $msg,
+					'details' => '',
+					'timestamp' => date('H:i:s'),
+				],
+				'mcpResult' => null,
+			];
+		}
+
+		$rate = $runtime->checkRateLimit('boost_mcp_test', 2);
+		if (!$rate['allowed']) {
+			$msg = sprintf(
+				$this->_('Rate limit active: please wait %d seconds before repeating this action.'),
+				$rate['retryAfter']
+			);
+
+			return [
+				'feedback' => [
+					'ok' => false,
+					'action' => 'runMcpReadOnlyTool',
+					'message' => $msg,
+					'details' => '',
+					'timestamp' => date('H:i:s'),
+				],
+				'mcpResult' => null,
+			];
+		}
+
+		$mcpRes = $runtime->executeReadOnlyMcpTool($mcpTool, $rawArgs);
+		$runtime->audit('boost_mcp_test', ($mcpRes['ok'] ? 'SUCCESS: ' : 'FAILED: ') . $mcpRes['message'], [
+			'tool' => $mcpTool,
+			'demo' => true,
+		]);
+
+		return [
+			'feedback' => [
+				'ok' => (bool) $mcpRes['ok'],
+				'action' => 'runMcpReadOnlyTool',
+				'message' => $mcpRes['message'],
+				'details' => '',
+				'timestamp' => date('H:i:s'),
+			],
+			'mcpResult' => $mcpRes,
+		];
+	}
+
+	/**
+	 * Extract and validate POST or JSON body payload from the current request (fail-closed on oversized/malformed payloads).
+	 *
+	 * @return array{ok: bool, payload: array<string, mixed>, error: string}
 	 */
 	protected function extractRequestPayload(): array
 	{
 		$method = strtoupper(trim(self::scalarString($_SERVER['REQUEST_METHOD'] ?? 'POST', 'POST')));
 		if ($method !== 'POST') {
-			return [];
-		}
-
-		$payload = [];
-		$input = $this->wire()->input;
-		if ($input && $input->post->count() > 0) {
-			$postArray = $input->post->getArray();
-			if (count($postArray, COUNT_RECURSIVE) <= self::MAX_JSON_ELEMENTS) {
-				foreach ($postArray as $k => $v) {
-					$payload[(string) $k] = $v;
-				}
-			}
+			return [
+				'ok' => true,
+				'payload' => [],
+				'error' => '',
+			];
 		}
 
 		$contentType = self::scalarString($_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? null);
 		if (stripos($contentType, 'application/json') !== false) {
 			$rawBody = @file_get_contents('php://input', false, null, 0, self::MAX_JSON_BODY_BYTES + 1);
-			if (is_string($rawBody) && $rawBody !== '' && strlen($rawBody) <= self::MAX_JSON_BODY_BYTES) {
+			if (is_string($rawBody) && $rawBody !== '') {
+				if (strlen($rawBody) > self::MAX_JSON_BODY_BYTES) {
+					return [
+						'ok' => false,
+						'payload' => [],
+						'error' => sprintf(
+							$this->_('Request payload exceeds the maximum allowed size of %d bytes.'),
+							self::MAX_JSON_BODY_BYTES
+						),
+					];
+				}
 				$decoded = json_decode($rawBody, true, self::MAX_JSON_DEPTH);
-				if (is_array($decoded) && count($decoded, COUNT_RECURSIVE) <= self::MAX_JSON_ELEMENTS) {
-					foreach ($decoded as $k => $v) {
-						$payload[(string) $k] = $v;
-					}
+				if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+					return [
+						'ok' => false,
+						'payload' => [],
+						'error' => $this->_('Malformed or overly nested JSON request payload.'),
+					];
+				}
+				if (count($decoded, COUNT_RECURSIVE) > self::MAX_JSON_ELEMENTS) {
+					return [
+						'ok' => false,
+						'payload' => [],
+						'error' => sprintf(
+							$this->_('Request payload exceeds the maximum allowed %d elements.'),
+							self::MAX_JSON_ELEMENTS
+						),
+					];
+				}
+
+				$payload = [];
+				foreach ($decoded as $k => $v) {
+					$payload[(string) $k] = $v;
+				}
+
+				return [
+					'ok' => true,
+					'payload' => $payload,
+					'error' => '',
+				];
+			}
+		}
+
+		$payload = [];
+		$input = $this->wire()->input;
+		if ($input->post->count() > 0) {
+			$postArray = $input->post->getArray();
+			if (count($postArray, COUNT_RECURSIVE) > self::MAX_JSON_ELEMENTS) {
+				return [
+					'ok' => false,
+					'payload' => [],
+					'error' => sprintf(
+						$this->_('Request payload exceeds the maximum allowed %d elements.'),
+						self::MAX_JSON_ELEMENTS
+					),
+				];
+			}
+			if ($this->estimatePayloadBytes($postArray) > self::MAX_JSON_BODY_BYTES) {
+				return [
+					'ok' => false,
+					'payload' => [],
+					'error' => sprintf(
+						$this->_('Request payload exceeds the maximum allowed size of %d bytes.'),
+						self::MAX_JSON_BODY_BYTES
+					),
+				];
+			}
+			foreach ($postArray as $k => $v) {
+				$payload[(string) $k] = $v;
+			}
+		}
+
+		return [
+			'ok' => true,
+			'payload' => $payload,
+			'error' => '',
+		];
+	}
+
+	/**
+	 * Estimate cumulative scalar key/value byte size for a request array with early cutoff above `MAX_JSON_BODY_BYTES`.
+	 *
+	 * @param array<array-key, mixed> $data
+	 */
+	private function estimatePayloadBytes(array $data): int
+	{
+		$bytes = 0;
+		$stack = [$data];
+		while ($stack !== []) {
+			$current = array_pop($stack);
+			foreach ($current as $key => $val) {
+				$bytes += strlen((string) $key);
+				if (is_array($val)) {
+					$stack[] = $val;
+				} elseif (is_string($val)) {
+					$bytes += strlen($val);
+				} elseif (is_int($val) || is_float($val) || is_bool($val)) {
+					$bytes += strlen((string) $val);
+				}
+				if ($bytes > self::MAX_JSON_BODY_BYTES) {
+					return $bytes;
 				}
 			}
 		}
 
-		return $payload;
+		return $bytes;
 	}
 
 	/**
@@ -804,6 +1033,9 @@ class ProcessWireConsole extends ProcessReact
 				'resetRefreshTitle' => $this->_('Reset, Refresh & Fresh'),
 				'resetRefreshDesc' => $this->_('Full migration cycle controls with optional SQL safety snapshot.'),
 				'operationMode' => $this->_('Operation Mode'),
+				'modeRefreshShort' => $this->_('Refresh'),
+				'modeResetShort' => $this->_('Reset'),
+				'modeFreshShort' => $this->_('Fresh'),
 				'modeRefreshOption' => $this->_('Refresh (Rollback All + Re-run All)'),
 				'modeResetOption' => $this->_('Reset (Rollback All Applied Migrations)'),
 				'modeFreshOption' => $this->_('Fresh (Drop Tracking Table + Re-run All)'),
@@ -1052,6 +1284,9 @@ class ProcessWireConsole extends ProcessReact
 				'scaffoldTitle' => $this->_('Scaffold Test or E2E Spec'),
 				'scaffoldDesc' => $this->_('Create a Pest PHP test or Playwright E2E spec in site/tests/ or an installed module.'),
 				'testKindLabel' => $this->_('Test Kind'),
+				'kindFeatureShort' => $this->_('Feature'),
+				'kindUnitShort' => $this->_('Unit'),
+				'kindE2eShort' => $this->_('Playwright E2E'),
 				'kindFeatureOption' => $this->_('Pest Feature Test (Feature/)'),
 				'kindUnitOption' => $this->_('Pest Unit Test (--unit)'),
 				'kindE2eOption' => $this->_('Playwright E2E Spec (--e2e)'),
@@ -1096,10 +1331,10 @@ class ProcessWireConsole extends ProcessReact
 				'syncNow' => $this->_('Sync Boost Now'),
 				'syncConfirmTitle' => $this->_('Synchronize ProcessWire Boost'),
 				'syncConfirmDesc' => $this->_('Regenerate AI guidelines, skills, and .agents/map.json.'),
-				'enabledFeaturesLabel' => $this->_('Enabled Features (CSV)'),
-				'targetAgentsLabel' => $this->_('Target Agents (CSV)'),
-				'targetAgentsPlaceholder' => $this->_('claude_code,cursor,codex'),
-				'enabledModulesLabel' => $this->_('Enabled Modules (CSV)'),
+				'enabledFeaturesLabel' => $this->_('Enabled Features'),
+				'targetAgentsLabel' => $this->_('Target Agents'),
+				'targetAgentsPlaceholder' => $this->_('Add agent (e.g. claude_code)'),
+				'enabledModulesLabel' => $this->_('Enabled Modules'),
 				'saveConfiguration' => $this->_('Save Configuration'),
 				'saveConfirmTitle' => $this->_('Save Boost Configuration'),
 				'saveConfirmDesc' => $this->_('Persist .agents/boost.json and reinstall selected features.'),
@@ -1121,6 +1356,10 @@ class ProcessWireConsole extends ProcessReact
 				'installSkillsConfirmDesc' => $this->_('Fetch and security-audit skills from "{repo}".'),
 				'scaffoldModuleLabel' => $this->_('Scaffold ProcessWire Module'),
 				'moduleStubTypeLabel' => $this->_('Module Stub Type'),
+				'moduleTypeStandardShort' => $this->_('Standard'),
+				'moduleTypeProcessShort' => $this->_('Process'),
+				'moduleTypeFieldtypeShort' => $this->_('Fieldtype'),
+				'moduleTypeInputfieldShort' => $this->_('Inputfield'),
 				'moduleTypeStandardOption' => $this->_('Standard Module (module)'),
 				'moduleTypeProcessOption' => $this->_('Admin Process Module (process)'),
 				'moduleTypeFieldtypeOption' => $this->_('Database Fieldtype (fieldtype)'),
@@ -1207,6 +1446,25 @@ class ProcessWireConsole extends ProcessReact
 	 */
 	public function ___uninstall(): void
 	{
+		$this->workspaceRegistered = false;
+		if ($this->wire()->modules->isInstalled('React')) {
+			React::forgetSharedWorkspace('console');
+			React::forgetSharedWidget('console-overview');
+			React::forgetDeferredRegistrations($this);
+			$react = $this->wire()->fuel->get('react');
+			if ($react instanceof React) {
+				if ($react->isWorkspacesResolved()) {
+					$react->workspaces()->unregister('console');
+				}
+				if ($react->isWidgetsResolved()) {
+					$react->widgets()->unregister('console-overview');
+				}
+				if ($react->isCommandSearchResolved()) {
+					$react->commandSearch()->unregister('wire-console');
+				}
+			}
+		}
+
 		$this->wire()->log->delete(ConsoleRuntime::LOG_CHANNEL);
 		$this->wire()->cache->delete('wire-console*');
 

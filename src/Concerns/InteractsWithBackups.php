@@ -37,20 +37,12 @@ trait InteractsWithBackups
 	/**
 	 * Instantiate a WireDatabaseBackup instance pointed at the standard backup directory.
 	 */
-	protected function createBackupManager(): ?WireDatabaseBackup
+	protected function createBackupManager(): WireDatabaseBackup
 	{
-		$db = $this->wire()->database;
-		if (!$db) {
-			return null;
-		}
-
 		$backup = new WireDatabaseBackup($this->getBackupDirectory());
 		$backup->setWire($this->wire());
-		$backup->setDatabase($db);
-		$config = $this->wire()->config;
-		if ($config) {
-			$backup->setDatabaseConfig($config);
-		}
+		$backup->setDatabase($this->wire()->database);
+		$backup->setDatabaseConfig($this->wire()->config);
 
 		return $backup;
 	}
@@ -142,15 +134,23 @@ trait InteractsWithBackups
 	public function createBackup(?string $description = null): array
 	{
 		$backup = $this->createBackupManager();
-		if ($backup === null) {
-			return [
-				'ok' => false,
-				'file' => null,
-				'message' => $this->_('Database backup manager is unavailable.'),
-			];
-		}
+		$pdo = $this->wire()->database->pdo();
+		$unbufferedToggled = false;
+		$previousBuffered = true;
 
 		try {
+			if (
+				$pdo instanceof \PDO
+				&& $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'mysql'
+				&& defined('Pdo\\Mysql::ATTR_USE_BUFFERED_QUERY')
+			) {
+				$previousBuffered = (bool) $pdo->getAttribute(\Pdo\Mysql::ATTR_USE_BUFFERED_QUERY);
+				if ($previousBuffered) {
+					$pdo->setAttribute(\Pdo\Mysql::ATTR_USE_BUFFERED_QUERY, false);
+					$unbufferedToggled = true;
+				}
+			}
+
 			$options = [];
 			if ($description !== null && trim($description) !== '') {
 				$options['description'] = trim($description);
@@ -180,6 +180,14 @@ trait InteractsWithBackups
 				'file' => null,
 				'message' => $e->getMessage(),
 			];
+		} finally {
+			if ($unbufferedToggled && $pdo instanceof \PDO) {
+				try {
+					$pdo->setAttribute(\Pdo\Mysql::ATTR_USE_BUFFERED_QUERY, $previousBuffered);
+				} catch (\Throwable) {
+					// Ignore attribute restoration failure on closed connection
+				}
+			}
 		}
 	}
 
@@ -244,14 +252,6 @@ trait InteractsWithBackups
 		}
 
 		$backup = $this->createBackupManager();
-		if ($backup === null) {
-			return [
-				'ok' => false,
-				'preBackupFile' => null,
-				'message' => $this->_('Database backup manager is unavailable.'),
-				'details' => '',
-			];
-		}
 
 		$preBackupFile = null;
 		$details = '';

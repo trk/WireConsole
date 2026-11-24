@@ -20,9 +20,6 @@ trait InteractsWithQueues
 	{
 		try {
 			$db = $this->wire()->database;
-			if (!is_object($db) || !method_exists($db, 'tableExists')) {
-				return false;
-			}
 
 			return (bool) $db->tableExists(self::TABLE_QUEUE_JOBS)
 				&& (bool) $db->tableExists(self::TABLE_QUEUE_FAILED);
@@ -140,9 +137,6 @@ trait InteractsWithQueues
 	{
 		try {
 			$db = $this->wire()->database;
-			if (!$db) {
-				return 0;
-			}
 			$safeTable = $db->escapeTable($tableName);
 			$stmt = $db->query("SELECT COUNT(*) FROM `{$safeTable}`");
 
@@ -160,12 +154,10 @@ trait InteractsWithQueues
 	protected function fetchQueuedJobRows(int $limit = 50): array
 	{
 		$db = $this->wire()->database;
-		if (!$db) {
-			return [];
-		}
-
 		$jobsTable = $db->escapeTable(self::TABLE_QUEUE_JOBS);
-		$stmt = $db->prepare("SELECT * FROM `{$jobsTable}` ORDER BY `id` ASC LIMIT :limit");
+		$stmt = $db->prepare(
+			"SELECT `id`, `queue`, `attempts`, `reserved_at`, `available_at`, LEFT(`payload`, 16384) AS `payload` FROM `{$jobsTable}` ORDER BY `id` ASC LIMIT :limit"
+		);
 		$stmt->bindValue(':limit', max(1, $limit), \PDO::PARAM_INT);
 		$stmt->execute();
 		/** @var list<array<string, mixed>>|false $rows */
@@ -181,18 +173,30 @@ trait InteractsWithQueues
 	 */
 	protected function parseQueueJobPayload(string $payloadRaw): array
 	{
-		$payload = json_decode($payloadRaw, true);
+		$boundedRaw = strlen($payloadRaw) > 16384 ? substr($payloadRaw, 0, 16384) : $payloadRaw;
+		$payload = $boundedRaw !== '' ? json_decode($boundedRaw, true, self::MAX_JSON_DEPTH) : null;
 		$jobClass = $this->_('Unknown Job');
-		$payloadFormatted = $payloadRaw;
+		$payloadFormatted = $boundedRaw;
 
 		if (is_array($payload)) {
 			if (isset($payload['class']) && is_string($payload['class']) && $payload['class'] !== '') {
 				$jobClass = $payload['class'];
 			}
-			$pretty = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+			$redacted = $this->redactContext($payload);
+			$pretty = json_encode($redacted, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 			if (is_string($pretty)) {
 				$payloadFormatted = $pretty;
 			}
+		} elseif ($boundedRaw !== '') {
+			$payloadFormatted = (string) preg_replace(
+				'/"([^"]*(?:pass|secret|token|key|auth|pwd)[^"]*)"\s*:\s*"(?:\\\\.|[^"\\\\])*"/i',
+				'"$1": "[REDACTED]"',
+				$boundedRaw
+			);
+		}
+
+		if (mb_strlen($payloadFormatted, 'UTF-8') > 2000) {
+			$payloadFormatted = mb_substr($payloadFormatted, 0, 2000, 'UTF-8') . '...';
 		}
 
 		return [
@@ -308,7 +312,7 @@ trait InteractsWithQueues
 	{
 		$manager = $this->createQueueManager();
 		$db = $this->wire()->database;
-		if ($manager === null || !$db || !$this->queueTablesExist()) {
+		if ($manager === null || !$this->queueTablesExist()) {
 			return [
 				'ok' => false,
 				'purgedCount' => 0,
@@ -476,7 +480,7 @@ trait InteractsWithQueues
 
 		$manager = $this->createQueueManager();
 		$db = $this->wire()->database;
-		if ($manager === null || !$db || !$this->queueTablesExist()) {
+		if ($manager === null || !$this->queueTablesExist()) {
 			return [
 				'ok' => false,
 				'deleted' => false,
@@ -565,10 +569,13 @@ trait InteractsWithQueues
 		$jobs = [];
 		$errors = [];
 
+		$memoryMb = max(512, (int) ceil(memory_get_usage(true) / 1048576) + 256);
+
 		for ($i = 0; $i < $limit; $i++) {
 			$res = $this->runConsoleCommandInProcess(QueueWorkCommand::class, [
 				'--queue' => $cleanQueue,
 				'--tries' => (string) $tries,
+				'--memory' => (string) $memoryMb,
 				'--once' => true,
 			]);
 

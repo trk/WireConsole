@@ -48,7 +48,10 @@ trait InteractsWithSystemAndLogs
 		$dbVersion = '—';
 		try {
 			$db = $this->wire()->database;
-			if ($db) {
+			$attrVersion = $db->getAttribute(\PDO::ATTR_SERVER_VERSION);
+			if (is_string($attrVersion) && $attrVersion !== '') {
+				$dbVersion = $attrVersion;
+			} else {
 				$stmt = $db->query('SELECT VERSION()');
 				if ($stmt !== false) {
 					$rawVer = (string) $stmt->fetchColumn();
@@ -86,10 +89,6 @@ trait InteractsWithSystemAndLogs
 	{
 		try {
 			$modules = $this->wire()->modules;
-			if (!$modules) {
-				return '—';
-			}
-
 			$info = $modules->getModuleInfoVerbose($moduleName);
 			if (!is_array($info) || (($info['version'] ?? 0) === 0 && empty($info['versionStr']))) {
 				$staticInfo = $modules->getModuleInfo($moduleName);
@@ -284,15 +283,12 @@ trait InteractsWithSystemAndLogs
 
 		try {
 			if ($resolvedMode === 'modules') {
-				$modules = $this->wire()->modules;
-				if ($modules) {
-					try {
-						$modules->refresh();
-					} catch (\Error) {
-						$this->wire()->cache->delete('Modules.*');
-					}
-					$cleared[] = 'ModulesRegistry';
+				try {
+					$this->wire()->modules->refresh();
+				} catch (\Error) {
+					$this->wire()->cache->delete('Modules.*');
 				}
+				$cleared[] = 'ModulesRegistry';
 			}
 
 			if ($resolvedMode === 'all' || $resolvedMode === 'core') {
@@ -313,11 +309,8 @@ trait InteractsWithSystemAndLogs
 			}
 
 			if ($resolvedMode === 'all' || $resolvedMode === 'wire') {
-				$cache = $this->wire()->cache;
-				if ($cache) {
-					$cache->deleteAll();
-					$cleared[] = 'WireCache';
-				}
+				$this->wire()->cache->deleteAll();
+				$cleared[] = 'WireCache';
 			}
 
 			return [
@@ -341,12 +334,7 @@ trait InteractsWithSystemAndLogs
 	 */
 	public function getLogChannels(): array
 	{
-		$log = $this->wire()->log;
-		if (!$log) {
-			return [];
-		}
-
-		$logs = $log->getLogs(true);
+		$logs = $this->wire()->log->getLogs(true);
 		if (!is_array($logs) || $logs === []) {
 			return [];
 		}
@@ -392,6 +380,43 @@ trait InteractsWithSystemAndLogs
 	}
 
 	/**
+	 * Sanitize a log channel identifier (`[a-z0-9_-]+` without leading/trailing dots).
+	 */
+	protected function sanitizeLogChannelName(string $channelName): string
+	{
+		$cleanName = $this->wire()->sanitizer->name((string) preg_replace('/\.txt$/i', '', basename(trim($channelName))));
+		if ($cleanName === '' || str_starts_with($cleanName, '.') || str_ends_with($cleanName, '.')) {
+			return '';
+		}
+
+		return $cleanName;
+	}
+
+	/**
+	 * Verify that a sanitized log channel resolves to a regular `.txt` file strictly inside `$logsDir`.
+	 */
+	protected function resolveVerifiedLogFilePath(string $logsDir, string $cleanName): ?string
+	{
+		if ($logsDir === '' || $cleanName === '') {
+			return null;
+		}
+
+		$filePath = rtrim($logsDir, '/') . '/' . $cleanName . '.txt';
+		$realLogsDir = realpath($logsDir);
+		$realFilePath = is_link($filePath) ? false : realpath($filePath);
+		if (
+			$realLogsDir === false
+			|| $realFilePath === false
+			|| !is_file($realFilePath)
+			|| !str_starts_with(str_replace('\\', '/', $realFilePath), rtrim(str_replace('\\', '/', $realLogsDir), '/') . '/')
+		) {
+			return null;
+		}
+
+		return $realFilePath;
+	}
+
+	/**
 	 * Read recent entries from a ProcessWire log channel, optionally filtered by a case-insensitive substring search.
 	 * Automatically parses JSON audit payloads into structured `audit` metadata.
 	 *
@@ -405,30 +430,13 @@ trait InteractsWithSystemAndLogs
 	 */
 	public function readLogEntries(string $channelName, int $limit = 50, string $search = ''): array
 	{
-		$log = $this->wire()->log;
-		$sanitizer = $this->wire()->sanitizer;
 		$logsDir = (string) $this->wire()->config->paths->logs;
-		if (!$log || !$sanitizer || $logsDir === '') {
+		$cleanName = $this->sanitizeLogChannelName($channelName);
+		if ($this->resolveVerifiedLogFilePath($logsDir, $cleanName) === null) {
 			return [];
 		}
 
-		$cleanName = $sanitizer->name((string) preg_replace('/\.txt$/i', '', basename(trim($channelName))));
-		if ($cleanName === '' || str_starts_with($cleanName, '.') || str_ends_with($cleanName, '.')) {
-			return [];
-		}
-
-		$filePath = rtrim($logsDir, '/') . '/' . $cleanName . '.txt';
-		$realLogsDir = realpath($logsDir);
-		$realFilePath = is_link($filePath) ? false : realpath($filePath);
-		if (
-			$realLogsDir === false
-			|| $realFilePath === false
-			|| !is_file($realFilePath)
-			|| !str_starts_with(str_replace('\\', '/', $realFilePath), rtrim(str_replace('\\', '/', $realLogsDir), '/') . '/')
-		) {
-			return [];
-		}
-
+		$log = $this->wire()->log;
 		$clampedLimit = max(1, min(250, $limit));
 		$cleanSearch = trim($search);
 		$fetchLimit = $cleanSearch !== '' ? max($clampedLimit, 250) : $clampedLimit;
@@ -500,32 +508,23 @@ trait InteractsWithSystemAndLogs
 	 */
 	public function clearLogChannel(string $channelName): array
 	{
-		$sanitizer = $this->wire()->sanitizer;
 		$logsDir = (string) $this->wire()->config->paths->logs;
-		if (!$sanitizer || $logsDir === '') {
+		if ($logsDir === '') {
 			return [
 				'ok' => false,
 				'message' => $this->_('Log directory is unavailable.'),
 			];
 		}
 
-		$cleanName = $sanitizer->name((string) preg_replace('/\.txt$/i', '', basename(trim($channelName))));
-		if ($cleanName === '' || str_starts_with($cleanName, '.') || str_ends_with($cleanName, '.')) {
+		$cleanName = $this->sanitizeLogChannelName($channelName);
+		if ($cleanName === '') {
 			return [
 				'ok' => false,
 				'message' => $this->_('Invalid log channel name.'),
 			];
 		}
 
-		$filePath = rtrim($logsDir, '/') . '/' . $cleanName . '.txt';
-		$realLogsDir = realpath($logsDir);
-		$realFilePath = is_link($filePath) ? false : realpath($filePath);
-		if (
-			$realLogsDir === false
-			|| $realFilePath === false
-			|| !is_file($realFilePath)
-			|| !str_starts_with(str_replace('\\', '/', $realFilePath), rtrim(str_replace('\\', '/', $realLogsDir), '/') . '/')
-		) {
+		if ($this->resolveVerifiedLogFilePath($logsDir, $cleanName) === null) {
 			return [
 				'ok' => false,
 				'message' => sprintf($this->_('Log file "%s" does not exist.'), $cleanName),
@@ -585,7 +584,14 @@ trait InteractsWithSystemAndLogs
 			];
 		}
 
-		$clearedCount = count(array_filter($result['data'], static fn(mixed $val): bool => $val === true));
+		$data = $result['data'];
+		if (is_int($data['cleared'] ?? null)) {
+			$clearedCount = $data['cleared'];
+		} elseif (is_array($data['channels'] ?? null)) {
+			$clearedCount = count(array_filter($data['channels'], static fn(mixed $val): bool => $val === true));
+		} else {
+			$clearedCount = 0;
+		}
 
 		return [
 			'ok' => true,

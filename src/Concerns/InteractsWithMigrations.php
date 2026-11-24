@@ -17,23 +17,10 @@ trait InteractsWithMigrations
 	public function migrationsTableExists(): bool
 	{
 		try {
-			$db = $this->wire()->database;
-			if (is_object($db) && method_exists($db, 'tableExists')) {
-				return (bool) $db->tableExists(self::TABLE_MIGRATIONS);
-			}
-			if ($db) {
-				$table = $db->escapeTable(self::TABLE_MIGRATIONS);
-				$stmt = $db->prepare('SHOW TABLES LIKE :table');
-				$stmt->bindValue(':table', $table, \PDO::PARAM_STR);
-				$stmt->execute();
-
-				return $stmt->rowCount() > 0;
-			}
+			return (bool) $this->wire()->database->tableExists(self::TABLE_MIGRATIONS);
 		} catch (\Throwable) {
 			return false;
 		}
-
-		return false;
 	}
 
 	/**
@@ -181,22 +168,20 @@ trait InteractsWithMigrations
 
 				$appliedAtMap = [];
 				$db = $this->wire()->database;
-				if ($db) {
-					try {
-						$table = $db->escapeTable(self::TABLE_MIGRATIONS);
-						$stmt = $db->query("SELECT `migration`, `applied_at` FROM `{$table}`");
-						if ($stmt !== false) {
-							while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-								if (isset($row['migration'])) {
-									$appliedAtMap[(string) $row['migration']] = isset($row['applied_at'])
-										? (string) $row['applied_at']
-										: null;
-								}
+				try {
+					$table = $db->escapeTable(self::TABLE_MIGRATIONS);
+					$stmt = $db->query("SELECT `migration`, `applied_at` FROM `{$table}`");
+					if ($stmt !== false) {
+						while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+							if (isset($row['migration'])) {
+								$appliedAtMap[(string) $row['migration']] = isset($row['applied_at'])
+									? (string) $row['applied_at']
+									: null;
 							}
 						}
-					} catch (\Throwable) {
-						// Ignore timestamp lookup error
 					}
+				} catch (\Throwable) {
+					// Ignore timestamp lookup error
 				}
 
 				['verified' => $verifiedMap] = $this->partitionMigrationFiles();

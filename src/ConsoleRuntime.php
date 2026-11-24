@@ -185,6 +185,162 @@ class ConsoleRuntime extends Wire
 	}
 
 	/**
+	 * Search accessible Console sections and discovered project artifacts for the Command Palette (`/_react/command-search`).
+	 *
+	 * @return list<array{id: string, label: string, subtitle: string, badge: string, icon: string, href: string, isInertia: bool}>
+	 */
+	public function searchCommandPalette(string $query, string $baseUrl = '', int $limit = 5): array
+	{
+		$needle = trim($query);
+		$cleanBase = rtrim(trim($baseUrl), '/');
+		if ($cleanBase === '' || mb_strlen($needle, 'UTF-8') < 2 || !$this->userCanView(self::PERMISSION_VIEW)) {
+			return [];
+		}
+
+		$cap = max(1, min(20, $limit));
+		$resolvedBaseUrl = $cleanBase . '/';
+		$accessibleTabs = $this->getAccessibleTabs();
+		$results = [];
+
+		foreach ($accessibleTabs as $key => $meta) {
+			$haystack = $meta['label'] . ' ' . $key . ' ' . $meta['description'];
+			if (mb_stripos($haystack, $needle, 0, 'UTF-8') === false) {
+				continue;
+			}
+			$results[] = [
+				'id' => 'console-tab-' . $key,
+				'label' => $meta['label'],
+				'subtitle' => $meta['description'],
+				'badge' => '',
+				'icon' => $meta['icon'],
+				'href' => $key === 'overview' ? $resolvedBaseUrl : $resolvedBaseUrl . rawurlencode($key) . '/',
+				'isInertia' => true,
+			];
+			if (count($results) >= $cap) {
+				return $results;
+			}
+		}
+
+		if (count($results) >= $cap) {
+			return $results;
+		}
+		if (isset($accessibleTabs['migrations'])) {
+			foreach ($this->getMigrationsStatus()['items'] as $mig) {
+				if (mb_stripos($mig['name'], $needle, 0, 'UTF-8') === false) {
+					continue;
+				}
+				$results[] = [
+					'id' => 'console-mig-' . $mig['name'],
+					'label' => $mig['name'],
+					'subtitle' => 'site/migrations/',
+					'badge' => $mig['status'],
+					'icon' => 'database',
+					'href' => $resolvedBaseUrl . 'migrations/',
+					'isInertia' => true,
+				];
+				if (count($results) >= $cap) {
+					return $results;
+				}
+			}
+		}
+
+		if (count($results) >= $cap) {
+			return $results;
+		}
+		if (isset($accessibleTabs['queues'])) {
+			foreach ($this->getDiscoveredQueuesList() as $queueItem) {
+				if (mb_stripos($queueItem['name'], $needle, 0, 'UTF-8') === false) {
+					continue;
+				}
+				$results[] = [
+					'id' => 'console-queue-' . $queueItem['name'],
+					'label' => $queueItem['name'],
+					'subtitle' => $this->toProjectRelativePath($queueItem['path']),
+					'badge' => $accessibleTabs['queues']['label'],
+					'icon' => 'stack-2',
+					'href' => $resolvedBaseUrl . 'queues/',
+					'isInertia' => true,
+				];
+				if (count($results) >= $cap) {
+					return $results;
+				}
+			}
+		}
+
+		if (count($results) >= $cap) {
+			return $results;
+		}
+		if (isset($accessibleTabs['seeding'])) {
+			foreach ($this->getDiscoveredSeeders() as $seeder) {
+				if (mb_stripos($seeder['name'] . ' ' . $seeder['class'], $needle, 0, 'UTF-8') === false) {
+					continue;
+				}
+				$results[] = [
+					'id' => 'console-seeder-' . $seeder['name'],
+					'label' => $seeder['name'],
+					'subtitle' => $this->toProjectRelativePath($seeder['path']),
+					'badge' => $accessibleTabs['seeding']['label'],
+					'icon' => 'plant',
+					'href' => $resolvedBaseUrl . 'seeding/',
+					'isInertia' => true,
+				];
+				if (count($results) >= $cap) {
+					return $results;
+				}
+			}
+		}
+
+		if (count($results) >= $cap) {
+			return $results;
+		}
+		if (isset($accessibleTabs['scheduling'])) {
+			foreach ($this->getScheduledTasks() as $task) {
+				if (mb_stripos($task['name'] . ' ' . $task['expression'], $needle, 0, 'UTF-8') === false) {
+					continue;
+				}
+				$results[] = [
+					'id' => 'console-task-' . $task['name'],
+					'label' => $task['name'],
+					'subtitle' => $this->toProjectRelativePath($task['path']),
+					'badge' => $task['expression'],
+					'icon' => 'clock',
+					'href' => $resolvedBaseUrl . 'scheduling/',
+					'isInertia' => true,
+				];
+				if (count($results) >= $cap) {
+					return $results;
+				}
+			}
+		}
+
+		if (count($results) >= $cap) {
+			return $results;
+		}
+		if (isset($accessibleTabs['boost'])) {
+			foreach ($this->listInstalledSkillNames() as $skill) {
+				$desc = $this->readSkillFrontmatterDescription($skill);
+				if (mb_stripos($skill . ' ' . $desc, $needle, 0, 'UTF-8') === false) {
+					continue;
+				}
+				$results[] = [
+					'id' => 'console-skill-' . $skill,
+					'label' => $skill,
+					'subtitle' => '.agents/skills/' . $skill . '/SKILL.md',
+					'badge' => $accessibleTabs['boost']['label'],
+					'icon' => 'sparkles',
+					'href' => $resolvedBaseUrl . 'boost/',
+					'isInertia' => true,
+				];
+				if (count($results) >= $cap) {
+					return $results;
+				}
+			}
+		}
+
+		return $results;
+	}
+
+	/**
 	 * Check if the current user can view a panel requiring the given permission.
 	 */
 	public function userCanView(string $permission): bool
@@ -813,10 +969,47 @@ class ConsoleRuntime extends Wire
 			$payload['backup']['directory'] = 'site/assets/backups/database/';
 		}
 
-		if (isset($payload['queues']['discoveredQueues']) && is_array($payload['queues']['discoveredQueues'])) {
-			foreach ($payload['queues']['discoveredQueues'] as $idx => $item) {
-				if (is_array($item) && isset($item['path']) && is_string($item['path'])) {
-					$payload['queues']['discoveredQueues'][$idx]['path'] = $this->toProjectRelativePath($item['path']);
+		if (isset($payload['queues']) && is_array($payload['queues'])) {
+			$rootPathWithSlash = $this->getProjectRootPath();
+			$rootPathNoSlash = rtrim($rootPathWithSlash, '/');
+			$stripHostRoot = static function (string $value) use ($rootPathWithSlash, $rootPathNoSlash): string {
+				if ($rootPathWithSlash !== '') {
+					$value = str_replace($rootPathWithSlash, '', $value);
+				}
+				if ($rootPathNoSlash !== '') {
+					$value = str_replace($rootPathNoSlash, '', $value);
+				}
+
+				return $value;
+			};
+
+			if (isset($payload['queues']['discoveredQueues']) && is_array($payload['queues']['discoveredQueues'])) {
+				foreach ($payload['queues']['discoveredQueues'] as $idx => $item) {
+					if (is_array($item) && isset($item['path']) && is_string($item['path'])) {
+						$payload['queues']['discoveredQueues'][$idx]['path'] = $this->toProjectRelativePath($item['path']);
+					}
+				}
+			}
+
+			if (isset($payload['queues']['pendingJobs']) && is_array($payload['queues']['pendingJobs'])) {
+				foreach ($payload['queues']['pendingJobs'] as $idx => $item) {
+					if (is_array($item)) {
+						$payload['queues']['pendingJobs'][$idx]['payloadFormatted'] = '';
+					}
+				}
+			}
+
+			if (isset($payload['queues']['failedJobs']) && is_array($payload['queues']['failedJobs'])) {
+				foreach ($payload['queues']['failedJobs'] as $idx => $item) {
+					if (is_array($item)) {
+						if (isset($item['exceptionPreview']) && is_string($item['exceptionPreview'])) {
+							$payload['queues']['failedJobs'][$idx]['exceptionPreview'] = $stripHostRoot($item['exceptionPreview']);
+						}
+						if (isset($item['exceptionFull']) && is_string($item['exceptionFull'])) {
+							$payload['queues']['failedJobs'][$idx]['exceptionFull'] = $stripHostRoot($item['exceptionFull']);
+						}
+						$payload['queues']['failedJobs'][$idx]['payloadFormatted'] = '';
+					}
 				}
 			}
 		}
@@ -859,11 +1052,11 @@ class ConsoleRuntime extends Wire
 	 */
 	public function checkRateLimit(string $actionKey, int $cooldownSeconds): array
 	{
-		$session = $this->wire()->session;
-		if (!$session || $cooldownSeconds <= 0) {
+		if ($cooldownSeconds <= 0) {
 			return ['allowed' => true, 'retryAfter' => 0];
 		}
 
+		$session = $this->wire()->session;
 		$storageKey = 'wc_ratelimit_' . preg_replace('/[^a-z0-9_]/i', '_', $actionKey);
 		$lastRun = (int) ($session->get($storageKey) ?? 0);
 		$now = time();
@@ -892,8 +1085,8 @@ class ConsoleRuntime extends Wire
 			$payload = [
 				'action' => $action,
 				'status' => $status,
-				'user' => $user && $user->id ? (string) $user->name : 'guest',
-				'userId' => $user && $user->id ? (int) $user->id : 0,
+				'user' => $user->id ? (string) $user->name : 'guest',
+				'userId' => $user->id ? (int) $user->id : 0,
 				'ip' => (string) $this->wire()->session->getIP(),
 				'context' => $this->redactContext($context),
 			];
@@ -915,19 +1108,19 @@ class ConsoleRuntime extends Wire
 	{
 		$input = $this->wire()->input;
 		$sanitizer = $this->wire()->sanitizer;
-		$url = $input ? (string) $input->httpUrl() : '';
-		if ($url === '' || $input === null) {
+		$url = (string) $input->httpUrl();
+		if ($url === '') {
 			return '?';
 		}
 
 		if ($input->get->count() > 0) {
 			$pairs = [];
 			foreach ($input->get as $k => $v) {
-				$cleanKey = $sanitizer ? $sanitizer->name((string) $k) : (string) $k;
+				$cleanKey = $sanitizer->name((string) $k);
 				if ($cleanKey === '' || !is_scalar($v)) {
 					continue;
 				}
-				$cleanVal = rawurlencode($sanitizer ? $sanitizer->text((string) $v) : (string) $v);
+				$cleanVal = rawurlencode($sanitizer->text((string) $v));
 				$pairs[] = $cleanKey . '=' . $cleanVal;
 			}
 			if ($pairs !== []) {
@@ -939,10 +1132,10 @@ class ConsoleRuntime extends Wire
 	}
 
 	/**
-	 * Redact sensitive keys from audit log payloads.
+	 * Redact sensitive keys from audit log and queue inspection payloads.
 	 *
-	 * @param array<string, mixed> $context
-	 * @return array<string, mixed>
+	 * @param array<array-key, mixed> $context
+	 * @return array<array-key, mixed>
 	 */
 	protected function redactContext(array $context): array
 	{

@@ -597,16 +597,14 @@ trait InteractsWithTesting
 			'NO_COLOR' => '1',
 		];
 		$config = $this->wire()->config;
-		if ($config !== null) {
-			$existingBaseUrl = getenv('PW_BASE_URL');
-			if ((!is_string($existingBaseUrl) || trim($existingBaseUrl) === '') && $this->isConsolePackageAvailable()) {
-				$extraEnv['PW_BASE_URL'] = TestE2eCommand::resolveBaseUrl($config);
-			}
-			$existingAdminUrl = getenv('PW_ADMIN_URL');
-			if (!is_string($existingAdminUrl) || trim($existingAdminUrl) === '') {
-				$rawAdminUrl = trim((string) $config->urls->admin, '/');
-				$extraEnv['PW_ADMIN_URL'] = $rawAdminUrl !== '' ? '/' . $rawAdminUrl . '/' : '/processwire/';
-			}
+		$existingBaseUrl = getenv('PW_BASE_URL');
+		if ((!is_string($existingBaseUrl) || trim($existingBaseUrl) === '') && $this->isConsolePackageAvailable()) {
+			$extraEnv['PW_BASE_URL'] = TestE2eCommand::resolveBaseUrl($config);
+		}
+		$existingAdminUrl = getenv('PW_ADMIN_URL');
+		if (!is_string($existingAdminUrl) || trim($existingAdminUrl) === '') {
+			$rawAdminUrl = trim((string) $config->urls->admin, '/');
+			$extraEnv['PW_ADMIN_URL'] = $rawAdminUrl !== '' ? '/' . $rawAdminUrl . '/' : '/processwire/';
 		}
 
 		return $this->executeWireCliSubprocess($subcommandArgs, $displayCmd, $timeoutSeconds, $extraEnv);
@@ -730,6 +728,10 @@ trait InteractsWithTesting
 
 			if ((microtime(true) - $start) > $timeout) {
 				$timedOut = true;
+				$pid = (int) $status['pid'];
+				if (function_exists('posix_kill') && $pid > 0) {
+					@posix_kill(-$pid, 9);
+				}
 				@proc_terminate($process, 9);
 				break;
 			}

@@ -280,6 +280,86 @@ trait InteractsWithBoost
 	}
 
 	/**
+	 * Scan `.agents/skills/<name>/SKILL.md` safely (rejecting symlinks) and return sorted skill folder names.
+	 *
+	 * @return list<string>
+	 */
+	protected function listInstalledSkillNames(): array
+	{
+		$root = $this->getProjectRootPath();
+		$agentsDir = $root . '.agents';
+		$skillsDir = $agentsDir . '/skills';
+		if (is_link($agentsDir) || is_link($skillsDir) || !is_dir($skillsDir)) {
+			return [];
+		}
+
+		$dirs = glob($skillsDir . '/*', GLOB_ONLYDIR);
+		if (!is_array($dirs)) {
+			return [];
+		}
+
+		$installedSkills = [];
+		foreach ($dirs as $dir) {
+			$skillFile = $dir . '/SKILL.md';
+			if (!is_link($dir) && !is_link($skillFile) && is_file($skillFile)) {
+				$installedSkills[] = basename($dir);
+			}
+		}
+		sort($installedSkills);
+
+		return $installedSkills;
+	}
+
+	/**
+	 * Extract the YAML frontmatter `description:` field from a skill's `SKILL.md` file when present.
+	 */
+	protected function readSkillFrontmatterDescription(string $skillName): string
+	{
+		$cleanName = basename(trim($skillName));
+		if ($cleanName === '' || $cleanName === '.' || $cleanName === '..') {
+			return '';
+		}
+
+		$skillFile = $this->getProjectRootPath() . '.agents/skills/' . $cleanName . '/SKILL.md';
+		if (is_link($skillFile) || !is_file($skillFile)) {
+			return '';
+		}
+
+		$fh = @fopen($skillFile, 'rb');
+		if ($fh === false) {
+			return '';
+		}
+
+		$description = '';
+		try {
+			$lineIndex = 0;
+			$inFrontmatter = false;
+			while (($line = fgets($fh, 1024)) !== false && $lineIndex < 20) {
+				$lineIndex++;
+				$trimmed = trim($line);
+				if ($lineIndex === 1) {
+					if ($trimmed !== '---') {
+						break;
+					}
+					$inFrontmatter = true;
+					continue;
+				}
+				if (!$inFrontmatter || $trimmed === '---') {
+					break;
+				}
+				if (preg_match('/^description\s*:\s*(.+)$/i', $trimmed, $m)) {
+					$description = trim($m[1], " \t\"'");
+					break;
+				}
+			}
+		} finally {
+			fclose($fh);
+		}
+
+		return $description;
+	}
+
+	/**
 	 * Inspect ProcessWire Boost configuration, detected AI agents, discoverable modules, and installed skills.
 	 *
 	 * @return array{
@@ -300,21 +380,7 @@ trait InteractsWithBoost
 	{
 		$manager = $this->createBoostManager();
 		$root = $this->getProjectRootPath();
-		$skillsDir = $root . '.agents/skills';
-		$installedSkills = [];
-
-		if (!is_link($root . '.agents') && is_dir($skillsDir) && !is_link($skillsDir)) {
-			$dirs = glob($skillsDir . '/*', GLOB_ONLYDIR);
-			if (is_array($dirs)) {
-				foreach ($dirs as $dir) {
-					$skillFile = $dir . '/SKILL.md';
-					if (!is_link($dir) && !is_link($skillFile) && is_file($skillFile)) {
-						$installedSkills[] = basename($dir);
-					}
-				}
-				sort($installedSkills);
-			}
-		}
+		$installedSkills = $this->listInstalledSkillNames();
 
 		$hasMapJson = !is_link($root . '.agents')
 			&& !is_link($root . '.agents/map.json')

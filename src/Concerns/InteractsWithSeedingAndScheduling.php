@@ -140,9 +140,16 @@ trait InteractsWithSeedingAndScheduling
 					];
 				}
 
-				$seededName = (string) ($res['data']['seeder'] ?? $seederName);
-				$executed[] = $seededName;
-				$line = sprintf('+ %s (%d ms)', $seededName, $elapsedMs);
+				$seededList = is_array($res['data']['seeded'] ?? null)
+					? array_values(array_filter(array_map('strval', $res['data']['seeded']), static fn(string $item): bool => $item !== ''))
+					: [];
+				if ($seededList === []) {
+					$seededList = [$seederName];
+				}
+				foreach ($seededList as $seededItem) {
+					$executed[] = $seededItem;
+				}
+				$line = sprintf('+ %s (%d ms)', implode(', ', $seededList), $elapsedMs);
 				if ($res['stdout'] !== '') {
 					$line .= "\n  " . str_replace("\n", "\n  ", mb_substr($res['stdout'], 0, 2000));
 				}
@@ -215,7 +222,7 @@ trait InteractsWithSeedingAndScheduling
 					// Keep fallback if cron expression is invalid
 				}
 
-				$lastRaw = $cache ? $cache->get('wire-console:schedule:last-run:' . $name) : null;
+				$lastRaw = $cache->get('wire-console:schedule:last-run:' . $name);
 				$lastTriggered = is_string($lastRaw) && $lastRaw !== '' ? $lastRaw : '—';
 
 				$tasks[] = [
@@ -312,9 +319,7 @@ trait InteractsWithSeedingAndScheduling
 					$handler = [$taskInstance, 'handle'];
 					$handler();
 					$executed[] = $matchedTask;
-					if ($cache) {
-						$cache->save('wire-console:schedule:last-run:' . $matchedTask, date('Y-m-d H:i:s'), 86400 * 30);
-					}
+					$cache->save('wire-console:schedule:last-run:' . $matchedTask, date('Y-m-d H:i:s'), 86400 * 30);
 					$detailLines[] = sprintf('+ %s', $matchedTask);
 				} catch (\Throwable $taskErr) {
 					$errMsg = $taskErr->getMessage();
@@ -332,9 +337,7 @@ trait InteractsWithSeedingAndScheduling
 
 				foreach ($executedRaw as $name) {
 					$executed[] = $name;
-					if ($cache) {
-						$cache->save('wire-console:schedule:last-run:' . $name, date('Y-m-d H:i:s'), 86400 * 30);
-					}
+					$cache->save('wire-console:schedule:last-run:' . $name, date('Y-m-d H:i:s'), 86400 * 30);
 					$detailLines[] = sprintf('+ %s', $name);
 				}
 
