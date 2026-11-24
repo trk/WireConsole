@@ -46,9 +46,8 @@ $runtime = $console->runtime();
 
 | Method | Signature | Description |
 |---|---|---|
-| `getModuleInfo` | `public static function getModuleInfo(): array` | Module metadata, permissions, and `requires` declaration. |
-| `isAutoload` | `public function isAutoload(): bool` | Returns `true` so deferred workspace (`'console'`) and widget (`'console-overview'`) registrations attach on boot. |
-| `init` | `public function init(): void` | Registers admin vector icons via `IconManager::registerAdminIcons(...)` and defers workspace/widget registration via `React::deferModuleRegistration(...)`. |
+| `getModuleInfo` | `public static function getModuleInfo(): array` | Module metadata (`autoload => false`, `reactCapabilities => ['workspace', 'icons', 'commandSearch']`), permissions, and `requires` declaration. |
+| `init` | `public function init(): void` | Registers admin vector icons via `IconManager::registerAdminIcons(...)` and defers workspace (`'console'`), widget (`'console-overview'`), and command search (`'wire-console'`) registration via `React::deferModuleRegistration(...)` and `React::deferCommandSearchRegistration(...)` when pulled by `React` or opened in Admin. |
 | `getModuleScriptAssets` | `public function getModuleScriptAssets(): array` | Returns `list<string>` containing `React`'s `ReactIcons.js` asset URL and the versioned `dist/ProcessWireConsole.js` bundle URL. |
 | `getModuleStyleAssets` | `public function getModuleStyleAssets(): array` | Returns `list<string>` containing the versioned `dist/WireConsole.css` delta stylesheet URL when compiled. |
 | `runtime` | `public function runtime(): ConsoleRuntime` | Returns the wired `Totoglu\WireConsole\ConsoleRuntime` instance. |
@@ -66,7 +65,7 @@ $runtime = $console->runtime();
 | `*executeDownloadBackup` | `public function ___executeDownloadBackup(): void` | Streams a verified `.sql` snapshot from `site/assets/backups/database/` (throws `WirePermissionException` for non-superusers or when `$config->demo` is active, and `Wire404Exception` for missing/invalid files). |
 | `*translations` | `public function ___translations(): array` | Returns the nested UI translation catalog consumed by `React::resolveModuleTranslations(...)`. |
 | `*install` | `public function ___install(): void` | Creates the `Setup > Console` admin page and installs all `wire-console*` permissions idempotently. |
-| `*uninstall` | `public function ___uninstall(): void` | Deletes `wire-console-audit` logs, removes `wire-console*` `WireCache` entries, and removes all `wire-console*` permissions. |
+| `*uninstall` | `public function ___uninstall(): void` | Detaches `React` workspace/widget/command-search registrations, deletes `wire-console-audit` logs, removes `wire-console*` `WireCache` entries, and removes all `wire-console*` permissions. |
 
 ---
 
@@ -94,6 +93,7 @@ Registered under `Totoglu\WireConsole` in `ProcessWireConsole::__construct()` an
 | `make` | `public static function make(mixed $wire = null): self` | Instantiates and wires a `ConsoleRuntime` bound to `$wire`. |
 | `getTabDefinitions` | `public function getTabDefinitions(): array` | Returns metadata (`label`, `icon`, `permission`, `description`) for all 9 workspace sections. |
 | `getAccessibleTabs` | `public function getAccessibleTabs(): array` | Filters `getTabDefinitions()` to sections permitted for the current user. |
+| `searchCommandPalette` | `public function searchCommandPalette(string $query, string $baseUrl = '', int $limit = 5): array` | Searches accessible Console sections and discovered migrations, queues, seeders, scheduled tasks, and Boost skills for `/_react/command-search`. |
 | `userCanView` | `public function userCanView(string $permission): bool` | Checks whether the current user is logged in and holds `$permission`. |
 | `userCanInspectCategory` | `public function userCanInspectCategory(string $category): bool` | Enforces section-level RBAC (plus superuser and non-demo checks for `'backup'`) before file inspection. |
 | `isSuperuser` | `public function isSuperuser(): bool` | Returns `true` only for an authenticated ProcessWire superuser. |
@@ -123,7 +123,7 @@ Registered under `Totoglu\WireConsole` in `ProcessWireConsole::__construct()` an
 
 ## 3. Inertia + React Frontend (`resources/ts/`, `resources/css/` -> `dist/ProcessWireConsole.js`, `dist/WireConsole.css`)
 
-- `@pw/react/*` SDK (`@pw/react/core`, `@pw/react/layout`, `@pw/react/ui`, `@pw/react/hooks`) — Strictly typed externalized bindings to React, Inertia, `AppShell`, `DynamicIcon`, UI primitives, `useTranslations`, and `useKeyboardShortcuts`.
+- `@pw/react/*` SDK (`@pw/react/core`, `@pw/react/layout`, `@pw/react/ui`, `@pw/react/fields`, `@pw/react/hooks`) — Strictly typed externalized bindings to React, Inertia, `AppShell`, `DynamicIcon`, UI primitives, `SchemaField`, `useTranslations`, and `useKeyboardShortcuts`.
 - `resources/css/entries/WireConsole.css` — Module Tailwind CSS v4 delta stylesheet (`@source "../../ts/**/*.{ts,tsx}"`) compiled to `dist/WireConsole.css` and loaded via `getModuleStyleAssets()`.
 - `resources/ts/types.ts` — Strict TypeScript interfaces for `WorkspaceProps` and all 9 section payloads.
 - `resources/ts/entries/ProcessWireConsole.tsx` — Registers `WireConsole/Workspace` via `registerPages(...)` and compiles to `dist/ProcessWireConsole.js`.

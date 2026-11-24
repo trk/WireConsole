@@ -31,7 +31,7 @@
 	},
 	"suggest": {
 		"trk/processwire-console": "Required (^0.2) to operate migrations, queues, seeders, scheduling, backups, and Pest/Playwright tests via the Console workspace.",
-		"trk/processwire-boost": "Optional (^0.3). Enables ProcessWire Boost AI guidelines, skills, and the 28-tool MCP server panel."
+		"trk/processwire-boost": "Optional (^0.3 || ^0.4). Enables ProcessWire Boost AI guidelines, skills, and the 28-tool MCP server panel."
 	},
 	"autoload": {
 		"psr-4": {

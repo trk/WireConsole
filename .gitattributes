@@ -1,7 +1,5 @@
 /.github export-ignore
-/docs export-ignore
 /tests export-ignore
-/GLOSSARY.md export-ignore
 /node_modules export-ignore
 /resources export-ignore
 /package.json export-ignore
@@ -14,6 +12,8 @@
 /.phpstan.cache export-ignore
 /.phpunit.cache export-ignore
 /.phpunit.result.cache export-ignore
+/test-results export-ignore
+/playwright-report export-ignore
 /preview.jpg export-ignore
 /.gitignore export-ignore
 /.gitattributes export-ignore

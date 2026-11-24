@@ -2,6 +2,9 @@
 
 Full-page Inertia v3 + React 19 + Tailwind CSS v4 administrative workspace (`Setup > Console`, `{admin}/setup/wire-console/`) for operating **`trk/processwire-console`** and **`trk/processwire-boost`** from the ProcessWire backend.
 
+> [!NOTE]
+> Deep-dive technical documentation is available in [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) and [API.md](./API.md).
+
 ![ProcessWire Console](https://raw.githubusercontent.com/trk/WireConsole/refs/heads/main/preview.jpg)
 
 ## Requirements
@@ -11,7 +14,7 @@ Full-page Inertia v3 + React 19 + Tailwind CSS v4 administrative workspace (`Set
 - ProcessWire modules: `Inertia`, `React`
 - Composer packages:
   - `trk/processwire-console` (`^0.2` — schema migrations, background queues, database seeders, scheduled cron tasks, SQL backups, Pest PHP runner, and Playwright E2E runner)
-  - `trk/processwire-boost` (`^0.3`, optional — AI guidelines, skills, and the 28-tool JSON-RPC MCP server)
+  - `trk/processwire-boost` (`^0.3 || ^0.4`, optional — AI guidelines, skills, and the 28-tool JSON-RPC MCP server)
 
 ## Installation
 
@@ -60,7 +63,7 @@ if ($telemetry['migrations']['pending'] > 0) {
 
 ## Configuration & Workspace Sections
 
-`ProcessWireConsole` is zero-configuration out of the box and automatically discovers project features from ProcessWire's native directories (`site/migrations/`, `site/queue/`, `site/seeders/`, `site/schedule/`, `site/assets/backups/database/`, `tests/`, `.agents/`) and installed modules via `React::deferModuleRegistration(...)`.
+`ProcessWireConsole` is zero-configuration out of the box and automatically discovers project features from ProcessWire's native directories (`site/migrations/`, `site/queue/`, `site/seeders/`, `site/schedule/`, `site/assets/backups/database/`, `tests/`, `.agents/`) and installed modules via `React::deferModuleRegistration(...)` and `React::deferCommandSearchRegistration(...)` (`⌘K` Command Palette search across accessible sections and discovered artifacts).
 
 | Section | Route | Required Permission | Managed Subsystem |
 |---|---|---|---|
@@ -131,7 +134,7 @@ php vendor/bin/wire log:tail wire-console-audit
 
 ## Security & Permissions
 
-- **Granular Section RBAC:** Non-superuser roles granted `wire-console` plus specific `wire-console-*` permissions receive **read-only** visibility restricted strictly to their permitted sections; unauthorized payload slices are omitted (`null`).
+- **Granular Section RBAC:** Non-superuser roles granted `wire-console` plus specific `wire-console-*` permissions receive **read-only** visibility restricted strictly to their permitted sections; unauthorized response slices are omitted (`null`).
 - **Superuser & Confirmation Gate:** All mutating actions (`migrate`, `queue:work`, `db:seed`, `schedule:run`, `db:backup`, `db:restore`, `test`, `boost:*`, `make:*`, cache flushes, maintenance toggles, log clearing) enforce:
   1. Valid ProcessWire `$session->CSRF` token (`_token` or `X-CSRF-Token` header)
   2. Authenticated ProcessWire **superuser** account (and `$config->demo` disabled)
